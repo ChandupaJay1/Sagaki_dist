@@ -412,7 +412,8 @@
                                              <img class="rounded-circle" width="32"
                                                   src="assets/images/users/avatar-1.jpg" alt="user-image">
                                              <span class="d-lg-flex flex-column gap-1 d-none">
-                                                  <h5 class="my-0 fs-13 text-uppercase text-reset fw-bold">Doris Lietz
+                                                  <h5 class="my-0 fs-13 text-uppercase text-reset fw-bold">
+                                                       {{ Auth::user()->name }}
                                                   </h5>
                                              </span>
                                         </span>
@@ -444,7 +445,12 @@
                                              <i class="bx bx-lock fs-18 align-middle me-2"></i><span
                                                   class="align-middle">Lock screen</span>
                                         </a>
-                                        <a class="dropdown-item" href="{{ route('login') }}">
+                                        <form id="logout-form" action="{{ route('logout') }}" method="POST"
+                                             style="display: none;">
+                                             @csrf
+                                        </form>
+                                        <a class="dropdown-item" href="#"
+                                             onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                              <i class="bx bx-log-out fs-18 align-middle me-2"></i><span
                                                   class="align-middle">Logout</span>
                                         </a>

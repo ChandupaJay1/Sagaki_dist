@@ -49,26 +49,55 @@
                                                   takes a minute.</p>
                                         </div>
                                         <div class="p-3">
-                                             <form action="{{ route('dashboard') }}" class="authentication-form">
+                                             <form action="{{ route('register') }}" method="POST"
+                                                  class="authentication-form">
+                                                  @csrf
                                                   <div class="mb-3">
-                                                       <label class="form-label" for="example-name">Name</label>
-                                                       <input type="name" id="example-name" name="example-name"
-                                                            class="form-control" placeholder="Enter your name">
+                                                       <label class="form-label" for="name">Name</label>
+                                                       <input type="text" id="name" name="name"
+                                                            class="form-control @error('name') is-invalid @enderror"
+                                                            placeholder="Enter your name" value="{{ old('name') }}"
+                                                            required>
+                                                       @error('name')
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                       @enderror
                                                   </div>
                                                   <div class="mb-3">
-                                                       <label class="form-label" for="example-email">Email</label>
-                                                       <input type="email" id="example-email" name="example-email"
-                                                            class="form-control" placeholder="Enter your email">
+                                                       <label class="form-label" for="email">Email</label>
+                                                       <input type="email" id="email" name="email"
+                                                            class="form-control @error('email') is-invalid @enderror"
+                                                            placeholder="Enter your email" value="{{ old('email') }}"
+                                                            required>
+                                                       @error('email')
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                       @enderror
                                                   </div>
                                                   <div class="mb-3">
-                                                       <label class="form-label" for="example-password">Password</label>
-                                                       <input type="text" id="example-password" class="form-control"
-                                                            placeholder="Enter your password">
+                                                       <label class="form-label" for="password">Password</label>
+                                                       <input type="password" id="password" name="password"
+                                                            class="form-control @error('password') is-invalid @enderror"
+                                                            placeholder="Enter your password" required>
+                                                       @error('password')
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                       @enderror
+                                                  </div>
+                                                  <div class="mb-3">
+                                                       <label class="form-label" for="role">Role</label>
+                                                       <select name="role" id="role"
+                                                            class="form-control @error('role') is-invalid @enderror"
+                                                            required>
+                                                            <option value="admin">Admin</option>
+                                                            <option value="customer">Customer</option>
+                                                            <option value="ref">Ref</option>
+                                                       </select>
+                                                       @error('role')
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                       @enderror
                                                   </div>
                                                   <div class="mb-3">
                                                        <div class="form-check">
                                                             <input type="checkbox" class="form-check-input"
-                                                                 id="checkbox-signin">
+                                                                 id="checkbox-signin" required>
                                                             <label class="form-check-label" for="checkbox-signin">I
                                                                  accept Terms and Condition</label>
                                                        </div>

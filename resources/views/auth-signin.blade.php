@@ -50,39 +50,48 @@
                                                   account.</p>
                                         </div>
                                         <div class="p-3">
-                                             <form action="{{ route('dashboard') }}" class="authentication-form">
+                                             <form action="{{ route('login') }}" method="POST"
+                                                  class="authentication-form">
+                                                  @csrf
                                                   <div class="mb-4">
-                                                       <label class="form-label" for="UserEmail">Email</label>
+                                                       <label class="form-label" for="email">Email</label>
                                                        <div class="position-relative w-100">
-                                                            <input type="email"
-                                                                 class="form-control form-control-lg rounded"
-                                                                 id="UserEmail" placeholder="Enter Email" required="">
+                                                            <input type="email" name="email"
+                                                                 class="form-control form-control-lg rounded @error('email') is-invalid @enderror"
+                                                                 id="email" placeholder="Enter Email"
+                                                                 value="{{ old('email') }}" required="">
                                                             <p
                                                                  class="text-muted p-0 position-absolute end-0 top-50 border-0 fs-4 translate-middle-y me-2 mb-0">
                                                                  <iconify-icon icon="solar:letter-bold-duotone"
                                                                       class="fs-20 mt-1 text-muted"></iconify-icon>
                                                             </p>
                                                        </div>
+                                                       @error('email')
+                                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                                       @enderror
                                                   </div>
                                                   <div class="mb-4">
                                                        <a href="auth-password.html"
                                                             class="float-end fw-semibold text-reset ms-1">Reset
                                                             password</a>
-                                                       <label class="form-label" for="UserPass">Password</label>
+                                                       <label class="form-label" for="password">Password</label>
                                                        <div class="position-relative w-100">
-                                                            <input type="password"
-                                                                 class="form-control form-control-lg rounded"
-                                                                 id="UserPass" placeholder="Enter password" required="">
+                                                            <input type="password" name="password"
+                                                                 class="form-control form-control-lg rounded @error('password') is-invalid @enderror"
+                                                                 id="password" placeholder="Enter password" required="">
                                                             <button type="button"
                                                                  class="btn text-muted p-0 position-absolute end-0 top-50 border-0 fs-4 translate-middle-y me-2"><iconify-icon
                                                                       icon="solar:eye-bold-duotone"
                                                                       class="fs-20 mt-1 text-muted"></iconify-icon></button>
                                                        </div>
+                                                       @error('password')
+                                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                                       @enderror
                                                   </div>
                                                   <div class="mb-3">
                                                        <div class="form-check">
-                                                            <input type="checkbox" class="form-check-input"
-                                                                 id="checkbox-signin">
+                                                            <input type="checkbox" name="remember"
+                                                                 class="form-check-input" id="checkbox-signin">
                                                             <label class="form-check-label"
                                                                  for="checkbox-signin">Remember me</label>
                                                        </div>
