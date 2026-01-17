@@ -31,10 +31,11 @@ class AuthController extends Controller
             $user = Auth::user();
             if ($user->role === 'admin') {
                 return redirect()->intended('/');
-            } elseif ($user->role === 'customer') {
-                return redirect()->intended('/'); // Placeholder for customer dashboard
             } else {
-                return redirect()->intended('/'); // Placeholder for ref dashboard
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => 'Only admins can access the web dashboard.',
+                ])->onlyInput('email');
             }
         }
 
@@ -57,7 +58,7 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
-            'role' => 'required|in:admin,customer,ref',
+            'role' => 'required|in:admin,ref',
         ]);
 
         if ($validator->fails()) {
@@ -71,9 +72,12 @@ class AuthController extends Controller
             'role' => $request->role,
         ]);
 
-        Auth::login($user);
+        if ($user->role === 'admin') {
+            Auth::login($user);
+            return redirect()->route('dashboard');
+        }
 
-        return redirect()->route('dashboard');
+        return redirect()->route('login')->with('success', 'Registration successful! Please use our mobile application to log in to your account.');
     }
 
     public function logout(Request $request)

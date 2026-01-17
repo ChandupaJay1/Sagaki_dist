@@ -33,10 +33,10 @@
                               <div class="card-body">
                                    <div class="p-3">
                                         <div class="mx-auto mb-5 auth-logo text-center">
-                                             <a href="{{ route('dashboard') }}" class="logo-dark">
+                                             <!-- <a href="{{ route('dashboard') }}" class="logo-dark">
                                                   <img src="{{ asset('assets/images/logo-dark.png') }}" height="30"
                                                        alt="logo dark">
-                                             </a>
+                                             </a> -->
 
                                              <a href="{{ route('dashboard') }}" class="logo-light">
                                                   <img src="{{ asset('assets/images/logo-white.png') }}" height="30"
@@ -44,7 +44,7 @@
                                              </a>
                                         </div>
                                         <div class="text-center">
-                                             <h3 class="fw-bold text-dark fs-20">Hi , Sign Up 👋 </h3>
+                                             <h3 class="fw-bold text-dark fs-20">Hi , Sign Up Here </h3>
                                              <p class="text-muted mt-1 mb-4">New to our platform? Sign up now! It only
                                                   takes a minute.</p>
                                         </div>
@@ -87,7 +87,6 @@
                                                             class="form-control @error('role') is-invalid @enderror"
                                                             required>
                                                             <option value="admin">Admin</option>
-                                                            <option value="customer">Customer</option>
                                                             <option value="ref">Ref</option>
                                                        </select>
                                                        @error('role')
@@ -107,25 +106,6 @@
                                                        <button class="btn btn-primary" type="submit">Sign Up</button>
                                                   </div>
                                              </form>
-                                             <p class="mt-3 fw-semibold no-span">Or Sign In with</p>
-
-                                             <div class="row align-items-center justify-content-center g-3 text-center">
-                                                  <div class="col-lg-3">
-                                                       <a href="javascript:void(0);"
-                                                            class="btn btn-outline-danger shadow w-100 d-flex align-items-center justify-content-center gap-1 fw-medium"><i
-                                                                 class='bx bxl-google fs-20'></i> Google</a>
-                                                  </div>
-                                                  <div class="col-lg-3">
-                                                       <a href="javascript:void(0);"
-                                                            class="btn btn-outline-primary shadow w-100 d-flex align-items-center justify-content-center gap-1 fw-medium"><i
-                                                                 class='bx bxl-facebook fs-20'></i>Facebook</a>
-                                                  </div>
-                                                  <div class="col-lg-3">
-                                                       <a href="javascript:void(0);"
-                                                            class="btn btn-outline-dark shadow w-100 d-flex align-items-center justify-content-center gap-1 fw-medium"><i
-                                                                 class='bx bxl-github fs-20'></i>Github</a>
-                                                  </div>
-                                             </div>
                                         </div>
 
                                         <p class="text-muted text-center mt-4 mb-0">I already have an account <a

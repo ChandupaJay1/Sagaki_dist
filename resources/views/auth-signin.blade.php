@@ -34,10 +34,10 @@
                               <div class="card-body">
                                    <div class="p-3">
                                         <div class="mx-auto mb-5 auth-logo text-center">
-                                             <a href="{{ route('dashboard') }}" class="logo-dark">
+                                             <!-- <a href="{{ route('dashboard') }}" class="logo-dark">
                                                   <img src="{{ asset('assets/images/logo-dark.png') }}" height="30"
                                                        alt="logo dark">
-                                             </a>
+                                             </a> -->
 
                                              <a href="{{ route('dashboard') }}" class="logo-light">
                                                   <img src="{{ asset('assets/images/logo-white.png') }}" height="30"
@@ -49,6 +49,14 @@
                                              <p class="text-muted mt-1 mb-4">Enter your credentials to access your
                                                   account.</p>
                                         </div>
+
+                                        @if (session('success'))
+                                             <div class="alert alert-success border-0 rounded-pill mb-4 text-center"
+                                                  role="alert">
+                                                  {{ session('success') }}
+                                             </div>
+                                        @endif
+
                                         <div class="p-3">
                                              <form action="{{ route('login') }}" method="POST"
                                                   class="authentication-form">
@@ -104,25 +112,6 @@
                                                             In</button>
                                                   </div>
                                              </form>
-                                             <p class="mt-3 fw-semibold no-span">Or Sign In with</p>
-
-                                             <div class="row align-items-center justify-content-center g-3 text-center">
-                                                  <div class="col-lg-3">
-                                                       <a href="javascript:void(0);"
-                                                            class="btn btn-outline-danger shadow w-100 d-flex align-items-center justify-content-center gap-1 fw-medium"><i
-                                                                 class='bx bxl-google fs-20'></i> Google</a>
-                                                  </div>
-                                                  <div class="col-lg-3">
-                                                       <a href="javascript:void(0);"
-                                                            class="btn btn-outline-primary shadow w-100 d-flex align-items-center justify-content-center gap-1 fw-medium"><i
-                                                                 class='bx bxl-facebook fs-20'></i>Facebook</a>
-                                                  </div>
-                                                  <div class="col-lg-3">
-                                                       <a href="javascript:void(0);"
-                                                            class="btn btn-outline-dark shadow w-100 d-flex align-items-center justify-content-center gap-1 fw-medium"><i
-                                                                 class='bx bxl-github fs-20'></i>Github</a>
-                                                  </div>
-                                             </div>
                                         </div>
 
                                         <p class="text-muted text-center mt-4 mb-0">Don't have an account? <a
