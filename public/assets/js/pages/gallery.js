@@ -1,0 +1,1 @@
+function init(){window.Shuffle;GLightbox({selector:".image-popup",title:!1})}init();
