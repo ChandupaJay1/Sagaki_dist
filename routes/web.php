@@ -17,9 +17,11 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 use App\Http\Controllers\CustomerController;
 Route::middleware('auth')->group(function () {
-    Route::get('/customers', [CustomerController::class, 'index'])->name('customers.index');
-    Route::get('/customers/create', [CustomerController::class, 'create'])->name('customers.create');
-    Route::post('/customers', [CustomerController::class, 'store'])->name('customers.store');
+    Route::resource('customers', CustomerController::class);
+    
+    // Profile Routes
+    Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
+    Route::put('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
 });
 
 Route::get('/404', function () {

@@ -118,7 +118,7 @@
                                 </span>
                             </a>
                             <div class="dropdown-menu dropdown-menu-end">
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" href="{{ route('profile.show') }}">
                                     <i class="bx bx-user-circle fs-18 align-middle me-2"></i><span
                                         class="align-middle">My Account</span>
                                 </a>
