@@ -56,6 +56,14 @@
                             <span class="nav-text"> Customers </span>
                         </a>
                     </li>
+                    <li class="menu-item">
+                        <a class="menu-link" href="{{ route('vendors.index') }}">
+                            <span class="nav-icon">
+                                <i class="ri-user-settings-line"></i>
+                            </span>
+                            <span class="nav-text"> Vendors </span>
+                        </a>
+                    </li>
                 </ul>
             </div>
         </div>

@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Edit Customer')
+@section('title', 'Edit Vendor')
 
 @section('content')
     <style>
@@ -99,17 +99,16 @@
             <div class="card shadow-lg border-0 rounded-3">
                 <div class="card-header card-header-custom py-3 d-flex justify-content-between align-items-center">
                     <div>
-                        <h4 class="card-title mb-0 fw-bold text-white"><i class="ri-edit-2-line me-2"></i>Edit Vendor /
-                            Customer</h4>
+                        <h4 class="card-title mb-0 fw-bold text-white"><i class="ri-edit-2-line me-2"></i>Edit Vendor</h4>
                         <p class="mb-0 text-white-50 fs-13 mt-1">Update details for
-                            {{ $customer->company_name ?? $customer->name }}
+                            {{ $vendor->company_name ?? $vendor->name }}
                         </p>
                     </div>
-                    <a href="{{ route('customers.index') }}" class="btn btn-outline-light btn-sm"><i
+                    <a href="{{ route('vendors.index') }}" class="btn btn-outline-light btn-sm"><i
                             class="ri-arrow-left-line me-1"></i> Back to List</a>
                 </div>
                 <div class="card-body p-4">
-                    <form action="{{ route('customers.update', $customer->id) }}" method="POST">
+                    <form action="{{ route('vendors.update', $vendor->id) }}" method="POST">
                         @csrf
                         @method('PUT')
 
@@ -128,7 +127,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-barcode-line"></i></span>
                                             <input type="text" class="form-control bg-light" id="code" name="code"
-                                                value="{{ old('code', $customer->code) }}" placeholder="VEN/00015">
+                                                value="{{ old('code', $vendor->code) }}" placeholder="VEN/00015">
                                         </div>
                                     </div>
                                 </div>
@@ -142,7 +141,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-building-4-line"></i></span>
                                             <input type="text" class="form-control" id="company_name" name="company_name"
-                                                value="{{ old('company_name', $customer->company_name) }}"
+                                                value="{{ old('company_name', $vendor->company_name) }}"
                                                 placeholder="Business/Company Name">
                                         </div>
                                     </div>
@@ -158,8 +157,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-user-star-line"></i></span>
                                             <input type="text" class="form-control" id="name" name="name"
-                                                value="{{ old('name', $customer->name) }}"
-                                                placeholder="Primary Contact Name">
+                                                value="{{ old('name', $vendor->name) }}" placeholder="Primary Contact Name">
                                         </div>
                                     </div>
                                 </div>
@@ -174,10 +172,10 @@
                                             <span class="input-group-text"><i class="ri-price-tag-3-line"></i></span>
                                             <select class="form-select" id="category" name="category">
                                                 <option value="">Select Category</option>
-                                                <option value="Wholesale" {{ old('category', $customer->category) == 'Wholesale' ? 'selected' : '' }}>Wholesale
+                                                <option value="Wholesale" {{ old('category', $vendor->category) == 'Wholesale' ? 'selected' : '' }}>Wholesale
                                                 </option>
-                                                <option value="Retail" {{ old('category', $customer->category) == 'Retail' ? 'selected' : '' }}>Retail</option>
-                                                <option value="Distributor" {{ old('category', $customer->category) == 'Distributor' ? 'selected' : '' }}>Distributor
+                                                <option value="Retail" {{ old('category', $vendor->category) == 'Retail' ? 'selected' : '' }}>Retail</option>
+                                                <option value="Distributor" {{ old('category', $vendor->category) == 'Distributor' ? 'selected' : '' }}>Distributor
                                                 </option>
                                             </select>
                                         </div>
@@ -194,7 +192,7 @@
                                             <span class="input-group-text"><i class="ri-phone-line"></i></span>
                                             <input type="text" class="form-control" id="main_office_no"
                                                 name="main_office_no"
-                                                value="{{ old('main_office_no', $customer->main_office_no) }}">
+                                                value="{{ old('main_office_no', $vendor->main_office_no) }}">
                                         </div>
                                     </div>
                                 </div>
@@ -209,7 +207,7 @@
                                             <span class="input-group-text"><i class="ri-phone-line"></i></span>
                                             <input type="text" class="form-control" id="main_office_no_2"
                                                 name="main_office_no_2"
-                                                value="{{ old('main_office_no_2', $customer->main_office_no_2) }}">
+                                                value="{{ old('main_office_no_2', $vendor->main_office_no_2) }}">
                                         </div>
                                     </div>
                                 </div>
@@ -223,8 +221,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-smartphone-line"></i></span>
                                             <input type="text" class="form-control" id="mobile_no" name="mobile_no"
-                                                value="{{ old('mobile_no', $customer->mobile_no) }}"
-                                                placeholder="07XXXXXXXX">
+                                                value="{{ old('mobile_no', $vendor->mobile_no) }}" placeholder="07XXXXXXXX">
                                         </div>
                                     </div>
                                 </div>
@@ -238,7 +235,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-printer-line"></i></span>
                                             <input type="text" class="form-control" id="fax" name="fax"
-                                                value="{{ old('fax', $customer->fax) }}">
+                                                value="{{ old('fax', $vendor->fax) }}">
                                         </div>
                                     </div>
                                 </div>
@@ -253,7 +250,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-mail-line"></i></span>
                                             <input type="email" class="form-control" id="email" name="email"
-                                                value="{{ old('email', $customer->email) }}" required>
+                                                value="{{ old('email', $vendor->email) }}" required>
                                         </div>
                                     </div>
                                 </div>
@@ -267,7 +264,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-mail-send-line"></i></span>
                                             <input type="email" class="form-control" id="cc_email" name="cc_email"
-                                                value="{{ old('cc_email', $customer->cc_email) }}">
+                                                value="{{ old('cc_email', $vendor->cc_email) }}">
                                         </div>
                                     </div>
                                 </div>
@@ -281,7 +278,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-global-line"></i></span>
                                             <input type="text" class="form-control" id="website" name="website"
-                                                value="{{ old('website', $customer->website) }}" placeholder="http://www.">
+                                                value="{{ old('website', $vendor->website) }}" placeholder="http://www.">
                                         </div>
                                     </div>
                                 </div>
@@ -300,7 +297,7 @@
                                     </div>
                                     <div class="col-sm-8">
                                         <textarea class="form-control" id="address" name="address" rows="2"
-                                            placeholder="Registered Address">{{ old('address', $customer->address) }}</textarea>
+                                            placeholder="Registered Address">{{ old('address', $vendor->address) }}</textarea>
                                     </div>
                                 </div>
 
@@ -313,7 +310,7 @@
                                     <div class="col-sm-8">
                                         <textarea class="form-control" id="delivery_address" name="delivery_address"
                                             rows="2"
-                                            placeholder="Delivery Address">{{ old('delivery_address', $customer->delivery_address) }}</textarea>
+                                            placeholder="Delivery Address">{{ old('delivery_address', $vendor->delivery_address) }}</textarea>
                                     </div>
                                 </div>
 
@@ -328,8 +325,8 @@
                                             <span class="input-group-text"><i
                                                     class="ri-money-dollar-circle-line"></i></span>
                                             <select class="form-select" id="currency" name="currency">
-                                                <option value="LKR" {{ old('currency', $customer->currency) == 'LKR' ? 'selected' : '' }}>LKR</option>
-                                                <option value="USD" {{ old('currency', $customer->currency) == 'USD' ? 'selected' : '' }}>USD</option>
+                                                <option value="LKR" {{ old('currency', $vendor->currency) == 'LKR' ? 'selected' : '' }}>LKR</option>
+                                                <option value="USD" {{ old('currency', $vendor->currency) == 'USD' ? 'selected' : '' }}>USD</option>
                                             </select>
                                         </div>
                                     </div>
@@ -345,9 +342,9 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-secure-payment-line"></i></span>
                                             <select class="form-select" id="account_payables" name="account_payables">
-                                                <option value="Account Payables" {{ old('account_payables', $customer->account_payables) == 'Account Payables' ? 'selected' : '' }}>
+                                                <option value="Account Payables" {{ old('account_payables', $vendor->account_payables) == 'Account Payables' ? 'selected' : '' }}>
                                                     Account Payables</option>
-                                                <option value="Other" {{ old('account_payables', $customer->account_payables) == 'Other' ? 'selected' : '' }}>Other
+                                                <option value="Other" {{ old('account_payables', $vendor->account_payables) == 'Other' ? 'selected' : '' }}>Other
                                                 </option>
                                             </select>
                                         </div>
@@ -363,8 +360,8 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-file-list-2-line"></i></span>
                                             <select class="form-select" id="terms" name="terms">
-                                                <option value="Cash Only" {{ old('terms', $customer->terms) == 'Cash Only' ? 'selected' : '' }}>Cash Only</option>
-                                                <option value="30 Days Credit" {{ old('terms', $customer->terms) == '30 Days Credit' ? 'selected' : '' }}>30 Days Credit</option>
+                                                <option value="Cash Only" {{ old('terms', $vendor->terms) == 'Cash Only' ? 'selected' : '' }}>Cash Only</option>
+                                                <option value="30 Days Credit" {{ old('terms', $vendor->terms) == '30 Days Credit' ? 'selected' : '' }}>30 Days Credit</option>
                                             </select>
                                         </div>
                                     </div>
@@ -379,7 +376,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-percent-line"></i></span>
                                             <input type="text" class="form-control" id="vat_no" name="vat_no"
-                                                value="{{ old('vat_no', $customer->vat_no) }}">
+                                                value="{{ old('vat_no', $vendor->vat_no) }}">
                                         </div>
                                     </div>
                                 </div>
@@ -393,7 +390,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-percent-line"></i></span>
                                             <input type="text" class="form-control" id="svat_no" name="svat_no"
-                                                value="{{ old('svat_no', $customer->svat_no) }}">
+                                                value="{{ old('svat_no', $vendor->svat_no) }}">
                                         </div>
                                     </div>
                                 </div>
@@ -408,7 +405,7 @@
                                             <span class="input-group-text fw-bold">0.00</span>
                                             <input type="number" step="0.01" class="form-control text-end" id="credit_limit"
                                                 name="credit_limit"
-                                                value="{{ old('credit_limit', $customer->credit_limit) }}">
+                                                value="{{ old('credit_limit', $vendor->credit_limit) }}">
                                         </div>
                                     </div>
                                 </div>
@@ -423,7 +420,7 @@
                                             <span class="input-group-text"><i class="ri-user-line"></i></span>
                                             <input type="text" class="form-control" id="contact_person_1"
                                                 name="contact_person_1"
-                                                value="{{ old('contact_person_1', $customer->contact_person_1) }}"
+                                                value="{{ old('contact_person_1', $vendor->contact_person_1) }}"
                                                 placeholder="FullName 1">
                                         </div>
                                     </div>
@@ -439,7 +436,7 @@
                                             <span class="input-group-text"><i class="ri-user-2-line"></i></span>
                                             <input type="text" class="form-control" id="contact_person_2"
                                                 name="contact_person_2"
-                                                value="{{ old('contact_person_2', $customer->contact_person_2) }}"
+                                                value="{{ old('contact_person_2', $vendor->contact_person_2) }}"
                                                 placeholder="FullName 2">
                                         </div>
                                     </div>
@@ -455,7 +452,7 @@
                                             <span class="input-group-text"><i class="ri-user-3-line"></i></span>
                                             <input type="text" class="form-control" id="contact_person_3"
                                                 name="contact_person_3"
-                                                value="{{ old('contact_person_3', $customer->contact_person_3) }}"
+                                                value="{{ old('contact_person_3', $vendor->contact_person_3) }}"
                                                 placeholder="FullName 3">
                                         </div>
                                     </div>
@@ -472,7 +469,7 @@
                                             <span class="input-group-text"><i class="ri-bank-card-2-line"></i></span>
                                             <input type="text" class="form-control" id="print_name_on_cheque"
                                                 name="print_name_on_cheque"
-                                                value="{{ old('print_name_on_cheque', $customer->print_name_on_cheque) }}"
+                                                value="{{ old('print_name_on_cheque', $vendor->print_name_on_cheque) }}"
                                                 placeholder="Print Name">
                                         </div>
                                     </div>
@@ -491,7 +488,7 @@
                                 <div class="input-group">
                                     <span class="input-group-text text-muted"><i class="ri-bank-line"></i></span>
                                     <input type="text" class="form-control" id="bank_name" name="bank_name"
-                                        placeholder="ABC Bank" value="{{ old('bank_name', $customer->bank_name) }}">
+                                        placeholder="ABC Bank" value="{{ old('bank_name', $vendor->bank_name) }}">
                                 </div>
                             </div>
                             <div class="col-md-4 mb-3">
@@ -500,8 +497,7 @@
                                 <div class="input-group">
                                     <span class="input-group-text text-muted"><i class="ri-git-branch-line"></i></span>
                                     <input type="text" class="form-control" id="bank_branch" name="bank_branch"
-                                        placeholder="Colombo Branch"
-                                        value="{{ old('bank_branch', $customer->bank_branch) }}">
+                                        placeholder="Colombo Branch" value="{{ old('bank_branch', $vendor->bank_branch) }}">
                                 </div>
                             </div>
                             <div class="col-md-4 mb-3">
@@ -511,7 +507,7 @@
                                     <span class="input-group-text text-muted"><i class="ri-hashtag"></i></span>
                                     <input type="text" class="form-control" id="bank_account_number"
                                         name="bank_account_number" placeholder="000-000-0000"
-                                        value="{{ old('bank_account_number', $customer->bank_account_number) }}">
+                                        value="{{ old('bank_account_number', $vendor->bank_account_number) }}">
                                 </div>
                             </div>
                         </div>
@@ -519,7 +515,7 @@
                         <div class="text-end mt-4 pt-3 border-top">
                             <button type="reset" class="btn btn-light px-4 me-2">Reset</button>
                             <button type="submit" class="btn btn-primary px-4 fw-bold"><i class="ri-save-line me-1"></i>
-                                Update Customer</button>
+                                Update Vendor</button>
                         </div>
                     </form>
                 </div>

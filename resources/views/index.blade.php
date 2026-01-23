@@ -13,14 +13,12 @@
                                    <div class="d-flex align-items-center justify-content-between">
                                         <div>
                                              <p class="mb-3 card-title">Total Revenue</p>
-                                             <h4
-                                                  class="fw-bold text-primary d-flex align-items-center gap-2 mb-0">
+                                             <h4 class="fw-bold text-primary d-flex align-items-center gap-2 mb-0">
                                                   $35,428.09</h4>
                                         </div>
                                         <div>
                                              <div class="py-2 px-3 rounded-circle bg-primary">
-                                                  <i
-                                                       class="ri-money-dollar-circle-line fs-25 text-white"></i>
+                                                  <i class="ri-money-dollar-circle-line fs-25 text-white"></i>
                                              </div>
                                         </div>
                                    </div>
@@ -52,9 +50,10 @@
                               <div class="card-body">
                                    <div class="d-flex align-items-center justify-content-between">
                                         <div>
-                                             <p class="mb-3 card-title">Total Customers</p>
+                                             <p class="mb-3 card-title">Registered Customers</p>
                                              <h4 class="fw-bold d-flex align-items-center gap-2 mb-0">
-                                                  5736</h4>
+                                                  {{ number_format($customerCount) }}
+                                             </h4>
                                         </div>
                                         <div>
                                              <div class="py-2 px-3 rounded-circle bg-secondary">
@@ -71,14 +70,14 @@
                               <div class="card-body">
                                    <div class="d-flex align-items-center justify-content-between">
                                         <div>
-                                             <p class="mb-3 card-title">Cancelled Orders</p>
-                                             <h4
-                                                  class="fw-bold text-primary d-flex align-items-center gap-2 mb-0">
-                                                  1310</h4>
+                                             <p class="mb-3 card-title text-muted">Registered Vendors</p>
+                                             <h4 class="fw-bold text-primary d-flex align-items-center gap-2 mb-0">
+                                                  {{ number_format($vendorCount) }}
+                                             </h4>
                                         </div>
                                         <div>
                                              <div class="py-2 px-3 rounded-circle bg-primary">
-                                                  <i class="ri-calendar-close-line fs-25 text-white"></i>
+                                                  <i class="ri-user-settings-line fs-25 text-white"></i>
                                              </div>
                                         </div>
                                    </div>
@@ -93,8 +92,7 @@
                                         <h4 class="card-title mb-0">Revenue Summary</h4>
                                    </div>
                                    <div class="dropdown">
-                                        <a href="#"
-                                             class="dropdown-toggle btn btn-sm btn-outline-light rounded"
+                                        <a href="#" class="dropdown-toggle btn btn-sm btn-outline-light rounded"
                                              data-bs-toggle="dropdown" aria-expanded="false">
                                              Monthly
                                         </a>
@@ -119,8 +117,7 @@
                                         <h4 class="card-title mb-0">Daily Delivery Chart</h4>
                                    </div>
                                    <div class="dropdown">
-                                        <a href="#"
-                                             class="dropdown-toggle btn btn-sm btn-link text-uppercase fw-semibold"
+                                        <a href="#" class="dropdown-toggle btn btn-sm btn-link text-uppercase fw-semibold"
                                              data-bs-toggle="dropdown" aria-expanded="false">
                                              Weekly
                                         </a>
@@ -149,8 +146,7 @@
                                         <h4 class="card-title mb-0">Orders Overview</h4>
                                    </div>
                                    <div class="dropdown">
-                                        <a href="#"
-                                             class="dropdown-toggle btn btn-sm btn-link text-uppercase fw-semibold"
+                                        <a href="#" class="dropdown-toggle btn btn-sm btn-link text-uppercase fw-semibold"
                                              data-bs-toggle="dropdown" aria-expanded="false">Weekly</a>
                                         <div class="dropdown-menu dropdown-menu-end">
                                              <a href="#!" class="dropdown-item">Week</a>
@@ -165,8 +161,7 @@
                                                   class="text-success fw-bold">+33</span> new orders
                                              today</p>
                                    </div>
-                                   <div id="datalabels-column2" class="apex-charts"
-                                        data-colors="#604ae3"></div>
+                                   <div id="datalabels-column2" class="apex-charts" data-colors="#604ae3"></div>
                               </div>
                          </div>
                     </div>
@@ -207,56 +202,49 @@
                                                   <tr>
                                                        <td>2025-08-06</td>
                                                        <td>Stripe</td>
-                                                       <td><span
-                                                                 class="badge badge-soft-success">Success</span>
+                                                       <td><span class="badge badge-soft-success">Success</span>
                                                        </td>
                                                        <td>210.00</td>
                                                   </tr>
                                                   <tr>
                                                        <td>2025-08-05</td>
                                                        <td>UPI</td>
-                                                       <td><span
-                                                                 class="badge badge-soft-warning">Pending</span>
+                                                       <td><span class="badge badge-soft-warning">Pending</span>
                                                        </td>
                                                        <td>135.50</td>
                                                   </tr>
                                                   <tr>
                                                        <td>2025-08-04</td>
                                                        <td>PayPal</td>
-                                                       <td><span
-                                                                 class="badge badge-soft-danger">Failed</span>
+                                                       <td><span class="badge badge-soft-danger">Failed</span>
                                                        </td>
                                                        <td>320.75</td>
                                                   </tr>
                                                   <tr>
                                                        <td>2025-08-03</td>
                                                        <td>Debit Card</td>
-                                                       <td><span
-                                                                 class="badge badge-soft-success">Success</span>
+                                                       <td><span class="badge badge-soft-success">Success</span>
                                                        </td>
                                                        <td>89.99</td>
                                                   </tr>
                                                   <tr>
                                                        <td>2025-08-02</td>
                                                        <td>Bank Transfer</td>
-                                                       <td><span
-                                                                 class="badge badge-soft-success">Success</span>
+                                                       <td><span class="badge badge-soft-success">Success</span>
                                                        </td>
                                                        <td>150.45</td>
                                                   </tr>
                                                   <tr>
                                                        <td>2025-08-01</td>
                                                        <td>Credit Card</td>
-                                                       <td><span
-                                                                 class="badge badge-soft-danger">Failed</span>
+                                                       <td><span class="badge badge-soft-danger">Failed</span>
                                                        </td>
                                                        <td>400.20</td>
                                                   </tr>
                                                   <tr>
                                                        <td>2025-07-31</td>
                                                        <td>Cash</td>
-                                                       <td><span
-                                                                 class="badge badge-soft-warning">Pending</span>
+                                                       <td><span class="badge badge-soft-warning">Pending</span>
                                                        </td>
                                                        <td>95.00</td>
                                                   </tr>
@@ -266,8 +254,7 @@
                               </div>
 
                               <div class="card-footer border-top text-center p-3">
-                                   <a href="#!"
-                                        class="link-primary text-decoration-underline fw-medium">Show
+                                   <a href="#!" class="link-primary text-decoration-underline fw-medium">Show
                                         More <i class="ri-arrow-right-up-line"></i></a>
                               </div>
                          </div>
@@ -285,8 +272,8 @@
                                         <h4 class="card-title mb-0">Other Outlets</h4>
                                    </div>
                                    <div class="dropdown">
-                                        <a href="#" class="dropdown-toggle rounded arrow-none"
-                                             data-bs-toggle="dropdown" aria-expanded="true">
+                                        <a href="#" class="dropdown-toggle rounded arrow-none" data-bs-toggle="dropdown"
+                                             aria-expanded="true">
                                              <i class="ri-edit-box-line fs-20"></i>
                                         </a>
                                         <div class="dropdown-menu dropdown-menu-end">
@@ -304,13 +291,11 @@
                                                   class="ms-auto fw-medium float-end"><i
                                                        class="ri-star-fill text-warning"></i> 4.2</span>
                                         </h6>
-                                        <span class="fw-medium fs-18"><i
-                                                  class="ri-map-pin-range-line"></i></span>
+                                        <span class="fw-medium fs-18"><i class="ri-map-pin-range-line"></i></span>
                                         <span class="fw-medium ms-1">88 Bloor St W, Toronto, ON M5S
                                              1M5</span>
                                         <div class="mt-1">
-                                             <span class="fw-medium fs-18"><i
-                                                       class="ri-phone-line"></i></span>
+                                             <span class="fw-medium fs-18"><i class="ri-phone-line"></i></span>
                                              <a href="#!" class="fw-medium link-primary ms-1">+1
                                                   416-555-1122</a>
                                         </div>
@@ -321,13 +306,11 @@
                                                   class="ms-auto fw-medium float-end"><i
                                                        class="ri-star-fill text-warning"></i> 4.6</span>
                                         </h6>
-                                        <span class="fw-medium fs-18"><i
-                                                  class="ri-map-pin-range-line"></i></span>
+                                        <span class="fw-medium fs-18"><i class="ri-map-pin-range-line"></i></span>
                                         <span class="fw-medium ms-1">Kurfürstendamm 21, 10719
                                              Berlin</span>
                                         <div class="mt-1">
-                                             <span class="fw-medium fs-18"><i
-                                                       class="ri-phone-line"></i></span>
+                                             <span class="fw-medium fs-18"><i class="ri-phone-line"></i></span>
                                              <a href="#!" class="fw-medium link-primary ms-1">+49 30 5555
                                                   3333</a>
                                         </div>
@@ -338,12 +321,10 @@
                                                   class="ms-auto fw-medium float-end"><i
                                                        class="ri-star-fill text-warning"></i> 4.8</span>
                                         </h6>
-                                        <span class="fw-medium fs-18"><i
-                                                  class="ri-map-pin-range-line"></i></span>
+                                        <span class="fw-medium fs-18"><i class="ri-map-pin-range-line"></i></span>
                                         <span class="fw-medium ms-1">Burj Khalifa, Dubai</span>
                                         <div class="mt-1">
-                                             <span class="fw-medium fs-18"><i
-                                                       class="ri-phone-line"></i></span>
+                                             <span class="fw-medium fs-18"><i class="ri-phone-line"></i></span>
                                              <a href="#!" class="fw-medium link-primary ms-1">+971 4
                                                   8888 8888</a>
                                         </div>
@@ -364,11 +345,9 @@
                               </div>
 
                               <div style="height: 333px;" data-simplebar>
-                                   <div
-                                        class="d-flex flex-wrap align-items-center gap-2 border rounded-2 p-3 mb-3 mx-4">
+                                   <div class="d-flex flex-wrap align-items-center gap-2 border rounded-2 p-3 mb-3 mx-4">
                                         <div>
-                                             <img src="assets/images/food-icon/pic15.png" alt=""
-                                                  class="avatar-lg">
+                                             <img src="assets/images/food-icon/pic15.png" alt="" class="avatar-lg">
                                         </div>
                                         <div>
                                              <a href="#!" class="text-dark fs-15 fw-medium">Tacos &
@@ -380,11 +359,9 @@
                                         </div>
                                    </div>
 
-                                   <div
-                                        class="d-flex flex-wrap align-items-center gap-2 border rounded-2 p-3 mb-3 mx-4">
+                                   <div class="d-flex flex-wrap align-items-center gap-2 border rounded-2 p-3 mb-3 mx-4">
                                         <div>
-                                             <img src="assets/images/food-icon/pic16.png" alt=""
-                                                  class="avatar-lg">
+                                             <img src="assets/images/food-icon/pic16.png" alt="" class="avatar-lg">
                                         </div>
                                         <div>
                                              <a href="#!" class="text-dark fs-15 fw-medium">Pizza</a>
@@ -395,11 +372,9 @@
                                         </div>
                                    </div>
 
-                                   <div
-                                        class="d-flex flex-wrap align-items-center gap-2 border rounded-2 p-3 mb-3 mx-4">
+                                   <div class="d-flex flex-wrap align-items-center gap-2 border rounded-2 p-3 mb-3 mx-4">
                                         <div>
-                                             <img src="assets/images/food-icon/pic17.png" alt=""
-                                                  class="avatar-lg">
+                                             <img src="assets/images/food-icon/pic17.png" alt="" class="avatar-lg">
                                         </div>
                                         <div>
                                              <a href="#!" class="text-dark fs-15 fw-medium">Sushi</a>
@@ -410,11 +385,9 @@
                                         </div>
                                    </div>
 
-                                   <div
-                                        class="d-flex flex-wrap align-items-center gap-2 border rounded-2 p-3 mb-3 mx-4">
+                                   <div class="d-flex flex-wrap align-items-center gap-2 border rounded-2 p-3 mb-3 mx-4">
                                         <div>
-                                             <img src="assets/images/food-icon/pic19.png" alt=""
-                                                  class="avatar-lg">
+                                             <img src="assets/images/food-icon/pic19.png" alt="" class="avatar-lg">
                                         </div>
                                         <div>
                                              <a href="#!" class="text-dark fs-15 fw-medium">Pasta</a>
