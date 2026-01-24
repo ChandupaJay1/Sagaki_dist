@@ -57,8 +57,8 @@
                             <thead class="bg-light">
                                 <tr>
                                     <th class="ps-4">Code</th>
-                                    <th>Company / Name</th>
-                                    <th>Contact</th>
+                                    <th>Company</th>
+                                    <th>Contact Person Name</th>
                                     <th>Email</th>
                                     <th>Phone</th>
                                     <th class="text-end pe-4">Actions</th>
@@ -76,13 +76,13 @@
                                                 </div>
                                                 <div>
                                                     <h6 class="mb-0 fs-14 fw-semibold">
-                                                        {{ $customer->company_name ?? $customer->name }}
+                                                        {{ $customer->company_name ?? 'N/A' }}
                                                     </h6>
                                                     <span class="text-muted fs-12">{{ $customer->category }}</span>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>{{ $customer->mobile_no ?? 'N/A' }}</td>
+                                        <td>{{ $customer->name ?? 'N/A' }}</td>
                                         <td>{{ $customer->email }}</td>
                                         <td>{{ $customer->mobile_no ?? $customer->phone }}</td>
                                         <td class="text-end pe-4">

@@ -151,7 +151,7 @@
                                 <!-- Contact Person (Name) -->
                                 <div class="row mb-3 align-items-center">
                                     <div class="col-sm-4">
-                                        <label for="name" class="form-label-custom">Contact Person <span
+                                        <label for="name" class="form-label-custom">Contact Person Name <span
                                                 class="text-danger">*</span></label>
                                     </div>
                                     <div class="col-sm-8">
@@ -416,7 +416,7 @@
                                 <!-- Contact 1 -->
                                 <div class="row mb-2 align-items-center">
                                     <div class="col-sm-4">
-                                        <label for="contact_person_1" class="form-label-custom">Contact</label>
+                                        <label for="contact_person_1" class="form-label-custom">Contact Person 1</label>
                                     </div>
                                     <div class="col-sm-8">
                                         <div class="input-group">
