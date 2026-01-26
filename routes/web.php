@@ -19,10 +19,12 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\VendorController;
+use App\Http\Controllers\ProductController;
 
 Route::middleware('auth')->group(function () {
     Route::resource('customers', CustomerController::class);
     Route::resource('vendors', VendorController::class);
+    Route::resource('products', ProductController::class);
 
     // Profile Routes
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
