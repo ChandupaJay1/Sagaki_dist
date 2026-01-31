@@ -7,7 +7,7 @@
         <div class="col-xl-6">
             <div class="card shadow-lg border-0 rounded-3">
                 <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
-                    <h4 class="card-title mb-0 fw-bold"><i class="ri-edit-line me-2"></i>Edit Ref Agent</h4>
+                    <h4 class="card-title mb-0 fw-bold"><i class="ri-edit-line me-2"></i>Edit Rep Agent</h4>
                     <a href="{{ route('refs.index') }}" class="btn btn-sm btn-outline-light"><i class="ri-arrow-left-line me-1"></i> Back</a>
                 </div>
                 <div class="card-body p-4">
@@ -35,7 +35,7 @@
                              @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="text-end">
-                            <button class="btn btn-primary fw-bold px-4" type="submit"><i class="ri-save-line me-1"></i> Update Ref</button>
+                            <button class="btn btn-primary fw-bold px-4" type="submit"><i class="ri-save-line me-1"></i> Update Rep</button>
                         </div>
                     </form>
                 </div>

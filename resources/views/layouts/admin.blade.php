@@ -61,7 +61,7 @@
                             <span class="nav-icon">
                                 <i class="ri-user-star-line"></i>
                             </span>
-                            <span class="nav-text"> Ref Agents </span>
+                            <span class="nav-text"> Rep Agents </span>
                         </a>
                     </li>
                     <li class="menu-item">

@@ -39,9 +39,9 @@
         <div class="col-12">
             <div class="card shadow-lg border-0 rounded-3">
                 <div class="card-header card-header-custom py-3 d-flex justify-content-between align-items-center">
-                    <h4 class="card-title mb-0 fw-bold text-white"><i class="ri-team-line me-2"></i>Ref Agent List</h4>
+                    <h4 class="card-title mb-0 fw-bold text-white"><i class="ri-team-line me-2"></i>Rep Agent List</h4>
                     <a href="{{ route('refs.create') }}" class="btn btn-outline-light fw-bold">
-                        <i class="ri-add-line me-1"></i> New Ref Agent
+                        <i class="ri-add-line me-1"></i> New Rep Agent
                     </a>
                 </div>
                 <div class="card-body p-0">
