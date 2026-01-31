@@ -81,18 +81,7 @@
                                                             <div class="invalid-feedback">{{ $message }}</div>
                                                        @enderror
                                                   </div>
-                                                  <div class="mb-3">
-                                                       <label class="form-label" for="role">Role</label>
-                                                       <select name="role" id="role"
-                                                            class="form-control @error('role') is-invalid @enderror"
-                                                            required>
-                                                            <option value="admin">Admin</option>
-                                                            <option value="ref">Ref</option>
-                                                       </select>
-                                                       @error('role')
-                                                            <div class="invalid-feedback">{{ $message }}</div>
-                                                       @enderror
-                                                  </div>
+                                                  <input type="hidden" name="role" value="admin">
                                                   <div class="mb-3">
                                                        <div class="form-check">
                                                             <input type="checkbox" class="form-check-input"

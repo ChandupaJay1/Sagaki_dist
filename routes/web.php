@@ -20,11 +20,13 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\RefController;
 
 Route::middleware('auth')->group(function () {
     Route::resource('customers', CustomerController::class);
     Route::resource('vendors', VendorController::class);
     Route::resource('products', ProductController::class);
+    Route::resource('refs', RefController::class);
 
     // Profile Routes
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');

@@ -57,6 +57,14 @@
                         </a>
                     </li>
                     <li class="menu-item">
+                        <a class="menu-link" href="{{ route('refs.index') }}">
+                            <span class="nav-icon">
+                                <i class="ri-user-star-line"></i>
+                            </span>
+                            <span class="nav-text"> Ref Agents </span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
                         <a class="menu-link" href="{{ route('vendors.index') }}">
                             <span class="nav-icon">
                                 <i class="ri-user-settings-line"></i>
