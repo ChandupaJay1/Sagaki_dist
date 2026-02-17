@@ -65,6 +65,14 @@
                         </a>
                     </li>
                     <li class="menu-item">
+                        <a class="menu-link" href="{{ route('approvals.index') }}">
+                            <span class="nav-icon">
+                                <i class="ri-user-follow-line"></i>
+                            </span>
+                            <span class="nav-text"> Pending Approvals </span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
                         <a class="menu-link" href="{{ route('vendors.index') }}">
                             <span class="nav-icon">
                                 <i class="ri-user-settings-line"></i>

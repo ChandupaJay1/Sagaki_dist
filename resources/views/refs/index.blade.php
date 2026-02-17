@@ -59,6 +59,9 @@
                                     <th class="ps-4">Name</th>
                                     <th>Email</th>
                                     <th>Mobile Number</th>
+                                    <th>Serial Number</th>
+                                    <th>Expires At</th>
+                                    <th>Status</th>
                                     <th>Registered At</th>
                                     <th class="text-end pe-4">Actions</th>
                                 </tr>
@@ -76,9 +79,41 @@
                                         </td>
                                         <td>{{ $ref->email }}</td>
                                         <td>{{ $ref->mobile_number ?? 'N/A' }}</td>
+                                        <td>
+                                            <span class="badge bg-primary-subtle text-primary">{{ $ref->serial_number ?? 'N/A' }}</span>
+                                        </td>
+                                        <td>
+                                            @if($ref->serial_expires_at)
+                                                <span class="badge {{ $ref->serial_expires_at < now() ? 'bg-danger-subtle text-danger' : 'bg-success-subtle text-success' }}">
+                                                    {{ \Carbon\Carbon::parse($ref->serial_expires_at)->format('Y-m-d') }}
+                                                </span>
+                                            @else
+                                                <span class="text-muted">N/A</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($ref->is_active)
+                                                <span class="badge bg-success-subtle text-success">Active</span>
+                                            @else
+                                                <span class="badge bg-danger-subtle text-danger">Disconnected</span>
+                                            @endif
+                                        </td>
                                         <td>{{ $ref->created_at->format('Y-m-d') }}</td>
                                         <td class="text-end pe-4">
                                             <div class="d-flex gap-2 justify-content-end">
+                                                <form action="{{ route('refs.toggle-status', $ref->id) }}" method="POST">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    @if($ref->is_active)
+                                                        <button type="submit" class="btn btn-sm btn-soft-warning" data-bs-toggle="tooltip" title="Disconnect">
+                                                            <i class="ri-shut-down-line"></i>
+                                                        </button>
+                                                    @else
+                                                        <button type="submit" class="btn btn-sm btn-soft-success" data-bs-toggle="tooltip" title="Connect">
+                                                            <i class="ri-plug-line"></i>
+                                                        </button>
+                                                    @endif
+                                                </form>
                                                 <a href="{{ route('refs.edit', $ref->id) }}"
                                                     class="btn btn-sm btn-soft-primary" data-bs-toggle="tooltip" title="Edit">
                                                     <i class="ri-edit-line"></i>

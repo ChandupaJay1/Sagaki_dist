@@ -30,6 +30,11 @@
                             @error('mobile_number') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="mb-3">
+                            <label class="form-label" for="serial_number">Serial Number</label>
+                            <input type="text" id="serial_number" name="serial_number" class="form-control @error('serial_number') is-invalid @enderror" placeholder="Enter serial number" value="{{ old('serial_number', $ref->serial_number) }}">
+                            @error('serial_number') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label" for="password">Password <small class="text-muted">(Leave blank to keep current)</small></label>
                             <input type="password" id="password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="Enter new password">
                              @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror

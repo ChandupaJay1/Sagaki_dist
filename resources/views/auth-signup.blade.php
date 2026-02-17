@@ -73,15 +73,63 @@
                                                        @enderror
                                                   </div>
                                                   <div class="mb-3">
+                                                       <label class="form-label" for="mobile_number">Mobile Number</label>
+                                                       <input type="text" id="mobile_number" name="mobile_number"
+                                                            class="form-control @error('mobile_number') is-invalid @enderror"
+                                                            placeholder="Enter your mobile number" value="{{ old('mobile_number') }}"
+                                                            required>
+                                                       @error('mobile_number')
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                       @enderror
+                                                  </div>
+                                                  <div class="mb-3">
+                                                       <label class="form-label" for="role">Role</label>
+                                                       <select class="form-select @error('role') is-invalid @enderror" id="role" name="role" required onchange="togglePassword(this.value)">
+                                                            <option value="" selected disabled>Select Role</option>
+                                                            <option value="ref" {{ old('role') == 'ref' ? 'selected' : '' }}>Rep Agent</option>
+                                                            <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Admin</option>
+                                                       </select>
+                                                       @error('role')
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                       @enderror
+                                                  </div>
+                                                  <div class="mb-3" id="password-field">
                                                        <label class="form-label" for="password">Password</label>
                                                        <input type="password" id="password" name="password"
                                                             class="form-control @error('password') is-invalid @enderror"
-                                                            placeholder="Enter your password" required>
+                                                            placeholder="Enter your password">
                                                        @error('password')
                                                             <div class="invalid-feedback">{{ $message }}</div>
                                                        @enderror
                                                   </div>
-                                                  <input type="hidden" name="role" value="admin">
+                                                  <div class="mb-3 text-start" id="ref-note" style="display: none;">
+                                                       <div class="alert alert-info">
+                                                            <i class="ri-information-line"></i> Your <strong>Serial Number</strong> will be generated automatically and used as your password.
+                                                       </div>
+                                                  </div>
+                                                  <script>
+                                                       function togglePassword(role) {
+                                                            var passwordField = document.getElementById('password-field');
+                                                            var refNote = document.getElementById('ref-note');
+                                                            var passwordInput = document.getElementById('password');
+
+                                                            if (role === 'ref') {
+                                                                 passwordField.style.display = 'none';
+                                                                 refNote.style.display = 'block';
+                                                                 passwordInput.required = false;
+                                                                 passwordInput.value = '';
+                                                            } else {
+                                                                 passwordField.style.display = 'block';
+                                                                 refNote.style.display = 'none';
+                                                                 passwordInput.required = true;
+                                                            }
+                                                       }
+                                                       // Run on load if old value exists
+                                                       window.onload = function() {
+                                                            var role = document.getElementById('role').value;
+                                                            if(role) togglePassword(role);
+                                                       };
+                                                  </script>
                                                   <div class="mb-3">
                                                        <div class="form-check">
                                                             <input type="checkbox" class="form-check-input"

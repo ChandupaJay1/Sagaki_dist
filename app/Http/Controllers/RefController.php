@@ -35,18 +35,33 @@ class RefController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'mobile_number' => 'required|string|max:15',
-            'password' => 'required|string|min:8',
+            'role' => 'required|in:admin,ref',
+            'password' => 'required_if:role,admin|nullable|string|min:8',
         ]);
 
-        User::create([
+        $userData = [
             'name' => $request->name,
             'email' => $request->email,
             'mobile_number' => $request->mobile_number,
-            'password' => Hash::make($request->password),
-            'role' => 'ref',
-        ]);
+            'role' => $request->role,
+            'is_active' => true, // Admin created users are active by default
+        ];
 
-        return redirect()->route('refs.index')->with('success', 'Ref Agent registered successfully.');
+        if ($request->role === 'ref') {
+            $serialNumber = $request->serial_number;
+            if (empty($serialNumber)) {
+                $serialNumber = User::generateSerialNumber();
+            }
+            $userData['serial_number'] = $serialNumber;
+            $userData['password'] = Hash::make($serialNumber);
+            $userData['serial_expires_at'] = now()->addMonths(5);
+        } else {
+            $userData['password'] = Hash::make($request->password);
+        }
+
+        User::create($userData);
+
+        return redirect()->route('refs.index')->with('success', 'User registered successfully.');
     }
 
     /**
@@ -78,12 +93,14 @@ class RefController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($ref->id)],
             'mobile_number' => 'required|string|max:15',
             'password' => 'nullable|string|min:8',
+            'serial_number' => ['nullable', 'string', Rule::unique('users')->ignore($ref->id)],
         ]);
 
         $data = [
             'name' => $request->name,
             'email' => $request->email,
             'mobile_number' => $request->mobile_number,
+            'serial_number' => $request->serial_number,
         ];
 
         if ($request->filled('password')) {
@@ -103,5 +120,15 @@ class RefController extends Controller
         $ref = User::where('role', 'ref')->findOrFail($id);
         $ref->delete();
         return redirect()->route('refs.index')->with('success', 'Ref Agent deleted successfully.');
+    }
+
+    public function toggleStatus(string $id)
+    {
+        $ref = User::where('role', 'ref')->findOrFail($id);
+        $ref->is_active = !$ref->is_active;
+        $ref->save();
+
+        $status = $ref->is_active ? 'connected' : 'disconnected';
+        return redirect()->route('refs.index')->with('success', "Ref Agent account has been $status.");
     }
 }

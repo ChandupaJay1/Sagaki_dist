@@ -27,6 +27,12 @@ Route::middleware('auth')->group(function () {
     Route::resource('vendors', VendorController::class);
     Route::resource('products', ProductController::class);
     Route::resource('refs', RefController::class);
+    Route::patch('/refs/{id}/toggle-status', [RefController::class, 'toggleStatus'])->name('refs.toggle-status');
+
+    // User Approvals
+    Route::get('/approvals', [App\Http\Controllers\UserApprovalController::class, 'index'])->name('approvals.index');
+    Route::put('/approvals/{id}/approve', [App\Http\Controllers\UserApprovalController::class, 'approve'])->name('approvals.approve');
+    Route::delete('/approvals/{id}/reject', [App\Http\Controllers\UserApprovalController::class, 'reject'])->name('approvals.reject');
 
     // Profile Routes
     Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
