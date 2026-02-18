@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Customers')
+@section('title', 'Vendors')
 
 @section('content')
     <style>
@@ -39,9 +39,9 @@
         <div class="col-12">
             <div class="card shadow-lg border-0 rounded-3">
                 <div class="card-header card-header-custom py-3 d-flex justify-content-between align-items-center">
-                    <h4 class="card-title mb-0 fw-bold text-white"><i class="ri-group-line me-2"></i>Customer List</h4>
-                    <a href="{{ route('customers.create') }}" class="btn btn-outline-light fw-bold">
-                        <i class="ri-add-line me-1"></i> New Customer
+                    <h4 class="card-title mb-0 fw-bold text-white"><i class="ri-group-line me-2"></i>Vendor List</h4>
+                    <a href="{{ route('vendors.create') }}" class="btn btn-outline-light fw-bold">
+                        <i class="ri-add-line me-1"></i> New Vendor
                     </a>
                 </div>
                 <div class="card-body p-0">
@@ -65,9 +65,9 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($customers as $customer)
+                                @forelse($vendors as $vendor)
                                     <tr>
-                                        <td class="ps-4 fw-medium">{{ $customer->code ?? 'N/A' }}</td>
+                                        <td class="ps-4 fw-medium">{{ $vendor->code ?? 'N/A' }}</td>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div
@@ -76,23 +76,23 @@
                                                 </div>
                                                 <div>
                                                     <h6 class="mb-0 fs-14 fw-semibold">
-                                                        {{ $customer->company_name ?? 'N/A' }}
+                                                        {{ $vendor->company_name ?? 'N/A' }}
                                                     </h6>
-                                                    <span class="text-muted fs-12">{{ $customer->category }}</span>
+                                                    <span class="text-muted fs-12">{{ $vendor->category }}</span>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>{{ $customer->name ?? 'N/A' }}</td>
-                                        <td>{{ $customer->email }}</td>
-                                        <td>{{ $customer->mobile_no ?? $customer->phone }}</td>
+                                        <td>{{ $vendor->name ?? 'N/A' }}</td>
+                                        <td>{{ $vendor->email }}</td>
+                                        <td>{{ $vendor->mobile_no ?? $vendor->phone }}</td>
                                         <td class="text-end pe-4">
                                             <div class="d-flex gap-2 justify-content-end">
-                                                <a href="{{ route('customers.edit', $customer->id) }}"
+                                                <a href="{{ route('vendors.edit', $vendor->id) }}"
                                                     class="btn btn-sm btn-soft-primary" data-bs-toggle="tooltip" title="Edit">
                                                     <i class="ri-edit-line"></i>
                                                 </a>
-                                                <form action="{{ route('customers.destroy', $customer->id) }}" method="POST"
-                                                    onsubmit="return confirm('Are you sure you want to delete this customer?');">
+                                                <form action="{{ route('vendors.destroy', $vendor->id) }}" method="POST"
+                                                    onsubmit="return confirm('Are you sure you want to delete this vendor?');">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-sm btn-soft-danger"
@@ -110,10 +110,10 @@
                                                 class="avatar-lg bg-light rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3">
                                                 <i class="ri-user-add-line text-muted display-5"></i>
                                             </div>
-                                            <h5 class="text-muted mb-1">No Customers Found</h5>
-                                            <p class="text-muted mb-3">Get started by creating your first customer.</p>
-                                            <a href="{{ route('customers.create') }}" class="btn btn-sm btn-primary">Create
-                                                Customer</a>
+                                            <h5 class="text-muted mb-1">No Vendors Found</h5>
+                                            <p class="text-muted mb-3">Get started by creating your first vendor.</p>
+                                            <a href="{{ route('vendors.create') }}" class="btn btn-sm btn-primary">Create
+                                                Vendor</a>
                                         </td>
                                     </tr>
                                 @endforelse
@@ -122,7 +122,7 @@
                     </div>
                 </div>
                 <div class="card-footer border-top bg-light text-center">
-                    <small class="text-muted">Showing all customers</small>
+                    <small class="text-muted">Showing all vendors</small>
                 </div>
             </div>
         </div>

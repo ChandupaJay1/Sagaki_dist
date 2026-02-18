@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Register Customer')
+@section('title', 'Register Vendor')
 
 @section('content')
     <style>
@@ -99,15 +99,15 @@
             <div class="card shadow-lg border-0 rounded-3">
                 <div class="card-header card-header-custom py-3 d-flex justify-content-between align-items-center">
                     <div>
-                        <h4 class="card-title mb-0 fw-bold text-white"><i class="ri-user-add-line me-2"></i>New Vendor /
-                            Customer Registration</h4>
+                        <h4 class="card-title mb-0 fw-bold text-white"><i class="ri-user-add-line me-2"></i>New Vendor
+                            Registration</h4>
                         <p class="mb-0 text-white-50 fs-13 mt-1">Make sure to fill all required fields marked with (*)</p>
                     </div>
-                    <a href="{{ route('customers.index') }}" class="btn btn-outline-light btn-sm"><i
+                    <a href="{{ route('vendors.index') }}" class="btn btn-outline-light btn-sm"><i
                             class="ri-arrow-left-line me-1"></i> Back to List</a>
                 </div>
                 <div class="card-body p-4">
-                    <form action="{{ route('customers.store') }}" method="POST">
+                    <form action="{{ route('vendors.store') }}" method="POST">
                         @csrf
 
                         <div class="row g-5">
@@ -499,7 +499,7 @@
                         <div class="text-end mt-4 pt-3 border-top">
                             <button type="reset" class="btn btn-light px-4 me-2">Reset</button>
                             <button type="submit" class="btn btn-success px-4 fw-bold"><i class="ri-save-line me-1"></i>
-                                Save Customer</button>
+                                Save Vendor</button>
                         </div>
                     </form>
                 </div>

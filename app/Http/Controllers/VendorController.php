@@ -2,27 +2,26 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Customer;
+use App\Models\Vendor;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 
-class CustomerController extends Controller
+class VendorController extends Controller
 {
     public function index()
     {
-        $customers = Customer::all();
-        return view('customers.index', compact('customers'));
+        $vendors = Vendor::all();
+        return view('vendors.index', compact('vendors'));
     }
 
     public function create()
     {
-        return view('customers.create');
+        return view('vendors.create');
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'email' => 'required|string|email|max:255|unique:customers',
+            'email' => 'required|string|email|max:255|unique:vendors',
             'code' => 'nullable|string|max:50',
             'company_name' => 'nullable|string|max:255',
             'category' => 'nullable|string|max:100',
@@ -47,14 +46,12 @@ class CustomerController extends Controller
             'bank_name' => 'nullable|string|max:255',
             'bank_branch' => 'nullable|string|max:255',
             'bank_account_number' => 'nullable|string|max:50',
-            // Name is handled via company_name or contact person usually, but keeping it if needed or defaulting
-            'name' => 'nullable|string|max:255', 
+            'name' => 'nullable|string|max:255',
         ]);
 
-        // If 'name' is empty, use company_name as the primary name
-        $name = $request->name ?? $request->company_name ?? 'Unknown Customer';
+        $name = $request->name ?? $request->company_name ?? 'Unknown Vendor';
 
-        Customer::create([
+        Vendor::create([
             'name' => $name,
             'email' => $request->email,
             'code' => $request->code,
@@ -62,13 +59,13 @@ class CustomerController extends Controller
             'category' => $request->category,
             'main_office_no' => $request->main_office_no,
             'main_office_no_2' => $request->main_office_no_2,
-            'mobile_no' => $request->mobile_no, // Mapping mobile_no to new field
-            'phone' => $request->mobile_no, // Also mapping to old phone field for backward compatibility
+            'mobile_no' => $request->mobile_no,
+            'phone' => $request->mobile_no,
             'fax' => $request->fax,
             'cc_email' => $request->cc_email,
             'website' => $request->website,
-            'address' => $request->address, 
-            'delivery_address' => $request->delivery_address, 
+            'address' => $request->address,
+            'delivery_address' => $request->delivery_address,
             'currency' => $request->currency,
             'account_payables' => $request->account_payables,
             'terms' => $request->terms,
@@ -82,24 +79,24 @@ class CustomerController extends Controller
             'bank_name' => $request->bank_name,
             'bank_branch' => $request->bank_branch,
             'bank_account_number' => $request->bank_account_number,
-            'password' => null, // No password for CRM customers
+            'password' => null,
         ]);
 
-        return redirect()->route('customers.index')->with('success', 'Customer registered successfully.');
+        return redirect()->route('vendors.index')->with('success', 'Vendor registered successfully.');
     }
 
     public function edit($id)
     {
-        $customer = Customer::findOrFail($id);
-        return view('customers.edit', compact('customer'));
+        $vendor = Vendor::findOrFail($id);
+        return view('vendors.edit', compact('vendor'));
     }
 
     public function update(Request $request, $id)
     {
-        $customer = Customer::findOrFail($id);
-        
+        $vendor = Vendor::findOrFail($id);
+
         $request->validate([
-            'email' => 'required|string|email|max:255|unique:customers,email,' . $id,
+            'email' => 'required|string|email|max:255|unique:vendors,email,' . $id,
             'code' => 'nullable|string|max:50',
             'company_name' => 'nullable|string|max:255',
             'category' => 'nullable|string|max:100',
@@ -124,22 +121,21 @@ class CustomerController extends Controller
             'bank_name' => 'nullable|string|max:255',
             'bank_branch' => 'nullable|string|max:255',
             'bank_account_number' => 'nullable|string|max:50',
-            'name' => 'nullable|string|max:255', 
+            'name' => 'nullable|string|max:255',
         ]);
 
-        // If 'name' is empty, use company_name as the primary name
-        $name = $request->name ?? $request->company_name ?? 'Unknown Customer';
+        $name = $request->name ?? $request->company_name ?? 'Unknown Vendor';
 
-        $customer->update(array_merge($request->all(), ['name' => $name]));
+        $vendor->update(array_merge($request->all(), ['name' => $name]));
 
-        return redirect()->route('customers.index')->with('success', 'Customer updated successfully.');
+        return redirect()->route('vendors.index')->with('success', 'Vendor updated successfully.');
     }
 
     public function destroy($id)
     {
-        $customer = Customer::findOrFail($id);
-        $customer->delete();
+        $vendor = Vendor::findOrFail($id);
+        $vendor->delete();
 
-        return redirect()->route('customers.index')->with('success', 'Customer deleted successfully.');
+        return redirect()->route('vendors.index')->with('success', 'Vendor deleted successfully.');
     }
 }

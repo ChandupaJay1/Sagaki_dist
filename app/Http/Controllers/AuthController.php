@@ -26,17 +26,18 @@ class AuthController extends Controller
         ]);
 
         if (Auth::attempt($credentials, $request->remember)) {
-            $request->session()->regenerate();
-
             $user = Auth::user();
-            if ($user->role === 'admin') {
-                return redirect()->intended('/');
-            } else {
+
+            if (!$user->is_active) {
                 Auth::logout();
                 return back()->withErrors([
-                    'email' => 'Only admins can access the web dashboard.',
+                    'email' => 'Your account has been disconnected. Please contact the administrator.',
                 ])->onlyInput('email');
             }
+
+            $request->session()->regenerate();
+
+            return redirect()->intended('/');
         }
 
         return back()->withErrors([
@@ -57,27 +58,40 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
+            'mobile_number' => 'required|string|max:15',
             'role' => 'required|in:admin,ref',
+            'password' => 'required_if:role,admin|nullable|string|min:8',
         ]);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
 
-        $user = User::create([
+        $userData = [
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'mobile_number' => $request->mobile_number,
             'role' => $request->role,
-        ]);
+            'is_active' => false, // Pending approval
+        ];
 
-        if ($user->role === 'admin') {
-            Auth::login($user);
-            return redirect()->route('dashboard');
+        if ($request->role === 'ref') {
+            $serialNumber = User::generateSerialNumber();
+            $userData['serial_number'] = $serialNumber;
+            $userData['password'] = Hash::make($serialNumber);
+            $userData['serial_expires_at'] = now()->addMonths(5);
+        } else {
+            $userData['password'] = Hash::make($request->password);
         }
 
-        return redirect()->route('login')->with('success', 'Registration successful! Please use our mobile application to log in to your account.');
+        $user = User::create($userData);
+
+        $message = 'Registration successful! Your account is pending approval.';
+        if ($user->role === 'ref') {
+            $message .= ' Your Serial Number (Password) is: ' . $user->serial_number . '. Save this for later use.';
+        }
+
+        return redirect()->route('login')->with('success', $message);
     }
 
     public function logout(Request $request)

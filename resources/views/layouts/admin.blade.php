@@ -56,6 +56,38 @@
                             <span class="nav-text"> Customers </span>
                         </a>
                     </li>
+                    <li class="menu-item">
+                        <a class="menu-link" href="{{ route('refs.index') }}">
+                            <span class="nav-icon">
+                                <i class="ri-user-star-line"></i>
+                            </span>
+                            <span class="nav-text"> Rep Agents </span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a class="menu-link" href="{{ route('approvals.index') }}">
+                            <span class="nav-icon">
+                                <i class="ri-user-follow-line"></i>
+                            </span>
+                            <span class="nav-text"> Pending Approvals </span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a class="menu-link" href="{{ route('vendors.index') }}">
+                            <span class="nav-icon">
+                                <i class="ri-user-settings-line"></i>
+                            </span>
+                            <span class="nav-text"> Vendors </span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a class="menu-link" href="{{ route('products.index') }}">
+                            <span class="nav-icon">
+                                <i class="ri-shopping-bag-3-line"></i>
+                            </span>
+                            <span class="nav-text"> Items </span>
+                        </a>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -118,7 +150,7 @@
                                 </span>
                             </a>
                             <div class="dropdown-menu dropdown-menu-end">
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" href="{{ route('profile.show') }}">
                                     <i class="bx bx-user-circle fs-18 align-middle me-2"></i><span
                                         class="align-middle">My Account</span>
                                 </a>

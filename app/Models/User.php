@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -20,8 +21,12 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'mobile_number',
         'password',
         'role',
+        'serial_number',
+        'serial_expires_at',
+        'is_active',
     ];
 
     /**
@@ -44,6 +49,17 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
+    }
+
+
+    public static function generateSerialNumber()
+    {
+        do {
+            $serial = 'SAGAKI-' . strtoupper(Str::random(8));
+        } while (self::where('serial_number', $serial)->exists());
+
+        return $serial;
     }
 }
