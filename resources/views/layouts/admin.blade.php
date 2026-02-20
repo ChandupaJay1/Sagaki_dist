@@ -88,6 +88,14 @@
                             <span class="nav-text"> Items </span>
                         </a>
                     </li>
+                    <li class="menu-item">
+                        <a class="menu-link" href="{{ route('admins.index') }}">
+                            <span class="nav-icon">
+                                <i class="ri-shield-user-line"></i>
+                            </span>
+                            <span class="nav-text"> Admins </span>
+                        </a>
+                    </li>
                 </ul>
             </div>
         </div>
