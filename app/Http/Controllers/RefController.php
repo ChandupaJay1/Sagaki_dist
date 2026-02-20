@@ -35,29 +35,23 @@ class RefController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'mobile_number' => 'required|string|max:15',
-            'role' => 'required|in:admin,ref',
-            'password' => 'required_if:role,admin|nullable|string|min:8',
         ]);
 
         $userData = [
             'name' => $request->name,
             'email' => $request->email,
             'mobile_number' => $request->mobile_number,
-            'role' => $request->role,
-            'is_active' => true, // Admin created users are active by default
+            'role' => 'ref',
+            'is_active' => true,
         ];
 
-        if ($request->role === 'ref') {
-            $serialNumber = $request->serial_number;
-            if (empty($serialNumber)) {
-                $serialNumber = User::generateSerialNumber();
-            }
-            $userData['serial_number'] = $serialNumber;
-            $userData['password'] = Hash::make($serialNumber);
-            $userData['serial_expires_at'] = now()->addMonths(5);
-        } else {
-            $userData['password'] = Hash::make($request->password);
+        $serialNumber = $request->serial_number;
+        if (empty($serialNumber)) {
+            $serialNumber = User::generateSerialNumber();
         }
+        $userData['serial_number'] = $serialNumber;
+        $userData['password'] = Hash::make($serialNumber);
+        $userData['serial_expires_at'] = now()->addMonths(5);
 
         User::create($userData);
 

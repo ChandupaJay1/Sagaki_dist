@@ -21,8 +21,10 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RefController;
+use App\Http\Controllers\AdminController;
 
 Route::middleware('auth')->group(function () {
+    Route::resource('admins', AdminController::class);
     Route::resource('customers', CustomerController::class);
     Route::resource('vendors', VendorController::class);
     Route::resource('products', ProductController::class);
