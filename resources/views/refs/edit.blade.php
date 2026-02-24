@@ -30,6 +30,16 @@
                             @error('mobile_number') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="mb-3">
+                            <label class="form-label" for="route_id">Distribution Route</label>
+                            <select class="form-select" id="route_id" name="route_id">
+                                <option value="">No route</option>
+                                @foreach($routes ?? [] as $r)
+                                    <option value="{{ $r->id }}" {{ old('route_id', $ref->route_id) == $r->id ? 'selected' : '' }}>{{ $r->name }}{{ $r->code ? ' (' . $r->code . ')' : '' }}</option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted">Assign or remove route. You can also change this from the rep agent list.</small>
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label" for="serial_number">Serial Number</label>
                             <input type="text" id="serial_number" name="serial_number" class="form-control @error('serial_number') is-invalid @enderror" placeholder="Enter serial number" value="{{ old('serial_number', $ref->serial_number) }}">
                             @error('serial_number') <div class="invalid-feedback">{{ $message }}</div> @enderror

@@ -59,6 +59,7 @@
                                     <th class="ps-4">Code</th>
                                     <th>Company</th>
                                     <th>Contact Person Name</th>
+                                    <th>Route</th>
                                     <th>Email</th>
                                     <th>Phone</th>
                                     <th class="text-end pe-4">Actions</th>
@@ -83,6 +84,19 @@
                                             </div>
                                         </td>
                                         <td>{{ $customer->name ?? 'N/A' }}</td>
+                                        <td>
+                                            <form action="{{ route('customers.update-route', $customer->id) }}" method="POST" class="d-inline" id="route-form-{{ $customer->id }}">
+                                                @csrf
+                                                @method('PATCH')
+                                                <select name="route_id" class="form-select form-select-sm" style="width: auto; min-width: 140px;" onchange="this.form.submit()">
+                                                    <option value="">No route</option>
+                                                    @foreach($routes ?? [] as $r)
+                                                        <option value="{{ $r->id }}" {{ ($customer->route_id == $r->id) ? 'selected' : '' }}>{{ $r->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </form>
+                                            <small class="text-muted d-block mt-1">Change route here</small>
+                                        </td>
                                         <td>{{ $customer->email }}</td>
                                         <td>{{ $customer->mobile_no ?? $customer->phone }}</td>
                                         <td class="text-end pe-4">
@@ -105,7 +119,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center py-5">
+                                        <td colspan="7" class="text-center py-5">
                                             <div
                                                 class="avatar-lg bg-light rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3">
                                                 <i class="ri-user-add-line text-muted display-5"></i>

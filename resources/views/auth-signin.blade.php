@@ -689,6 +689,11 @@
 
             <div class="form-footer">
                 <p>Don't have an account? <a href="{{ route('register') }}">Create one &rarr;</a></p>
+                <div class="mt-4 pt-3 border-top text-center">
+                    <p class="text-muted extra-small mb-0">
+                        <script>document.write(new Date().getFullYear())</script> &copy; NerdTech Labs. All rights reserved.
+                    </p>
+                </div>
             </div>
 
         </div>

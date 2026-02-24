@@ -21,6 +21,7 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'route_id',
         'name',
         'email',
         'mobile_number',
@@ -63,5 +64,10 @@ class User extends Authenticatable
         } while (self::where('serial_number', $serial)->exists());
 
         return $serial;
+    }
+
+    public function route()
+    {
+        return $this->belongsTo(Route::class);
     }
 }

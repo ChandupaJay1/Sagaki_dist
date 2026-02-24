@@ -59,6 +59,7 @@
                                     <th class="ps-4">Name</th>
                                     <th>Email</th>
                                     <th>Mobile Number</th>
+                                    <th>Route</th>
                                     <th>Serial Number</th>
                                     <th>Expires At</th>
                                     <th>Status</th>
@@ -79,6 +80,19 @@
                                         </td>
                                         <td>{{ $ref->email }}</td>
                                         <td>{{ $ref->mobile_number ?? 'N/A' }}</td>
+                                        <td>
+                                            <form action="{{ route('refs.update-route', $ref->id) }}" method="POST" class="d-inline" id="route-form-ref-{{ $ref->id }}">
+                                                @csrf
+                                                @method('PATCH')
+                                                <select name="route_id" class="form-select form-select-sm" style="width: auto; min-width: 140px;" onchange="this.form.submit()">
+                                                    <option value="">No route</option>
+                                                    @foreach($routes ?? [] as $r)
+                                                        <option value="{{ $r->id }}" {{ ($ref->route_id == $r->id) ? 'selected' : '' }}>{{ $r->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </form>
+                                            <small class="text-muted d-block mt-1">Change route here</small>
+                                        </td>
                                         <td>
                                             <span class="badge bg-primary-subtle text-primary">{{ $ref->serial_number ?? 'N/A' }}</span>
                                         </td>
@@ -132,7 +146,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center py-5">
+                                        <td colspan="9" class="text-center py-5">
                                             <div
                                                 class="avatar-lg bg-light rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3">
                                                 <i class="ri-user-add-line text-muted display-5"></i>
