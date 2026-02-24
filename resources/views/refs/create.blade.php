@@ -28,6 +28,16 @@
                             <input type="text" id="mobile_number" name="mobile_number" class="form-control @error('mobile_number') is-invalid @enderror" placeholder="Enter mobile number" value="{{ old('mobile_number') }}" required>
                             @error('mobile_number') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="route_id">Distribution Route</label>
+                            <select class="form-select" id="route_id" name="route_id">
+                                <option value="">No route</option>
+                                @foreach($routes ?? [] as $r)
+                                    <option value="{{ $r->id }}" {{ old('route_id') == $r->id ? 'selected' : '' }}>{{ $r->name }}{{ $r->code ? ' (' . $r->code . ')' : '' }}</option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted">Which route this rep agent delivers on. You can change this later from the rep list.</small>
+                        </div>
 
                         <div id="serial-section">
                             <div class="mb-3">

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Models\Route;
+use App\Models\CustomerCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -10,13 +12,17 @@ class CustomerController extends Controller
 {
     public function index()
     {
-        $customers = Customer::all();
-        return view('customers.index', compact('customers'));
+        $customers = Customer::with(['route', 'customerCategory'])->get();
+        $routes = Route::where('is_active', true)->orderBy('name')->get();
+        $customerCategories = CustomerCategory::orderBy('name')->get();
+        return view('customers.index', compact('customers', 'routes', 'customerCategories'));
     }
 
     public function create()
     {
-        return view('customers.create');
+        $routes = Route::where('is_active', true)->orderBy('name')->get();
+        $customerCategories = CustomerCategory::orderBy('name')->get();
+        return view('customers.create', compact('routes', 'customerCategories'));
     }
 
     public function store(Request $request)
@@ -26,6 +32,7 @@ class CustomerController extends Controller
             'code' => 'nullable|string|max:50',
             'company_name' => 'nullable|string|max:255',
             'category' => 'nullable|string|max:100',
+            'customer_category_id' => 'nullable|exists:customer_categories,id',
             'main_office_no' => 'nullable|string|max:20',
             'main_office_no_2' => 'nullable|string|max:20',
             'mobile_no' => 'nullable|string|max:20',
@@ -48,13 +55,16 @@ class CustomerController extends Controller
             'bank_branch' => 'nullable|string|max:255',
             'bank_account_number' => 'nullable|string|max:50',
             // Name is handled via company_name or contact person usually, but keeping it if needed or defaulting
-            'name' => 'nullable|string|max:255', 
+            'name' => 'nullable|string|max:255',
+            'route_id' => 'nullable|exists:routes,id',
         ]);
 
         // If 'name' is empty, use company_name as the primary name
         $name = $request->name ?? $request->company_name ?? 'Unknown Customer';
 
         Customer::create([
+            'route_id' => $request->route_id,
+            'customer_category_id' => $request->customer_category_id,
             'name' => $name,
             'email' => $request->email,
             'code' => $request->code,
@@ -91,7 +101,9 @@ class CustomerController extends Controller
     public function edit($id)
     {
         $customer = Customer::findOrFail($id);
-        return view('customers.edit', compact('customer'));
+        $routes = Route::where('is_active', true)->orderBy('name')->get();
+        $customerCategories = CustomerCategory::orderBy('name')->get();
+        return view('customers.edit', compact('customer', 'routes', 'customerCategories'));
     }
 
     public function update(Request $request, $id)
@@ -103,6 +115,7 @@ class CustomerController extends Controller
             'code' => 'nullable|string|max:50',
             'company_name' => 'nullable|string|max:255',
             'category' => 'nullable|string|max:100',
+            'customer_category_id' => 'nullable|exists:customer_categories,id',
             'main_office_no' => 'nullable|string|max:20',
             'main_office_no_2' => 'nullable|string|max:20',
             'mobile_no' => 'nullable|string|max:20',
@@ -124,13 +137,20 @@ class CustomerController extends Controller
             'bank_name' => 'nullable|string|max:255',
             'bank_branch' => 'nullable|string|max:255',
             'bank_account_number' => 'nullable|string|max:50',
-            'name' => 'nullable|string|max:255', 
+            'name' => 'nullable|string|max:255',
+            'route_id' => 'nullable|exists:routes,id',
         ]);
 
         // If 'name' is empty, use company_name as the primary name
         $name = $request->name ?? $request->company_name ?? 'Unknown Customer';
 
-        $customer->update(array_merge($request->all(), ['name' => $name]));
+        $customer->update(array_merge(
+            $request->all(),
+            [
+                'name' => $name,
+                'customer_category_id' => $request->customer_category_id,
+            ]
+        ));
 
         return redirect()->route('customers.index')->with('success', 'Customer updated successfully.');
     }
@@ -141,5 +161,15 @@ class CustomerController extends Controller
         $customer->delete();
 
         return redirect()->route('customers.index')->with('success', 'Customer deleted successfully.');
+    }
+
+    /**
+     * Update only the route assignment (from list page).
+     */
+    public function updateRoute(Request $request, Customer $customer)
+    {
+        $request->validate(['route_id' => 'nullable|exists:routes,id']);
+        $customer->update(['route_id' => $request->route_id]);
+        return redirect()->route('customers.index')->with('success', 'Route updated for customer.');
     }
 }
