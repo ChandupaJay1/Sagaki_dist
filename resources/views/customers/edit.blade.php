@@ -164,7 +164,7 @@
                                     </div>
                                 </div>
 
-                                <!-- Category -->
+                                <!-- Category (Legacy Text) -->
                                 <div class="row mb-3 align-items-center">
                                     <div class="col-sm-4">
                                         <label for="category" class="form-label-custom">Category</label>
@@ -173,14 +173,52 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-price-tag-3-line"></i></span>
                                             <select class="form-select" id="category" name="category">
-                                                <option value="">Select Category</option>
-                                                <option value="Wholesale" {{ old('category', $customer->category) == 'Wholesale' ? 'selected' : '' }}>Wholesale
-                                                </option>
+                                                <option value="">Select Category (text)</option>
+                                                <option value="Wholesale" {{ old('category', $customer->category) == 'Wholesale' ? 'selected' : '' }}>Wholesale</option>
                                                 <option value="Retail" {{ old('category', $customer->category) == 'Retail' ? 'selected' : '' }}>Retail</option>
-                                                <option value="Distributor" {{ old('category', $customer->category) == 'Distributor' ? 'selected' : '' }}>Distributor
-                                                </option>
+                                                <option value="Distributor" {{ old('category', $customer->category) == 'Distributor' ? 'selected' : '' }}>Distributor</option>
                                             </select>
                                         </div>
+                                    </div>
+                                </div>
+
+                                <!-- Customer Category (Master) -->
+                                <div class="row mb-3 align-items-center">
+                                    <div class="col-sm-4">
+                                        <label for="customer_category_id" class="form-label-custom">Customer Category (Master)</label>
+                                    </div>
+                                    <div class="col-sm-8">
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="ri-group-line"></i></span>
+                                            <select class="form-select" id="customer_category_id" name="customer_category_id">
+                                                <option value="">No category</option>
+                                                @foreach($customerCategories ?? [] as $cat)
+                                                    <option value="{{ $cat->id }}" {{ old('customer_category_id', $customer->customer_category_id) == $cat->id ? 'selected' : '' }}>
+                                                        {{ $cat->name }}{{ $cat->code ? ' (' . $cat->code . ')' : '' }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <small class="text-muted">Change customer category using the master list.</small>
+                                    </div>
+                                </div>
+
+                                <!-- Distribution Route -->
+                                <div class="row mb-3 align-items-center">
+                                    <div class="col-sm-4">
+                                        <label for="route_id" class="form-label-custom">Distribution Route</label>
+                                    </div>
+                                    <div class="col-sm-8">
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="ri-route-line"></i></span>
+                                            <select class="form-select" id="route_id" name="route_id">
+                                                <option value="">No route</option>
+                                                @foreach($routes ?? [] as $r)
+                                                    <option value="{{ $r->id }}" {{ old('route_id', $customer->route_id) == $r->id ? 'selected' : '' }}>{{ $r->name }}{{ $r->code ? ' (' . $r->code . ')' : '' }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <small class="text-muted">Assign or remove route. You can also change this from the customer list.</small>
                                     </div>
                                 </div>
 

@@ -10,6 +10,8 @@ class Customer extends Model
     use HasFactory;
 
     protected $fillable = [
+        'route_id',
+        'customer_category_id',
         'name',
         'email',
         'phone',
@@ -43,4 +45,14 @@ class Customer extends Model
     protected $hidden = [
         'password',
     ];
+
+    public function route()
+    {
+        return $this->belongsTo(Route::class);
+    }
+
+    public function customerCategory()
+    {
+        return $this->belongsTo(CustomerCategory::class);
+    }
 }

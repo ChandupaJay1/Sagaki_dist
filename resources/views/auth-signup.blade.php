@@ -582,6 +582,11 @@
 
             <div class="form-footer">
                 <p>Already have an account? <a href="{{ route('login') }}">&larr; Sign In</a></p>
+                <div class="mt-4 pt-2 border-top text-center">
+                    <p class="text-muted extra-small mb-0">
+                        <script>document.write(new Date().getFullYear())</script> &copy; NerdTech Labs. All rights reserved.
+                    </p>
+                </div>
             </div>
 
         </div>
