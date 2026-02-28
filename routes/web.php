@@ -25,6 +25,8 @@ use App\Http\Controllers\RefController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\CustomerCategoryController;
+use App\Http\Controllers\UnitController;
+use App\Http\Controllers\ItemCategoryController;
 
 Route::middleware('auth')->group(function () {
     Route::get('/master-tables', function () {
@@ -32,6 +34,8 @@ Route::middleware('auth')->group(function () {
     })->name('master-tables');
 
     Route::resource('customer-categories', CustomerCategoryController::class);
+    Route::resource('units', UnitController::class);
+    Route::resource('item-categories', ItemCategoryController::class);
 
     Route::resource('admins', AdminController::class);
     Route::resource('routes', RouteController::class);
@@ -51,6 +55,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/approvals', [App\Http\Controllers\UserApprovalController::class , 'index'])->name('approvals.index');
     Route::put('/approvals/{id}/approve', [App\Http\Controllers\UserApprovalController::class , 'approve'])->name('approvals.approve');
     Route::delete('/approvals/{id}/reject', [App\Http\Controllers\UserApprovalController::class , 'reject'])->name('approvals.reject');
+    Route::get('/approvals/count', [App\Http\Controllers\UserApprovalController::class , 'count'])->name('approvals.count');
 
     // Profile Routes
     Route::get('/profile', [App\Http\Controllers\ProfileController::class , 'show'])->name('profile.show');

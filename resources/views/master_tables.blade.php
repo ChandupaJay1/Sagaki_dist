@@ -36,44 +36,69 @@
             </a>
         </div>
 
-        <!-- Unit Master (Coming Soon) -->
         <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-            <div class="card h-100 hover-translate border-dashed">
-                <div class="card-body d-flex flex-column">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="avatar-sm bg-info-subtle rounded-3 d-flex align-items-center justify-content-center me-2">
-                            <i class="ri-stack-line fs-24 text-info"></i>
+            <a href="{{ route('routes.index') }}" class="text-decoration-none">
+                <div class="card h-100 hover-translate">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="avatar-sm bg-primary-subtle rounded-3 d-flex align-items-center justify-content-center me-2">
+                                <i class="ri-route-line fs-24 text-primary"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0 fw-semibold text-dark">Routes</h5>
+                                <small class="text-muted">Distribution routes</small>
+                            </div>
                         </div>
-                        <div>
-                            <h5 class="mb-0 fw-semibold text-dark">Unit Master</h5>
-                            <small class="text-muted">Units & conversions</small>
-                        </div>
+                        <p class="text-muted mb-0 small mt-auto">
+                            Click to manage routes and assignments.
+                        </p>
                     </div>
-                    <span class="badge bg-soft-warning text-warning fw-semibold align-self-start mt-auto">
-                        Coming Soon
-                    </span>
                 </div>
-            </div>
+            </a>
         </div>
 
-        <!-- Item Category (Coming Soon) -->
+        <!-- Unit Master -->
         <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-            <div class="card h-100 hover-translate border-dashed">
-                <div class="card-body d-flex flex-column">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="avatar-sm bg-warning-subtle rounded-3 d-flex align-items-center justify-content-center me-2">
-                            <i class="ri-price-tag-3-line fs-24 text-warning"></i>
+            <a href="{{ route('units.index') }}" class="text-decoration-none">
+                <div class="card h-100 hover-translate">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="avatar-sm bg-info-subtle rounded-3 d-flex align-items-center justify-content-center me-2">
+                                <i class="ri-stack-line fs-24 text-info"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0 fw-semibold text-dark">Unit Master</h5>
+                                <small class="text-muted">Units & conversions</small>
+                            </div>
                         </div>
-                        <div>
-                            <h5 class="mb-0 fw-semibold text-dark">Item Category</h5>
-                            <small class="text-muted">Organize items</small>
-                        </div>
+                        <p class="text-muted mb-0 small mt-auto">
+                            Click to manage units.
+                        </p>
                     </div>
-                    <span class="badge bg-soft-warning text-warning fw-semibold align-self-start mt-auto">
-                        Coming Soon
-                    </span>
                 </div>
-            </div>
+            </a>
+        </div>
+
+        <!-- Item Category -->
+        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+            <a href="{{ route('item-categories.index') }}" class="text-decoration-none">
+                <div class="card h-100 hover-translate">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="avatar-sm bg-warning-subtle rounded-3 d-flex align-items-center justify-content-center me-2">
+                                <i class="ri-price-tag-3-line fs-24 text-warning"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0 fw-semibold text-dark">Item Category</h5>
+                                <small class="text-muted">Organize items</small>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-0 small mt-auto">
+                            Click to manage item categories.
+                        </p>
+                    </div>
+                </div>
+            </a>
         </div>
 
         <!-- Area (Coming Soon) -->
@@ -178,4 +203,3 @@
     </div>
 </div>
 @endsection
-
