@@ -270,18 +270,89 @@
             align-items: center;
         }
 
-        /* Topbar name: always visible - light theme = dark text, dark theme = light text (Metor removed) */
-        .topbar > .logo-box .brand-name {
+        .topbar > .logo-box .brand-name { 
+            display: inline-block !important;
             color: #1e293b !important;
         }
-
-        [data-bs-theme="dark"] .topbar > .logo-box .brand-name {
+        [data-bs-theme="dark"] .topbar > .logo-box .brand-name { 
             color: #f1f5f9 !important;
+        }
+        /* Ensure only one brand text on desktop: hide short label on md+ */
+        @media (min-width: 992px) {
+            .topbar > .logo-box .brand-name-short { display: none !important; }
         }
 
         .topbar .navbar-header {
             padding: 0 28px;
             height: 100%;
+        }
+        
+        /* Global form controls dark theme */
+        [data-bs-theme="dark"] .form-control,
+        [data-bs-theme="dark"] .form-select {
+            background-color: #1e293b !important;
+            color: #e5e7eb !important;
+            border-color: #475569 !important;
+        }
+        [data-bs-theme="dark"] .form-select {
+            background-image: var(--bs-form-select-bg-img), linear-gradient(#0b1120, #0b1120) !important;
+            background-color: #0b1120 !important;
+            border-color: #1f2937 !important;
+            color: #e5e7eb !important;
+        }
+        [data-bs-theme="dark"] .form-select option,
+        [data-bs-theme="dark"] .form-control option {
+            background-color: #0f172a !important;
+            color: #e5e7eb !important;
+        }
+        [data-bs-theme="dark"] .form-select:disabled,
+        [data-bs-theme="dark"] .form-control:disabled {
+            background-color: #1f2937 !important;
+            color: #9ca3af !important;
+            border-color: #374151 !important;
+        }
+        [data-bs-theme="dark"] .form-select:focus,
+        [data-bs-theme="dark"] .form-control:focus {
+            background-image: var(--bs-form-select-bg-img), linear-gradient(#020617, #020617) !important;
+            background-color: #020617 !important;
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.2) !important;
+            color: #f8fafc !important;
+        }
+        [data-bs-theme="dark"] .form-control:focus,
+        [data-bs-theme="dark"] .form-select:focus {
+            background-color: #0f172a !important;
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.2) !important;
+            color: #f8fafc !important;
+        }
+        [data-bs-theme="dark"] .ts-wrapper .ts-control {
+            background-color: #0b1120 !important;
+            color: #e5e7eb !important;
+            border-color: #1f2937 !important;
+            border-radius: .375rem !important;
+        }
+        [data-bs-theme="dark"] .ts-wrapper.focus .ts-control {
+            background-color: #020617 !important;
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 2px rgba(99,102,241,0.35) !important;
+            color: #f8fafc !important;
+        }
+        [data-bs-theme="dark"] .ts-control input {
+            color: #e5e7eb !important;
+        }
+        [data-bs-theme="dark"] .ts-dropdown {
+            background-color: #0b1120 !important;
+            color: #e5e7eb !important;
+            border-color: #1f2937 !important;
+        }
+        [data-bs-theme="dark"] .ts-dropdown .active {
+            background: #111827 !important;
+            color: #f8fafc !important;
+        }
+        .table .ts-wrapper {
+            min-width: 140px;
+            width: auto;
         }
 
         /* Menu toggle in header - clearly visible in light theme */
@@ -836,27 +907,25 @@
         <header class="topbar d-flex">
             <!-- Header Logo - full on desktop, short on mobile -->
             <div class="logo-box">
-                <a href="{{ route('dashboard') }}" class="logo-dark">
-                    <img src="{{ asset('assets/images/logo-sm.png') }}" class="logo-sm" alt="Sagaki">
-                    <img src="{{ asset('assets/images/logo-dark.png') }}" class="logo-lg" alt="Sagaki Distribution">
-                    <span class="brand-name brand-name-full" title="Sagaki Distribution">Sagaki Distribution</span>
-                    <span class="brand-name brand-name-short" title="Sagaki Distribution">Sagaki</span>
-                </a>
+                <div class="d-flex align-items-center">
+                    <a href="{{ route('dashboard') }}" class="d-flex align-items-center">
+                        <img src="{{ asset('assets/images/logo-sm.png') }}" class="logo-sm" alt="Sagaki">
+                        <img src="{{ asset('assets/images/logo-dark.png') }}" class="logo-lg" alt="Sagaki Distribution">
+                        <span class="brand-name brand-name-full ms-1" title="Sagaki Distribution">Sagaki Distribution</span>
+                        <span class="brand-name brand-name-short ms-1" title="Sagaki Distribution">Sagaki</span>
+                    </a>
+                    <!-- (Reverted) No menu icon inside logo area -->
 
-                <a href="{{ route('dashboard') }}" class="logo-light">
-                    <img src="{{ asset('assets/images/logo-sm.png') }}" class="logo-sm" alt="Sagaki">
-                    <img src="{{ asset('assets/images/logo-white.png') }}" class="logo-lg" alt="Sagaki Distribution">
-                    <span class="brand-name brand-name-full" title="Sagaki Distribution">Sagaki Distribution</span>
-                    <span class="brand-name brand-name-short" title="Sagaki Distribution">Sagaki</span>
-                </a>
+                    <!-- Desktop menu toggle removed to restore original layout -->
+                </div>
             </div>
 
             <div class="container">
                 <div class="navbar-header">
 
-                    <!-- Menu Toggle Button (sm-hover) -->
-                    <button type="button" class="btn btn-link d-flex button-sm-hover button-toggle-menu"
-                        aria-label="Show Full Sidebar">
+                    <!-- Menu Toggle Button (original placement & visibility on all breakpoints) -->
+                    <button type="button" class="btn btn-link d-flex button-sm-hover button-toggle-menu me-2"
+                        aria-label="Show Full Sidebar" title="Menu">
                         <i class="ri-menu-2-line button-sm-hover-icon text-white"></i>
                     </button>
 
