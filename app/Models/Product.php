@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\GeneratesCode;
 
 class Product extends Model
 {
+    use GeneratesCode;
     protected $fillable = [
         'name', 'code', 'sku', 'is_main_product', 'main_product_id',
         'category', 'sub_category', 'brand', 'model', 'description',

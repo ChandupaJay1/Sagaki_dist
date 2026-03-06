@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\GeneratesCode;
 
 class Unit extends Model
 {
-    use HasFactory;
+    use HasFactory, GeneratesCode;
 
     protected $fillable = [
         'name',
@@ -15,4 +16,3 @@ class Unit extends Model
         'is_active',
     ];
 }
-

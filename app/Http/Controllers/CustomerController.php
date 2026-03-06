@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\Route;
 use App\Models\CustomerCategory;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -15,14 +16,18 @@ class CustomerController extends Controller
         $customers = Customer::with(['route', 'customerCategory'])->get();
         $routes = Route::where('is_active', true)->orderBy('name')->get();
         $customerCategories = CustomerCategory::orderBy('name')->get();
-        return view('customers.index', compact('customers', 'routes', 'customerCategories'));
+        $categories = Category::where('is_active', true)->orderBy('name')->get();
+        return view('customers.index', compact('customers', 'routes', 'customerCategories', 'categories'));
     }
 
     public function create()
     {
         $routes = Route::where('is_active', true)->orderBy('name')->get();
         $customerCategories = CustomerCategory::orderBy('name')->get();
-        return view('customers.create', compact('routes', 'customerCategories'));
+        $terms = \App\Models\PaymentTerm::where('is_active', true)->orderBy('days')->get();
+        $accounts = \App\Models\Account::where('is_active', true)->orderBy('name')->get();
+        $categories = Category::where('is_active', true)->orderBy('name')->get();
+        return view('customers.create', compact('routes', 'customerCategories', 'terms', 'accounts', 'categories'));
     }
 
     public function store(Request $request)
@@ -103,7 +108,10 @@ class CustomerController extends Controller
         $customer = Customer::findOrFail($id);
         $routes = Route::where('is_active', true)->orderBy('name')->get();
         $customerCategories = CustomerCategory::orderBy('name')->get();
-        return view('customers.edit', compact('customer', 'routes', 'customerCategories'));
+        $terms = \App\Models\PaymentTerm::where('is_active', true)->orderBy('days')->get();
+        $accounts = \App\Models\Account::where('is_active', true)->orderBy('name')->get();
+        $categories = Category::where('is_active', true)->orderBy('name')->get();
+        return view('customers.edit', compact('customer', 'routes', 'customerCategories', 'terms', 'accounts', 'categories'));
     }
 
     public function update(Request $request, $id)

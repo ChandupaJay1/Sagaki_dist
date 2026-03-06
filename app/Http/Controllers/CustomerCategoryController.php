@@ -31,8 +31,7 @@ class CustomerCategoryController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'code' => ['nullable', 'string', 'max:50', 'unique:customer_categories,code'],
+            'name' => ['required', 'string', 'max:255', 'unique:customer_categories,name'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
@@ -59,7 +58,7 @@ class CustomerCategoryController extends Controller
     public function update(Request $request, CustomerCategory $customerCategory)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', 'unique:customer_categories,name,' . $customerCategory->id],
             'code' => ['nullable', 'string', 'max:50', 'unique:customer_categories,code,' . $customerCategory->id],
             'is_active' => ['nullable', 'boolean'],
         ]);
@@ -85,4 +84,3 @@ class CustomerCategoryController extends Controller
             ->with('success', 'Customer Category deleted successfully.');
     }
 }
-

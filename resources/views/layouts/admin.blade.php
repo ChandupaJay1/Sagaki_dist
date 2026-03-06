@@ -16,6 +16,7 @@
     <link href="{{ asset('assets/css/icons.min.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet" type="text/css" />
     <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.min.css">
     
     <style>
         :root {
@@ -957,6 +958,7 @@
 
     <script src="{{ asset('assets/js/vendor.min.js') }}"></script>
     <script src="{{ asset('assets/js/app.min.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <script>
         (function() {
             var wrap = document.getElementById('search-wrap');
@@ -978,6 +980,38 @@
                     }
                 });
             }
+        })();
+    </script>
+    <script>
+        (function() {
+            var selects = document.querySelectorAll('select.form-select');
+            selects.forEach(function(el) {
+                if (el.tomselect) return;
+                var plugins = [];
+                if (el.hasAttribute('multiple')) { plugins.push('remove_button'); } else { plugins.push('clear_button'); }
+                new TomSelect(el, {
+                    create: false,
+                    allowEmptyOption: true,
+                    plugins: plugins,
+                    maxOptions: 10000,
+                    searchField: ['text','code','keywords'],
+                    selectOnTab: true,
+                    closeAfterSelect: true,
+                    render: {
+                        no_results: function(data, escape) { return '<div class="no-results">No results</div>'; }
+                    },
+                    onItemAdd: function() {
+                        this.setTextboxValue('');
+                        this.refreshOptions(false);
+                    },
+                    onDropdownClose: function() {
+                        this.setTextboxValue('');
+                    },
+                    onBlur: function() {
+                        this.setTextboxValue('');
+                    }
+                });
+            });
         })();
     </script>
     <script>

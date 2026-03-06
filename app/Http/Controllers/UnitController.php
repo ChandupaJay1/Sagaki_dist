@@ -22,8 +22,7 @@ class UnitController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'code' => ['nullable', 'string', 'max:50', 'unique:units,code'],
+            'name' => ['required', 'string', 'max:255', 'unique:units,name'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
@@ -42,7 +41,7 @@ class UnitController extends Controller
     public function update(Request $request, Unit $unit)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', 'unique:units,name,' . $unit->id],
             'code' => ['nullable', 'string', 'max:50', 'unique:units,code,' . $unit->id],
             'is_active' => ['nullable', 'boolean'],
         ]);
@@ -61,4 +60,3 @@ class UnitController extends Controller
         return redirect()->route('units.index')->with('success', 'Unit deleted successfully.');
     }
 }
-

@@ -34,7 +34,7 @@
                             <select class="form-select" id="route_id" name="route_id">
                                 <option value="">No route</option>
                                 @foreach($routes ?? [] as $r)
-                                    <option value="{{ $r->id }}" {{ old('route_id', $ref->route_id) == $r->id ? 'selected' : '' }}>{{ $r->name }}{{ $r->code ? ' (' . $r->code . ')' : '' }}</option>
+                                    <option value="{{ $r->id }}" data-code="{{ $r->code }}" {{ old('route_id', $ref->route_id) == $r->id ? 'selected' : '' }}>{{ $r->name }}{{ $r->code ? ' (' . $r->code . ')' : '' }}</option>
                                 @endforeach
                             </select>
                             <small class="text-muted">Assign or remove route. You can also change this from the rep agent list.</small>

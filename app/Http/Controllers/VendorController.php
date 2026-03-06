@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Vendor;
 use Illuminate\Http\Request;
+use App\Models\Category;
 
 class VendorController extends Controller
 {
@@ -15,7 +16,11 @@ class VendorController extends Controller
 
     public function create()
     {
-        return view('vendors.create');
+        $terms = \App\Models\PaymentTerm::where('is_active', true)->orderBy('days')->get();
+        $accounts = \App\Models\Account::where('is_active', true)->orderBy('name')->get();
+        $supplierCategories = \App\Models\SupplierCategory::where('is_active', true)->orderBy('name')->get();
+        $categories = Category::where('is_active', true)->orderBy('name')->get();
+        return view('vendors.create', compact('terms', 'accounts', 'supplierCategories', 'categories'));
     }
 
     public function store(Request $request)
@@ -88,7 +93,11 @@ class VendorController extends Controller
     public function edit($id)
     {
         $vendor = Vendor::findOrFail($id);
-        return view('vendors.edit', compact('vendor'));
+        $terms = \App\Models\PaymentTerm::where('is_active', true)->orderBy('days')->get();
+        $accounts = \App\Models\Account::where('is_active', true)->orderBy('name')->get();
+        $supplierCategories = \App\Models\SupplierCategory::where('is_active', true)->orderBy('name')->get();
+        $categories = Category::where('is_active', true)->orderBy('name')->get();
+        return view('vendors.edit', compact('vendor', 'terms', 'accounts', 'supplierCategories', 'categories'));
     }
 
     public function update(Request $request, $id)

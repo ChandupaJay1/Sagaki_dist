@@ -22,8 +22,7 @@ class ItemCategoryController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'code' => ['nullable', 'string', 'max:50', 'unique:item_categories,code'],
+            'name' => ['required', 'string', 'max:255', 'unique:item_categories,name'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 
@@ -42,7 +41,7 @@ class ItemCategoryController extends Controller
     public function update(Request $request, ItemCategory $itemCategory)
     {
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', 'unique:item_categories,name,' . $itemCategory->id],
             'code' => ['nullable', 'string', 'max:50', 'unique:item_categories,code,' . $itemCategory->id],
             'is_active' => ['nullable', 'boolean'],
         ]);
@@ -61,4 +60,3 @@ class ItemCategoryController extends Controller
         return redirect()->route('item-categories.index')->with('success', 'Item Category deleted successfully.');
     }
 }
-
