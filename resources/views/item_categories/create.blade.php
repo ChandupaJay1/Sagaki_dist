@@ -58,12 +58,7 @@
                         </div>
                     </div>
 
-                    <div class="mb-3 row">
-                        <label for="code" class="col-sm-3 col-form-label fw-bold">Short Code</label>
-                        <div class="col-sm-4">
-                            <input type="text" class="form-control" id="code" name="code" value="{{ old('code') }}" placeholder="e.g. CAT01">
-                        </div>
-                    </div>
+                    
 
                     <div class="mb-3 row align-items-center">
                         <label class="col-sm-3 col-form-label fw-bold">Active</label>
@@ -81,4 +76,3 @@
     </div>
 </div>
 @endsection
-

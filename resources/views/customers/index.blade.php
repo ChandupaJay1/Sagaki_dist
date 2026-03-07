@@ -33,6 +33,31 @@
         html[data-bs-theme="dark"] .avatar-lg.bg-light {
             background-color: #2c3035 !important;
         }
+        html[data-bs-theme="dark"] .table .form-select.form-select-sm {
+            background-color: #0b1120 !important;
+            color: #e5e7eb !important;
+            border-color: #1f2937 !important;
+        }
+        html[data-bs-theme="dark"] .table .form-select.form-select-sm:focus {
+            background-color: #020617 !important;
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 2px rgba(99,102,241,0.35) !important;
+            color: #f9fafb !important;
+        }
+        html[data-bs-theme="dark"] .route-select {
+            background-color: #0b1120 !important;
+            color: #e5e7eb !important;
+            border-color: #1f2937 !important;
+            -webkit-appearance: none !important;
+            -moz-appearance: none !important;
+            appearance: none !important;
+        }
+        html[data-bs-theme="dark"] .route-select:focus {
+            background-color: #020617 !important;
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 2px rgba(99,102,241,0.35) !important;
+            color: #f9fafb !important;
+        }
     </style>
 
     <div class="row">
@@ -88,7 +113,7 @@
                                             <form action="{{ route('customers.update-route', $customer->id) }}" method="POST" class="d-inline" id="route-form-{{ $customer->id }}">
                                                 @csrf
                                                 @method('PATCH')
-                                                <select name="route_id" class="form-select form-select-sm" style="width: auto; min-width: 140px;" onchange="this.form.submit()">
+                                                <select name="route_id" class="form-select form-select-sm route-select" style="width: auto; min-width: 140px;" onchange="this.form.submit()">
                                                     <option value="">No route</option>
                                                     @foreach($routes ?? [] as $r)
                                                         <option value="{{ $r->id }}" {{ ($customer->route_id == $r->id) ? 'selected' : '' }}>{{ $r->name }}</option>

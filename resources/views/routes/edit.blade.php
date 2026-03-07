@@ -50,11 +50,16 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="code" class="form-label fw-semibold text-dark">Code</label>
-                            <input type="text" class="form-control rounded-3" id="code" name="code" value="{{ old('code', $route->code) }}">
+                            <input type="text" class="form-control rounded-3" id="code" name="code" value="{{ old('code', $route->code) }}" placeholder="Auto if empty">
                         </div>
                         <div class="col-md-6">
-                            <label for="area" class="form-label fw-semibold text-dark">Area</label>
-                            <input type="text" class="form-control rounded-3" id="area" name="area" value="{{ old('area', $route->area) }}">
+                            <label for="territory_id" class="form-label fw-semibold text-dark">Territory</label>
+                            <select class="form-select rounded-3" id="territory_id" name="territory_id">
+                                <option value="">— Select Territory —</option>
+                                @foreach(\App\Models\Territory::where('is_active', true)->orderBy('name')->get() as $t)
+                                    <option value="{{ $t->id }}" data-code="{{ $t->code }}" @selected(old('territory_id', $route->territory_id)==$t->id)>{{ $t->name }}{{ $t->code ? ' (' . $t->code . ')' : '' }}</option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
 

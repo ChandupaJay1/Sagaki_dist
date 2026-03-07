@@ -16,6 +16,7 @@
     <link href="{{ asset('assets/css/icons.min.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet" type="text/css" />
     <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.min.css">
     
     <style>
         :root {
@@ -227,8 +228,41 @@
             .search-wrap.search-open .app-search { max-width: 320px; width: 320px; }
         }
 
+        @media (min-width: 768px) and (max-width: 991.98px) {
+            .search-wrap.search-open .app-search { max-width: 260px; width: 260px; }
+            .topbar .button-toggle-menu,
+            .topbar-button { width: 40px; height: 40px; min-width: 40px; }
+            .brand-chip { padding: 6px 8px; font-size: 0.9rem; }
+        }
+
         @media (max-width: 767px) {
             .search-wrap.search-open .app-search { max-width: 160px; width: 160px; }
+        }
+        
+        .navbar-header { position: relative; }
+        @media (max-width: 576px) {
+            .navbar-header.searching #search-wrap {
+                position: absolute;
+                left: 8px;
+                right: 8px;
+                top: 8px;
+                z-index: 1100;
+            }
+            .navbar-header.searching #search-wrap .app-search {
+                max-width: none !important;
+                width: 100% !important;
+                opacity: 1 !important;
+                margin-right: 0 !important;
+            }
+            .navbar-header.searching #search-wrap .search-toggle-btn {
+                display: none !important;
+            }
+            .navbar-header.searching .button-toggle-menu,
+            .navbar-header.searching .brand-chip,
+            .navbar-header.searching .topbar-button,
+            .navbar-header.searching #page-header-user-dropdown {
+                visibility: hidden !important;
+            }
         }
 
         .topbar > .logo-box a {
@@ -236,18 +270,89 @@
             align-items: center;
         }
 
-        /* Topbar name: always visible - light theme = dark text, dark theme = light text (Metor removed) */
-        .topbar > .logo-box .brand-name {
+        .topbar > .logo-box .brand-name { 
+            display: inline-block !important;
             color: #1e293b !important;
         }
-
-        [data-bs-theme="dark"] .topbar > .logo-box .brand-name {
+        [data-bs-theme="dark"] .topbar > .logo-box .brand-name { 
             color: #f1f5f9 !important;
+        }
+        /* Ensure only one brand text on desktop: hide short label on md+ */
+        @media (min-width: 992px) {
+            .topbar > .logo-box .brand-name-short { display: none !important; }
         }
 
         .topbar .navbar-header {
             padding: 0 28px;
             height: 100%;
+        }
+        
+        /* Global form controls dark theme */
+        [data-bs-theme="dark"] .form-control,
+        [data-bs-theme="dark"] .form-select {
+            background-color: #1e293b !important;
+            color: #e5e7eb !important;
+            border-color: #475569 !important;
+        }
+        [data-bs-theme="dark"] .form-select {
+            background-image: var(--bs-form-select-bg-img), linear-gradient(#0b1120, #0b1120) !important;
+            background-color: #0b1120 !important;
+            border-color: #1f2937 !important;
+            color: #e5e7eb !important;
+        }
+        [data-bs-theme="dark"] .form-select option,
+        [data-bs-theme="dark"] .form-control option {
+            background-color: #0f172a !important;
+            color: #e5e7eb !important;
+        }
+        [data-bs-theme="dark"] .form-select:disabled,
+        [data-bs-theme="dark"] .form-control:disabled {
+            background-color: #1f2937 !important;
+            color: #9ca3af !important;
+            border-color: #374151 !important;
+        }
+        [data-bs-theme="dark"] .form-select:focus,
+        [data-bs-theme="dark"] .form-control:focus {
+            background-image: var(--bs-form-select-bg-img), linear-gradient(#020617, #020617) !important;
+            background-color: #020617 !important;
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.2) !important;
+            color: #f8fafc !important;
+        }
+        [data-bs-theme="dark"] .form-control:focus,
+        [data-bs-theme="dark"] .form-select:focus {
+            background-color: #0f172a !important;
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.2) !important;
+            color: #f8fafc !important;
+        }
+        [data-bs-theme="dark"] .ts-wrapper .ts-control {
+            background-color: #0b1120 !important;
+            color: #e5e7eb !important;
+            border-color: #1f2937 !important;
+            border-radius: .375rem !important;
+        }
+        [data-bs-theme="dark"] .ts-wrapper.focus .ts-control {
+            background-color: #020617 !important;
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 2px rgba(99,102,241,0.35) !important;
+            color: #f8fafc !important;
+        }
+        [data-bs-theme="dark"] .ts-control input {
+            color: #e5e7eb !important;
+        }
+        [data-bs-theme="dark"] .ts-dropdown {
+            background-color: #0b1120 !important;
+            color: #e5e7eb !important;
+            border-color: #1f2937 !important;
+        }
+        [data-bs-theme="dark"] .ts-dropdown .active {
+            background: #111827 !important;
+            color: #f8fafc !important;
+        }
+        .table .ts-wrapper {
+            min-width: 140px;
+            width: auto;
         }
 
         /* Menu toggle in header - clearly visible in light theme */
@@ -498,6 +603,27 @@
             padding: 40px !important;
             animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
+        /* Consistent look across large monitors: center and cap width */
+        @media (min-width: 1400px) {
+            .page-content { max-width: 1280px; margin-left: auto; margin-right: auto; }
+            .topbar .container { max-width: 1280px; }
+        }
+        @media (min-width: 1800px) {
+            .page-content { max-width: 1400px; }
+            .topbar .container { max-width: 1400px; }
+        }
+        @media (max-width: 1200px) {
+            .page-content { padding: 32px !important; }
+        }
+        @media (max-width: 992px) {
+            .page-content { padding: 28px !important; }
+        }
+        @media (max-width: 768px) {
+            .page-content { padding: 22px !important; }
+        }
+        @media (max-width: 576px) {
+            .page-content { padding: 16px !important; }
+        }
 
         @keyframes slideUp {
             from { opacity: 0; transform: translateY(20px); }
@@ -573,6 +699,91 @@
         /* Scrollbar */
         [data-simplebar] .simplebar-scrollbar:before {
             background: rgba(255,255,255,0.1) !important;
+        }
+        
+        /* Toast & Notification */
+        #toast-container {
+            position: fixed;
+            top: 80px;
+            right: 16px;
+            z-index: 1080;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: none;
+        }
+        .toast-item {
+            min-width: 260px;
+            max-width: 360px;
+            background: #ffffff;
+            color: #1f2937;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            pointer-events: auto;
+        }
+        .toast-item .toast-icon {
+            color: #ef4444;
+            font-size: 18px;
+            line-height: 1;
+        }
+        .toast-item .toast-text {
+            flex: 1;
+            font-size: 14px;
+            margin: 0;
+        }
+        .toast-item .toast-action {
+            white-space: nowrap;
+        }
+        [data-bs-theme="dark"] .toast-item {
+            background: #0f172a;
+            color: #e5e7eb;
+            border-color: rgba(255,255,255,0.1);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        .brand-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 10px;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            color: #1e293b !important;
+            text-decoration: none !important;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+        .brand-chip i { color: #f97316; }
+        [data-bs-theme="dark"] .brand-chip {
+            background: rgba(51, 65, 85, 0.5);
+            border-color: rgba(71, 85, 105, 0.5);
+            color: #f1f5f9 !important;
+        }
+        @media (max-width: 576px) {
+            .topbar { height: 64px; }
+            .topbar .navbar-header { padding: 0 16px; }
+            .topbar .button-toggle-menu,
+            .topbar-button { width: 38px; height: 38px; min-width: 38px; }
+            .search-wrap.search-open .app-search { max-width: 220px; width: 220px; }
+            .app-search .form-control:focus { width: 240px; }
+            .brand-name-short { font-size: 0.95rem !important; }
+        }
+        @media (max-width: 576px) {
+            #toast-container {
+                top: auto;
+                right: 8px;
+                left: 8px;
+                bottom: 16px;
+            }
+            .toast-item {
+                max-width: 100%;
+                min-width: 0;
+            }
         }
     </style>
     <script src="{{ asset('assets/js/config.min.js') }}"></script>
@@ -659,19 +870,15 @@
                     <li class="menu-title">Operations</li>
 
                     <li class="menu-item">
-                        <a class="menu-link" href="{{ route('approvals.index') }}">
+                        @php($pendingApprovalCount = \App\Models\User::where('is_active', false)->count())
+                        <a class="menu-link" href="{{ route('approvals.index') }}" id="approvals-link">
                             <span class="nav-icon">
                                 <i class="ri-user-follow-line"></i>
                             </span>
-                            <span class="nav-text"> Pending Approvals </span>
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a class="menu-link" href="{{ route('routes.index') }}">
-                            <span class="nav-icon">
-                                <i class="ri-route-line"></i>
+                            <span class="nav-text">
+                                Pending Approvals
+                                <span id="pending-approvals-badge" class="badge bg-danger-subtle text-danger ms-2 align-middle" style="{{ $pendingApprovalCount > 0 ? '' : 'display:none' }}">{{ $pendingApprovalCount }}</span>
                             </span>
-                            <span class="nav-text"> Routes </span>
                         </a>
                     </li>
                     <li class="menu-item">
@@ -700,31 +907,39 @@
         <header class="topbar d-flex">
             <!-- Header Logo - full on desktop, short on mobile -->
             <div class="logo-box">
-                <a href="{{ route('dashboard') }}" class="logo-dark">
-                    <img src="{{ asset('assets/images/logo-sm.png') }}" class="logo-sm" alt="Sagaki">
-                    <img src="{{ asset('assets/images/logo-dark.png') }}" class="logo-lg" alt="Sagaki Distribution">
-                    <span class="brand-name brand-name-full" title="Sagaki Distribution">Sagaki Distribution</span>
-                    <span class="brand-name brand-name-short" title="Sagaki Distribution">Sagaki</span>
-                </a>
+                <div class="d-flex align-items-center">
+                    <a href="{{ route('dashboard') }}" class="d-flex align-items-center">
+                        <img src="{{ asset('assets/images/logo-sm.png') }}" class="logo-sm" alt="Sagaki">
+                        <img src="{{ asset('assets/images/logo-dark.png') }}" class="logo-lg" alt="Sagaki Distribution">
+                        <span class="brand-name brand-name-full ms-1" title="Sagaki Distribution">Sagaki Distribution</span>
+                        <span class="brand-name brand-name-short ms-1" title="Sagaki Distribution">Sagaki</span>
+                    </a>
+                    <!-- (Reverted) No menu icon inside logo area -->
 
-                <a href="{{ route('dashboard') }}" class="logo-light">
-                    <img src="{{ asset('assets/images/logo-sm.png') }}" class="logo-sm" alt="Sagaki">
-                    <img src="{{ asset('assets/images/logo-white.png') }}" class="logo-lg" alt="Sagaki Distribution">
-                    <span class="brand-name brand-name-full" title="Sagaki Distribution">Sagaki Distribution</span>
-                    <span class="brand-name brand-name-short" title="Sagaki Distribution">Sagaki</span>
-                </a>
+                    <!-- Desktop menu toggle removed to restore original layout -->
+                </div>
             </div>
 
             <div class="container">
                 <div class="navbar-header">
 
-                    <!-- Menu Toggle Button (sm-hover) -->
-                    <button type="button" class="btn btn-link d-flex button-sm-hover button-toggle-menu"
-                        aria-label="Show Full Sidebar">
+                    <!-- Menu Toggle Button (original placement & visibility on all breakpoints) -->
+                    <button type="button" class="btn btn-link d-flex button-sm-hover button-toggle-menu me-2"
+                        aria-label="Show Full Sidebar" title="Menu">
                         <i class="ri-menu-2-line button-sm-hover-icon text-white"></i>
                     </button>
 
+                    <!-- Brand chip hidden on md+ to avoid duplication; visible only on mobiles below -->
+
+                    <!-- Mobile-only brand chip moved to right side tools cluster -->
+
                     <div class="d-flex align-items-center gap-2 flex-grow-1 min-width-0 justify-content-end justify-content-md-start">
+                        <div class="d-lg-none me-2">
+                            <a href="{{ route('dashboard') }}" class="brand-chip">
+                                <i class="ri-fire-line"></i>
+                                <span>Sagaki</span>
+                            </a>
+                        </div>
                         <!-- Search: icon toggles search bar -->
                         <div class="search-wrap" id="search-wrap">
                             <button type="button" class="search-toggle-btn me-2" id="search-toggle-btn" aria-label="Search">
@@ -812,22 +1027,126 @@
 
     <script src="{{ asset('assets/js/vendor.min.js') }}"></script>
     <script src="{{ asset('assets/js/app.min.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <script>
         (function() {
             var wrap = document.getElementById('search-wrap');
             var btn = document.getElementById('search-toggle-btn');
             var input = document.getElementById('topbar-search-input');
+            var header = document.querySelector('.navbar-header');
             if (wrap && btn && input) {
                 btn.addEventListener('click', function() {
                     wrap.classList.toggle('search-open');
+                    if (header) header.classList.toggle('searching', wrap.classList.contains('search-open'));
                     if (wrap.classList.contains('search-open')) {
                         input.focus();
                     }
                 });
                 input.addEventListener('blur', function() {
-                    if (!input.value.trim()) wrap.classList.remove('search-open');
+                    if (!input.value.trim()) {
+                        wrap.classList.remove('search-open');
+                        if (header) header.classList.remove('searching');
+                    }
                 });
             }
+        })();
+    </script>
+    <script>
+        (function() {
+            var selects = document.querySelectorAll('select.form-select');
+            selects.forEach(function(el) {
+                if (el.tomselect) return;
+                var plugins = [];
+                if (el.hasAttribute('multiple')) { plugins.push('remove_button'); } else { plugins.push('clear_button'); }
+                new TomSelect(el, {
+                    create: false,
+                    allowEmptyOption: true,
+                    plugins: plugins,
+                    maxOptions: 10000,
+                    searchField: ['text','code','keywords'],
+                    selectOnTab: true,
+                    closeAfterSelect: true,
+                    render: {
+                        no_results: function(data, escape) { return '<div class="no-results">No results</div>'; }
+                    },
+                    onItemAdd: function() {
+                        this.setTextboxValue('');
+                        this.refreshOptions(false);
+                    },
+                    onDropdownClose: function() {
+                        this.setTextboxValue('');
+                    },
+                    onBlur: function() {
+                        this.setTextboxValue('');
+                    }
+                });
+            });
+        })();
+    </script>
+    <script>
+        (function() {
+            var badge = document.getElementById('pending-approvals-badge');
+            var link = document.getElementById('approvals-link');
+            if (!badge || !link) return;
+            var last = parseInt(badge.textContent || '0', 10) || 0;
+            var url = "{{ route('approvals.count') }}";
+            var container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                document.body.appendChild(container);
+            }
+            function showToast(message) {
+                var t = document.createElement('div');
+                t.className = 'toast-item';
+                var icon = document.createElement('i');
+                icon.className = 'ri-notification-3-line toast-icon';
+                var text = document.createElement('div');
+                text.className = 'toast-text';
+                text.textContent = message;
+                var action = document.createElement('a');
+                action.href = link.getAttribute('href');
+                action.textContent = 'Review';
+                action.className = 'btn btn-sm btn-soft-danger toast-action';
+                t.appendChild(icon);
+                t.appendChild(text);
+                t.appendChild(action);
+                container.appendChild(t);
+                setTimeout(function() {
+                    if (t.parentNode) t.parentNode.removeChild(t);
+                }, 6000);
+            }
+            function setBadge(count) {
+                badge.textContent = count;
+                if (count > 0) {
+                    badge.style.display = '';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+            function poll() {
+                fetch(url, { 
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        var c = parseInt((data && data.count) || 0, 10) || 0;
+                        if (c > last) {
+                            var diff = c - last;
+                            var msg = diff === 1 ? '1 new user awaiting approval' : (diff + ' new users awaiting approval');
+                            showToast(msg);
+                        }
+                        last = c;
+                        setBadge(c);
+                    })
+                    .catch(function() {});
+            }
+            setInterval(poll, 15000);
+            setTimeout(poll, 1000);
         })();
     </script>
     @yield('scripts')

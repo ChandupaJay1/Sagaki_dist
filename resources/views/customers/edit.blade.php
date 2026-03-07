@@ -164,7 +164,7 @@
                                     </div>
                                 </div>
 
-                                <!-- Category (Legacy Text) -->
+                                <!-- Category -->
                                 <div class="row mb-3 align-items-center">
                                     <div class="col-sm-4">
                                         <label for="category" class="form-label-custom">Category</label>
@@ -173,10 +173,12 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-price-tag-3-line"></i></span>
                                             <select class="form-select" id="category" name="category">
-                                                <option value="">Select Category (text)</option>
-                                                <option value="Wholesale" {{ old('category', $customer->category) == 'Wholesale' ? 'selected' : '' }}>Wholesale</option>
-                                                <option value="Retail" {{ old('category', $customer->category) == 'Retail' ? 'selected' : '' }}>Retail</option>
-                                                <option value="Distributor" {{ old('category', $customer->category) == 'Distributor' ? 'selected' : '' }}>Distributor</option>
+                                                <option value="">-- Select --</option>
+                                                @foreach(($categories ?? []) as $cat)
+                                                    <option value="{{ $cat->name }}" data-code="{{ $cat->code }}" {{ old('category', $customer->category) == $cat->name ? 'selected' : '' }}>
+                                                        {{ $cat->name }}{{ $cat->code ? ' (' . $cat->code . ')' : '' }}
+                                                    </option>
+                                                @endforeach
                                             </select>
                                         </div>
                                     </div>
@@ -383,14 +385,17 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-secure-payment-line"></i></span>
                                             <select class="form-select" id="account_payables" name="account_payables">
-                                                <option value="Account Payables" {{ old('account_payables', $customer->account_payables) == 'Account Payables' ? 'selected' : '' }}>
-                                                    Account Payables</option>
-                                                <option value="Other" {{ old('account_payables', $customer->account_payables) == 'Other' ? 'selected' : '' }}>Other
-                                                </option>
+                                                <option value="">-- Select --</option>
+                                                @foreach(($accounts ?? []) as $acc)
+                                                    @php $val = $acc->code ? ($acc->code.' - '.$acc->name) : $acc->name; @endphp
+                                                    <option value="{{ $val }}" {{ old('account_payables', $customer->account_payables) == $val ? 'selected' : '' }}>
+                                                        {{ $acc->name }}{{ $acc->code ? ' (' . $acc->code . ')' : '' }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
                                             </select>
                                         </div>
                                     </div>
-                                </div>
 
                                 <!-- Terms -->
                                 <div class="row mb-3 align-items-center">
@@ -401,8 +406,13 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-file-list-2-line"></i></span>
                                             <select class="form-select" id="terms" name="terms">
-                                                <option value="Cash Only" {{ old('terms', $customer->terms) == 'Cash Only' ? 'selected' : '' }}>Cash Only</option>
-                                                <option value="30 Days Credit" {{ old('terms', $customer->terms) == '30 Days Credit' ? 'selected' : '' }}>30 Days Credit</option>
+                                                <option value="">-- Select --</option>
+                                                @foreach(($terms ?? []) as $t)
+                                                    @php $label = ($t->days == 0) ? 'Cash Only' : ($t->days.' Days Credit'); @endphp
+                                                    <option value="{{ $label }}" data-code="{{ $t->code }}" {{ old('terms', $customer->terms) == $label ? 'selected' : '' }}>
+                                                        {{ $label }}{{ $t->code ? ' (' . $t->code . ')' : '' }}
+                                                    </option>
+                                                @endforeach
                                             </select>
                                         </div>
                                     </div>
