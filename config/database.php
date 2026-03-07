@@ -2,6 +2,15 @@
 
 use Illuminate\Support\Str;
 
+// MySQL SSL CA auto-detect: use env('MYSQL_ATTR_SSL_CA') if set; otherwise fallback to storage/certs/ca.pem when present.
+$mysqlCa = env('MYSQL_ATTR_SSL_CA');
+if (!$mysqlCa) {
+    $defaultCa = storage_path('certs/ca.pem');
+    if (file_exists($defaultCa)) {
+        $mysqlCa = $defaultCa;
+    }
+}
+
 return [
 
     /*
@@ -58,9 +67,11 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+            'options' => extension_loaded('pdo_mysql')
+                ? array_filter([
+                    (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => $mysqlCa,
+                ])
+                : [],
         ],
 
         'mariadb' => [

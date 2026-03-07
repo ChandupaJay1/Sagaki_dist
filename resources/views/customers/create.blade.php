@@ -159,7 +159,7 @@
                                     </div>
                                 </div>
 
-                                <!-- Category (Legacy Text) -->
+                                <!-- Category -->
                                 <div class="row mb-3 align-items-center">
                                     <div class="col-sm-4">
                                         <label for="category" class="form-label-custom">Category</label>
@@ -168,10 +168,12 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-price-tag-3-line"></i></span>
                                             <select class="form-select" id="category" name="category">
-                                                <option value="">Select Category (text)</option>
-                                                <option value="Wholesale" {{ old('category') == 'Wholesale' ? 'selected' : '' }}>Wholesale</option>
-                                                <option value="Retail" {{ old('category') == 'Retail' ? 'selected' : '' }}>Retail</option>
-                                                <option value="Distributor" {{ old('category') == 'Distributor' ? 'selected' : '' }}>Distributor</option>
+                                                <option value="">-- Select --</option>
+                                                @foreach(($categories ?? []) as $cat)
+                                                    <option value="{{ $cat->name }}" data-code="{{ $cat->code }}" {{ old('category') == $cat->name ? 'selected' : '' }}>
+                                                        {{ $cat->name }}{{ $cat->code ? ' (' . $cat->code . ')' : '' }}
+                                                    </option>
+                                                @endforeach
                                             </select>
                                         </div>
                                     </div>
@@ -188,7 +190,7 @@
                                             <select class="form-select" id="customer_category_id" name="customer_category_id">
                                                 <option value="">No category</option>
                                                 @foreach($customerCategories ?? [] as $cat)
-                                                    <option value="{{ $cat->id }}" {{ old('customer_category_id') == $cat->id ? 'selected' : '' }}>
+                                                    <option value="{{ $cat->id }}" data-code="{{ $cat->code }}" {{ old('customer_category_id') == $cat->id ? 'selected' : '' }}>
                                                         {{ $cat->name }}{{ $cat->code ? ' (' . $cat->code . ')' : '' }}
                                                     </option>
                                                 @endforeach
@@ -209,7 +211,7 @@
                                             <select class="form-select" id="route_id" name="route_id">
                                                 <option value="">No route</option>
                                                 @foreach($routes ?? [] as $r)
-                                                    <option value="{{ $r->id }}" {{ old('route_id') == $r->id ? 'selected' : '' }}>{{ $r->name }}{{ $r->code ? ' (' . $r->code . ')' : '' }}</option>
+                                                    <option value="{{ $r->id }}" data-code="{{ $r->code }}" {{ old('route_id') == $r->id ? 'selected' : '' }}>{{ $r->name }}{{ $r->code ? ' (' . $r->code . ')' : '' }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -374,8 +376,12 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-secure-payment-line"></i></span>
                                             <select class="form-select" id="account_payables" name="account_payables">
-                                                <option value="Account Payables" selected>Account Payables</option>
-                                                <option value="Other">Other</option>
+                                                <option value="">-- Select --</option>
+                                                @foreach(($accounts ?? []) as $acc)
+                                                    <option value="{{ $acc->code ? ($acc->code.' - '.$acc->name) : $acc->name }}" {{ old('account_payables') == ($acc->code ? ($acc->code.' - '.$acc->name) : $acc->name) ? 'selected' : '' }}>
+                                                        {{ $acc->name }}{{ $acc->code ? ' (' . $acc->code . ')' : '' }}
+                                                    </option>
+                                                @endforeach
                                             </select>
                                         </div>
                                     </div>
@@ -390,8 +396,13 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-file-list-2-line"></i></span>
                                             <select class="form-select" id="terms" name="terms">
-                                                <option value="Cash Only">Cash Only</option>
-                                                <option value="30 Days Credit">30 Days Credit</option>
+                                                <option value="">-- Select --</option>
+                                                @foreach(($terms ?? []) as $t)
+                                                    @php $label = ($t->days == 0) ? 'Cash Only' : ($t->days.' Days Credit'); @endphp
+                                                    <option value="{{ $label }}" data-code="{{ $t->code }}" {{ old('terms') == $label ? 'selected' : '' }}>
+                                                        {{ $label }}{{ $t->code ? ' (' . $t->code . ')' : '' }}
+                                                    </option>
+                                                @endforeach
                                             </select>
                                         </div>
                                     </div>

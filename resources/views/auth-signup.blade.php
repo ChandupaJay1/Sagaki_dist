@@ -17,14 +17,35 @@
         body {
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
-            background: #0a0a1a;
-            overflow: hidden;
+            background: #f7fafc;
+            overflow-y: auto;
+            position: relative;
+        }
+        body::before{
+            content:"";
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background:
+              radial-gradient(700px 700px at var(--sx1,18%) var(--sy1,12%), rgba(16,185,129,0.12), transparent 45%),
+              radial-gradient(800px 800px at var(--sx2,82%) var(--sy2,20%), rgba(96,165,250,0.12), transparent 46%),
+              radial-gradient(600px 600px at var(--sx3,50%) var(--sy3,85%), rgba(99,102,241,0.10), transparent 50%),
+              linear-gradient(180deg,#f8fafc 0%, #ffffff 60%);
+            animation: sbgmove 24s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes sbgmove{
+            0%   { --sx1:18%; --sy1:12%; --sx2:82%; --sy2:20%; --sx3:50%; --sy3:85%; }
+            50%  { --sx1:22%; --sy1:16%; --sx2:78%; --sy2:24%; --sx3:46%; --sy3:82%; }
+            100% { --sx1:18%; --sy1:12%; --sx2:82%; --sy2:20%; --sx3:50%; --sy3:85%; }
         }
 
         /* ── Wrapper ── */
         .auth-wrapper {
             display: flex;
             min-height: 100vh;
+            position: relative;
+            z-index: 1;
         }
 
         /* ── Left Panel ── */
@@ -165,7 +186,7 @@
         /* ── Right Panel ── */
         .right-panel {
             width: 500px; min-width: 500px;
-            background: #ffffff;
+            background: transparent;
             display: flex; align-items: center; justify-content: center;
             padding: 36px 56px;
             position: relative;
@@ -182,6 +203,56 @@
         .form-container {
             width: 100%; max-width: 380px;
             animation: slideIn 0.5s cubic-bezier(0.23,1,0.32,1) both;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+            padding: 18px 18px 22px;
+        }
+
+        .ambient {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .ambient .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: .28;
+        }
+        .ambient .b1 {
+            width: 420px; height: 420px;
+            background: radial-gradient(circle at 30% 30%, rgba(16,185,129,.6), rgba(16,185,129,.1) 60%, transparent 70%);
+            top: -120px; left: -120px;
+            animation: orb1 16s ease-in-out infinite;
+        }
+        .ambient .b2 {
+            width: 360px; height: 360px;
+            background: radial-gradient(circle at 60% 40%, rgba(96,165,250,.55), rgba(96,165,250,.1) 60%, transparent 70%);
+            bottom: -100px; right: -80px;
+            animation: orb2 18s ease-in-out infinite reverse;
+        }
+        .ambient .b3 {
+            width: 300px; height: 300px;
+            background: radial-gradient(circle at 50% 50%, rgba(99,102,241,.5), rgba(99,102,241,.08) 60%, transparent 70%);
+            top: 20%; right: 20%;
+            animation: orb3 22s ease-in-out infinite;
+        }
+        @keyframes orb1 { 0%,100%{ transform: translate(0,0) scale(1) } 50%{ transform: translate(40px,30px) scale(1.08) } }
+        @keyframes orb2 { 0%,100%{ transform: translate(0,0) scale(1) } 50%{ transform: translate(-30px,20px) scale(1.05) } }
+        @keyframes orb3 { 0%,100%{ transform: translate(0,0) scale(1) } 50%{ transform: translate(10px,-20px) scale(1.04) } }
+        @media (max-width: 900px) {
+            .ambient .b1 { width: 340px; height: 340px; top: -140px; left: -140px; filter: blur(48px); }
+            .ambient .b2 { width: 300px; height: 300px; bottom: -120px; right: -100px; filter: blur(48px); }
+            .ambient .b3 { width: 260px; height: 260px; right: 10%; top: 25%; filter: blur(44px); }
+        }
+        @media (max-width: 500px) {
+            .ambient .b1 { width: 260px; height: 260px; }
+            .ambient .b2 { width: 220px; height: 220px; }
+            .ambient .b3 { width: 200px; height: 200px; }
         }
 
         @keyframes slideIn {
@@ -378,18 +449,36 @@
         .form-footer a:hover { color: #059669; }
 
         /* Responsive */
+        .brand-inline {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .brand-inline .brand-chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 10px; border-radius: 10px;
+            background: #f1f5f9; border: 1px solid #cbd5e1; color: #1e293b; font-weight: 800;
+            text-decoration: none;
+        }
+        .brand-inline .brand-chip i { color: #10b981; }
         @media (max-width: 900px) {
             .left-panel { display: none; }
-            .right-panel { width: 100%; min-width: unset; padding: 32px 20px; }
+            .right-panel { width: 100%; min-width: unset; padding: 24px 16px; }
+            .brand-inline { display: flex; }
         }
 
         @media (max-width: 500px) {
             .form-row-2 { grid-template-columns: 1fr; }
+            .form-container { max-width: 100%; padding: 16px 14px 18px; border-radius: 14px; }
+            .form-header h1 { font-size: 22px; }
+            .form-input, .form-select-custom { height: 50px; }
         }
     </style>
 </head>
 
 <body>
+<div class="ambient"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span></div>
 <div class="auth-wrapper">
 
     <!-- ── Left Branding Panel ── -->
@@ -443,6 +532,13 @@
     <!-- ── Right Form Panel ── -->
     <div class="right-panel">
         <div class="form-container">
+
+            <div class="brand-inline">
+                <a href="{{ route('dashboard') }}" class="brand-chip">
+                    <i class='bx bx-package'></i>
+                    <span>Sagaki Distribution</span>
+                </a>
+            </div>
 
             <div class="form-header">
                 <div class="welcome-badge">

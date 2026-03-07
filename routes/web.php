@@ -25,6 +25,20 @@ use App\Http\Controllers\RefController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\CustomerCategoryController;
+use App\Http\Controllers\UnitController;
+use App\Http\Controllers\ItemCategoryController;
+use App\Http\Controllers\AreaController;
+use App\Http\Controllers\TerritoryController;
+use App\Http\Controllers\SupplierCategoryController;
+use App\Http\Controllers\LocationController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\ModelMasterController;
+use App\Http\Controllers\CurrencyController;
+use App\Http\Controllers\TermController;
+use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\AccountController;
+use App\Http\Controllers\ProductSubCategoryController;
+use App\Http\Controllers\CategoryController;
 
 Route::middleware('auth')->group(function () {
     Route::get('/master-tables', function () {
@@ -32,6 +46,23 @@ Route::middleware('auth')->group(function () {
     })->name('master-tables');
 
     Route::resource('customer-categories', CustomerCategoryController::class);
+    Route::resource('categories', CategoryController::class);
+    Route::resource('units', UnitController::class);
+    Route::resource('item-categories', ItemCategoryController::class);
+    Route::resource('areas', AreaController::class);
+    Route::resource('territories', TerritoryController::class);
+    Route::resource('supplier-categories', SupplierCategoryController::class);
+    Route::resource('locations', LocationController::class);
+    Route::resource('brands', BrandController::class);
+    Route::resource('model-masters', ModelMasterController::class);
+    Route::resource('currencies', CurrencyController::class);
+    Route::resource('terms', TermController::class);
+    Route::resource('projects', ProjectController::class);
+    Route::resource('accounts', AccountController::class);
+    Route::resource('product-sub-categories', ProductSubCategoryController::class);
+    Route::get('main-products', [ProductController::class, 'mainProducts'])->name('main-products.index');
+    Route::get('main-products/create', [ProductController::class, 'createMain'])->name('main-products.create');
+    Route::post('main-products', [ProductController::class, 'storeMain'])->name('main-products.store');
 
     Route::resource('admins', AdminController::class);
     Route::resource('routes', RouteController::class);
@@ -51,6 +82,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/approvals', [App\Http\Controllers\UserApprovalController::class , 'index'])->name('approvals.index');
     Route::put('/approvals/{id}/approve', [App\Http\Controllers\UserApprovalController::class , 'approve'])->name('approvals.approve');
     Route::delete('/approvals/{id}/reject', [App\Http\Controllers\UserApprovalController::class , 'reject'])->name('approvals.reject');
+    Route::get('/approvals/count', [App\Http\Controllers\UserApprovalController::class , 'count'])->name('approvals.count');
 
     // Profile Routes
     Route::get('/profile', [App\Http\Controllers\ProfileController::class , 'show'])->name('profile.show');

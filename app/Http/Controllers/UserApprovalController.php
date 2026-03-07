@@ -13,6 +13,12 @@ class UserApprovalController extends Controller
         return view('admin.approvals.index', compact('pendingUsers'));
     }
 
+    public function count()
+    {
+        $count = User::where('is_active', false)->count();
+        return response()->json(['count' => $count]);
+    }
+
     public function approve($id)
     {
         $user = User::findOrFail($id);

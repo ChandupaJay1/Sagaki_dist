@@ -28,6 +28,14 @@
         box-shadow: 0 16px 40px rgba(79, 70, 229, 0.12) !important;
     }
     [data-bs-theme="dark"] .dashboard-stat-card { border-color: rgba(255,255,255,0.06) !important; }
+    @media (max-width: 992px) {
+        .dashboard-welcome { padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
+        .dashboard-stat-card .card-body { padding: 1.25rem !important; }
+    }
+    @media (max-width: 768px) {
+        .dashboard-quick-links a { padding: 6px 10px; font-size: 12px; }
+        .dashboard-stat-card .fs-28 { font-size: 22px !important; }
+    }
     .dashboard-section-title {
         font-size: 1.05rem;
         font-weight: 700;

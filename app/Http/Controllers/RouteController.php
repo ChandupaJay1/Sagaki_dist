@@ -11,7 +11,7 @@ class RouteController extends Controller
 {
     public function index()
     {
-        $routes = Route::withCount(['customers', 'refs'])->latest()->get();
+        $routes = Route::with(['territory.areas'])->withCount(['customers', 'refs'])->latest()->get();
         return view('routes.index', compact('routes'));
     }
 
@@ -31,23 +31,22 @@ class RouteController extends Controller
 
     public function create()
     {
-        return view('routes.create');
+        $territories = \App\Models\Territory::where('is_active', true)->orderBy('name')->get();
+        return view('routes.create', compact('territories'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:50|unique:routes,code',
-            'area' => 'nullable|string|max:255',
+            'name' => 'required|string|max:255|unique:routes,name',
+            'territory_id' => 'nullable|exists:territories,id',
             'description' => 'nullable|string|max:500',
             'is_active' => 'boolean',
         ]);
 
         Route::create([
             'name' => $request->name,
-            'code' => $request->code,
-            'area' => $request->area,
+            'territory_id' => $request->territory_id,
             'description' => $request->description,
             'is_active' => $request->boolean('is_active'),
         ]);
@@ -66,17 +65,15 @@ class RouteController extends Controller
         $route = Route::findOrFail($id);
 
         $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:50|unique:routes,code,' . $id,
-            'area' => 'nullable|string|max:255',
+            'name' => 'required|string|max:255|unique:routes,name,' . $id,
+            'territory_id' => 'nullable|exists:territories,id',
             'description' => 'nullable|string|max:500',
             'is_active' => 'boolean',
         ]);
 
         $route->update([
             'name' => $request->name,
-            'code' => $request->code,
-            'area' => $request->area,
+            'territory_id' => $request->territory_id,
             'description' => $request->description,
             'is_active' => $request->boolean('is_active'),
         ]);

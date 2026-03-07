@@ -37,7 +37,11 @@ class AuthController extends Controller
 
             $request->session()->regenerate();
 
-            return redirect()->intended('/');
+            $intended = session()->pull('url.intended');
+            if ($intended && str_contains($intended, '/approvals/count')) {
+                return redirect()->route('dashboard');
+            }
+            return $intended ? redirect()->to($intended) : redirect()->route('dashboard');
         }
 
         return back()->withErrors([

@@ -6,6 +6,33 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+    public function mainProducts()
+    {
+        $products = \App\Models\Product::where('is_main_product', true)->orderBy('name')->paginate(10);
+        return view('products.main', compact('products'));
+    }
+    
+    public function createMain()
+    {
+        return view('products.main_create');
+    }
+    
+    public function storeMain(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:products,name',
+        ]);
+        
+        $data = [
+            'name' => $validated['name'],
+            'is_main_product' => true,
+            // code will be auto-generated if empty
+        ];
+        
+        \App\Models\Product::create($data);
+        
+        return redirect()->route('main-products.index')->with('success', 'Main product created successfully.');
+    }
     /**
      * Display a listing of the resource.
      */
@@ -22,7 +49,15 @@ class ProductController extends Controller
     {
         $vendors = \App\Models\Vendor::all();
         $mainProducts = \App\Models\Product::where('is_main_product', true)->get();
-        return view('products.create', compact('vendors', 'mainProducts'));
+        $locations = \App\Models\Location::where('is_active', true)->orderBy('name')->get();
+        $units = \App\Models\Unit::where('is_active', true)->orderBy('name')->get();
+        $brands = \App\Models\Brand::where('is_active', true)->orderBy('name')->get();
+        $models = \App\Models\ModelMaster::where('is_active', true)->orderBy('name')->get();
+        $categories = \App\Models\ItemCategory::where('is_active', true)->orderBy('name')->get();
+        $subCategories = \App\Models\ProductSubCategory::where('is_active', true)->orderBy('name')->get();
+        $projects = \App\Models\Project::where('is_active', true)->orderBy('name')->get();
+        $accounts = \App\Models\Account::where('is_active', true)->orderBy('name')->get();
+        return view('products.create', compact('vendors', 'mainProducts', 'locations', 'units', 'brands', 'models', 'categories', 'subCategories', 'projects', 'accounts'));
     }
 
     /**
@@ -34,7 +69,6 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'code' => 'required|string|unique:products|max:255',
             'sku' => 'nullable|string|max:255',
-            'is_main_product' => 'boolean',
             'main_product_id' => 'nullable|exists:products,id',
             'category' => 'nullable|string',
             'sub_category' => 'nullable|string',
@@ -62,13 +96,15 @@ class ProductController extends Controller
 
         // Handle boolean fields which might not be present in request
         $booleans = [
-            'is_main_product', 'is_purchase', 'is_sale', 'is_production', 
+            'is_purchase', 'is_sale', 'is_production', 
             'is_serialized', 'is_stock_report', 'is_price_level', 'is_multi_price'
         ];
         
         foreach ($booleans as $boolField) {
             $validated[$boolField] = $request->has($boolField);
         }
+        // Always ensure normal item create is NOT a main product
+        $validated['is_main_product'] = false;
 
         if ($request->hasFile('image_path')) {
             $path = $request->file('image_path')->store('products', 'public');
@@ -96,7 +132,15 @@ class ProductController extends Controller
         $product = \App\Models\Product::findOrFail($id);
         $vendors = \App\Models\Vendor::all();
         $mainProducts = \App\Models\Product::where('is_main_product', true)->where('id', '!=', $id)->get();
-        return view('products.edit', compact('product', 'vendors', 'mainProducts'));
+        $locations = \App\Models\Location::where('is_active', true)->orderBy('name')->get();
+        $units = \App\Models\Unit::where('is_active', true)->orderBy('name')->get();
+        $brands = \App\Models\Brand::where('is_active', true)->orderBy('name')->get();
+        $models = \App\Models\ModelMaster::where('is_active', true)->orderBy('name')->get();
+        $categories = \App\Models\ItemCategory::where('is_active', true)->orderBy('name')->get();
+        $subCategories = \App\Models\ProductSubCategory::where('is_active', true)->orderBy('name')->get();
+        $projects = \App\Models\Project::where('is_active', true)->orderBy('name')->get();
+        $accounts = \App\Models\Account::where('is_active', true)->orderBy('name')->get();
+        return view('products.edit', compact('product', 'vendors', 'mainProducts', 'locations', 'units', 'brands', 'models', 'categories', 'subCategories', 'projects', 'accounts'));
     }
 
     /**
@@ -110,7 +154,6 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:255|unique:products,code,' . $id,
             'sku' => 'nullable|string|max:255',
-            'is_main_product' => 'boolean',
             'main_product_id' => 'nullable|exists:products,id',
             'vendor_id' => 'nullable|exists:vendors,id',
             'cost' => 'nullable|numeric',
@@ -119,7 +162,7 @@ class ProductController extends Controller
 
         // Handle boolean fields
         $booleans = [
-            'is_main_product', 'is_purchase', 'is_sale', 'is_production', 
+            'is_purchase', 'is_sale', 'is_production', 
             'is_serialized', 'is_stock_report', 'is_price_level', 'is_multi_price'
         ];
         
@@ -132,7 +175,8 @@ class ProductController extends Controller
             $validated['image_path'] = $path;
         }
 
-        $formattedData = array_merge($request->except(['_token', '_method', 'image_path']), $validated);
+        // Prevent changing main-product flag from general edit form
+        $formattedData = array_merge($request->except(['_token', '_method', 'image_path', 'is_main_product']), $validated);
         $product->update($formattedData);
 
         return redirect()->route('products.index')->with('success', 'Product updated successfully.');

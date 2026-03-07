@@ -48,12 +48,13 @@
 
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label for="code" class="form-label fw-semibold text-dark">Code</label>
-                            <input type="text" class="form-control rounded-3" id="code" name="code" value="{{ old('code') }}" placeholder="e.g. R001">
-                        </div>
-                        <div class="col-md-6">
-                            <label for="area" class="form-label fw-semibold text-dark">Area</label>
-                            <input type="text" class="form-control rounded-3" id="area" name="area" value="{{ old('area') }}" placeholder="e.g. Western Province">
+                            <label for="territory_id" class="form-label fw-semibold text-dark">Territory</label>
+                            <select class="form-select rounded-3" id="territory_id" name="territory_id">
+                                <option value="">— Select Territory —</option>
+                                @foreach($territories as $t)
+                                    <option value="{{ $t->id }}" data-code="{{ $t->code }}" @selected(old('territory_id')==$t->id)>{{ $t->name }}{{ $t->code ? ' (' . $t->code . ')' : '' }}</option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
 

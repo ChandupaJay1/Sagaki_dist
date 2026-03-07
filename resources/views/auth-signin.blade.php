@@ -21,8 +21,27 @@
         body {
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
-            overflow: hidden;
-            background: #0a0a1a;
+            overflow-y: auto;
+            background: #f7fafc;
+            position: relative;
+        }
+        body::before{
+            content:"";
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background:
+              radial-gradient(700px 700px at var(--x1,15%) var(--y1,12%), rgba(99,102,241,0.12), transparent 45%),
+              radial-gradient(800px 800px at var(--x2,85%) var(--y2,18%), rgba(96,165,250,0.12), transparent 46%),
+              radial-gradient(600px 600px at var(--x3,50%) var(--y3,85%), rgba(167,139,250,0.10), transparent 50%),
+              linear-gradient(180deg,#f8fafc 0%, #ffffff 60%);
+            animation: bgmove 24s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes bgmove{
+            0%   { --x1:15%; --y1:12%; --x2:85%; --y2:18%; --x3:50%; --y3:85%; }
+            50%  { --x1:20%; --y1:16%; --x2:80%; --y2:22%; --x3:46%; --y3:82%; }
+            100% { --x1:15%; --y1:12%; --x2:85%; --y2:18%; --x3:50%; --y3:85%; }
         }
 
         /* ── Animated Background ── */
@@ -30,6 +49,7 @@
             display: flex;
             min-height: 100vh;
             position: relative;
+            z-index: 1;
         }
 
         /* ── Left Panel ── */
@@ -224,7 +244,7 @@
         .right-panel {
             width: 480px;
             min-width: 480px;
-            background: #ffffff;
+            background: transparent;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -244,6 +264,56 @@
         .form-container {
             width: 100%;
             max-width: 360px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+            padding: 18px 18px 22px;
+        }
+
+        .ambient {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .ambient .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: .28;
+        }
+        .ambient .b1 {
+            width: 420px; height: 420px;
+            background: radial-gradient(circle at 30% 30%, rgba(99,102,241,.6), rgba(99,102,241,.1) 60%, transparent 70%);
+            top: -120px; left: -120px;
+            animation: orb1 16s ease-in-out infinite;
+        }
+        .ambient .b2 {
+            width: 360px; height: 360px;
+            background: radial-gradient(circle at 60% 40%, rgba(96,165,250,.55), rgba(96,165,250,.1) 60%, transparent 70%);
+            bottom: -100px; right: -80px;
+            animation: orb2 18s ease-in-out infinite reverse;
+        }
+        .ambient .b3 {
+            width: 300px; height: 300px;
+            background: radial-gradient(circle at 50% 50%, rgba(167,139,250,.5), rgba(167,139,250,.08) 60%, transparent 70%);
+            top: 20%; right: 20%;
+            animation: orb3 22s ease-in-out infinite;
+        }
+        @keyframes orb1 { 0%,100%{ transform: translate(0,0) scale(1) } 50%{ transform: translate(40px,30px) scale(1.08) } }
+        @keyframes orb2 { 0%,100%{ transform: translate(0,0) scale(1) } 50%{ transform: translate(-30px,20px) scale(1.05) } }
+        @keyframes orb3 { 0%,100%{ transform: translate(0,0) scale(1) } 50%{ transform: translate(10px,-20px) scale(1.04) } }
+        @media (max-width: 900px) {
+            .ambient .b1 { width: 340px; height: 340px; top: -140px; left: -140px; filter: blur(48px); }
+            .ambient .b2 { width: 300px; height: 300px; bottom: -120px; right: -100px; filter: blur(48px); }
+            .ambient .b3 { width: 260px; height: 260px; right: 10%; top: 25%; filter: blur(44px); }
+        }
+        @media (max-width: 500px) {
+            .ambient .b1 { width: 260px; height: 260px; }
+            .ambient .b2 { width: 220px; height: 220px; }
+            .ambient .b3 { width: 200px; height: 200px; }
         }
 
         .form-header {
@@ -525,18 +595,34 @@
         }
 
         /* Responsive */
+        .brand-inline {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .brand-inline .brand-chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 10px; border-radius: 10px;
+            background: #f1f5f9; border: 1px solid #cbd5e1; color: #1e293b; font-weight: 800;
+            text-decoration: none;
+        }
+        .brand-inline .brand-chip i { color: #6366f1; }
         @media (max-width: 900px) {
             .left-panel { display: none; }
-            .right-panel {
-                width: 100%;
-                min-width: unset;
-                padding: 40px 24px;
-            }
+            .right-panel { width: 100%; min-width: unset; padding: 28px 16px; }
+            .brand-inline { display: flex; }
+        }
+        @media (max-width: 500px) {
+            .form-container { max-width: 100%; padding: 16px 14px 18px; border-radius: 14px; }
+            .form-header h1 { font-size: 24px; }
+            .form-input { height: 50px; }
         }
     </style>
 </head>
 
 <body>
+<div class="ambient"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span></div>
 <div class="auth-wrapper">
 
     <!-- ── Left Branding Panel ── -->
@@ -595,6 +681,13 @@
     <!-- ── Right Form Panel ── -->
     <div class="right-panel">
         <div class="form-container">
+
+            <div class="brand-inline">
+                <a href="{{ route('dashboard') }}" class="brand-chip">
+                    <i class='bx bx-package'></i>
+                    <span>Sagaki Distribution</span>
+                </a>
+            </div>
 
             <div class="form-header">
                 <div class="welcome-badge">

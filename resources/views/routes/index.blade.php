@@ -46,6 +46,7 @@
                                 <th class="ps-4 border-0 text-muted small fw-bold text-uppercase">Route</th>
                                 <th class="border-0 text-muted small fw-bold text-uppercase">Code</th>
                                 <th class="border-0 text-muted small fw-bold text-uppercase">Area</th>
+                                <th class="border-0 text-muted small fw-bold text-uppercase">Territory</th>
                                 <th class="border-0 text-muted small fw-bold text-uppercase">Customers</th>
                                 <th class="border-0 text-muted small fw-bold text-uppercase">Rep Agents</th>
                                 <th class="border-0 text-muted small fw-bold text-uppercase">Status</th>
@@ -68,7 +69,23 @@
                                             <span class="text-muted">—</span>
                                         @endif
                                     </td>
-                                    <td class="text-muted">{{ $route->area ?? '—' }}</td>
+                                    <td class="text-muted">
+                                        @php
+                                            $territory = $route->territory;
+                                            $areas = $territory ? $territory->areas : collect();
+                                        @endphp
+                                        @if($territory && $areas->count() === 1)
+                                            {{ $areas->first()->name }}
+                                        @elseif($territory && $areas->count() > 1)
+                                            @php $names = $areas->pluck('name')->implode(', '); @endphp
+                                            <span class="badge bg-light text-dark border fw-medium px-2 py-1" data-bs-toggle="tooltip" title="{{ $names }}">
+                                                Multiple ({{ $areas->count() }})
+                                            </span>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-muted">{{ optional($route->territory)->name ?? '—' }}</td>
                                     <td>
                                         <span class="badge bg-primary-subtle text-primary border-0 px-2 py-1 rounded-pill">{{ $route->customers_count }}</span>
                                     </td>
