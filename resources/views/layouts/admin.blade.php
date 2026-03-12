@@ -142,6 +142,29 @@
             border-right-color: rgba(255,255,255,0.06) !important;
         }
 
+        /* Sidebar Sub-menu Styles */
+        .sub-menu {
+            list-style: none;
+            padding-left: 54px;
+            margin-bottom: 10px;
+        }
+
+        .sub-menu .menu-link {
+            padding: 8px 16px !important;
+            margin: 2px 16px 2px 0 !important;
+            font-size: 13px;
+            border-radius: 8px;
+        }
+
+        .menu-arrow {
+            margin-left: auto;
+            transition: transform 0.2s ease;
+        }
+
+        [aria-expanded="true"] .menu-arrow {
+            transform: rotate(90deg);
+        }
+
         /* Hide full logo image everywhere so "Metor" is never shown - only icon + our name */
         .topbar > .logo-box .logo-lg,
         .main-nav .logo-box .logo-lg {
@@ -887,6 +910,113 @@
                                 <i class="ri-shopping-bag-3-line"></i>
                             </span>
                             <span class="nav-text"> Items </span>
+                        </a>
+                    </li>
+
+                    <li class="menu-item">
+                        <a class="menu-link" data-bs-toggle="collapse" href="#menuSales" role="button" aria-expanded="false" aria-controls="menuSales">
+                            <span class="nav-icon">
+                                <i class="ri-shopping-cart-2-line"></i>
+                            </span>
+                            <span class="nav-text"> Sales </span>
+                            <i class="ri-arrow-right-s-line menu-arrow"></i>
+                        </a>
+                        <div class="collapse" id="menuSales">
+                            <ul class="sub-menu">
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('sales-orders.index') }}">
+                                        <span class="nav-text">Sales Order</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('invoices.index') }}">
+                                        <span class="nav-text">Invoice</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('sales-returns.index') }}">
+                                        <span class="nav-text">Sales Return</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="menu-item">
+                        <a class="menu-link" data-bs-toggle="collapse" href="#menuPurchasing" role="button" aria-expanded="false" aria-controls="menuPurchasing">
+                            <span class="nav-icon">
+                                <i class="ri-handbag-line"></i>
+                            </span>
+                            <span class="nav-text"> Purchasing </span>
+                            <i class="ri-arrow-right-s-line menu-arrow"></i>
+                        </a>
+                        <div class="collapse" id="menuPurchasing">
+                            <ul class="sub-menu">
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('purchase-orders.index') }}">
+                                        <span class="nav-text">Purchase Order</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('vendors.index') }}">
+                                        <span class="nav-text">Vendors</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('not-found') }}">
+                                        <span class="nav-text">Debit Note</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('not-found') }}">
+                                        <span class="nav-text">GRN</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="menu-item">
+                        <a class="menu-link" data-bs-toggle="collapse" href="#menuInventory" role="button" aria-expanded="false" aria-controls="menuInventory">
+                            <span class="nav-icon">
+                                <i class="ri-archive-line"></i>
+                            </span>
+                            <span class="nav-text"> Inventory </span>
+                            <i class="ri-arrow-right-s-line menu-arrow"></i>
+                        </a>
+                        <div class="collapse" id="menuInventory">
+                            <ul class="sub-menu">
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('products.index') }}">
+                                        <span class="nav-text">Item</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('not-found') }}">
+                                        <span class="nav-text">Transfer Note</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('not-found') }}">
+                                        <span class="nav-text">Issue Note</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('not-found') }}">
+                                        <span class="nav-text">Stock Adjustment</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="menu-title">Payment</li>
+                    <li class="menu-item">
+                        <a class="menu-link" href="{{ route('not-found') }}">
+                            <span class="nav-icon">
+                                <i class="ri-secure-payment-line"></i>
+                            </span>
+                            <span class="nav-text"> Payment </span>
                         </a>
                     </li>
 
