@@ -43,6 +43,10 @@ use App\Http\Controllers\SalesOrderController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\SalesReturnController;
 use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\GrnController;
+use App\Http\Controllers\GrnReturnController;
+use App\Http\Controllers\InventoryTransferController;
+use App\Http\Controllers\StockAdjustmentController;
 
 Route::middleware('auth')->group(function () {
     Route::get('/master-tables', function () {
@@ -71,6 +75,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('invoices', InvoiceController::class)->only(['index','create','store']);
     Route::resource('sales-returns', SalesReturnController::class)->only(['index','create','store']);
     Route::resource('purchase-orders', PurchaseOrderController::class)->only(['index','create','store']);
+    Route::resource('grns', GrnController::class)->only(['index','create','store']);
+    Route::resource('grn-returns', GrnReturnController::class)->only(['index','create','store']);
+    Route::resource('inventory-transfers', InventoryTransferController::class)->only(['index','create','store']);
+    Route::resource('stock-adjustments', StockAdjustmentController::class)->only(['index','create','store']);
 
     Route::resource('admins', AdminController::class);
     Route::resource('routes', RouteController::class);

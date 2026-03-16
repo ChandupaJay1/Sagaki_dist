@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\SalesOrder;
+use App\Models\Customer;
+use App\Models\Location;
+use App\Models\User;
+use App\Models\PaymentTerm;
 use Illuminate\Http\Request;
 
 class SalesOrderController extends Controller
@@ -15,8 +19,11 @@ class SalesOrderController extends Controller
 
     public function create()
     {
-        $customers = \App\Models\Customer::orderBy('name')->get();
-        return view('sales_orders.create', compact('customers'));
+        $customers = Customer::orderBy('name')->get();
+        $locations = Location::orderBy('name')->get();
+        $reps = User::where('is_active', 1)->orderBy('name')->get(); // Assuming reps are users
+        $terms = PaymentTerm::orderBy('days')->get();
+        return view('sales_orders.create', compact('customers', 'locations', 'reps', 'terms'));
     }
 
     public function store(Request $request)
