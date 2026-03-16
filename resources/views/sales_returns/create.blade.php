@@ -52,13 +52,19 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold mb-1">Class</label>
+                            <select name="class" class="form-select form-select-sm">
+                                <option value="Administration department">Administration department</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Site <span class="text-danger">*</span></label>
                             <select name="site" class="form-select form-select-sm">
                                 <option value="Main">Main</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Load</label>
                             <select name="load" class="form-select form-select-sm">
                                 <option value=""></option>
@@ -252,6 +258,26 @@
                                     <div class="d-flex justify-content-between mb-2 align-items-center">
                                         <span class="small fw-bold">Sub Total</span>
                                         <input type="text" class="form-control form-control-sm text-end w-50 bg-white" value="0.00" readonly>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="small fw-bold mb-0">SSCL %</label>
+                                            <input type="text" class="form-control form-control-sm text-center" value="0.00">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="small fw-bold mb-0">SSCL</label>
+                                            <input type="text" class="form-control form-control-sm text-end" value="0.00">
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="small fw-bold mb-0">VAT %</label>
+                                            <input type="text" class="form-control form-control-sm text-center" value="0.00">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="small fw-bold mb-0">VAT</label>
+                                            <input type="text" class="form-control form-control-sm text-end" value="0.00">
+                                        </div>
                                     </div>
                                     <div class="d-flex justify-content-between align-items-center">
                                         <span class="small fw-bold h6 text-primary mb-0">Total</span>

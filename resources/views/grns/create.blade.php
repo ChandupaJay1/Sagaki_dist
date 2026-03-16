@@ -126,7 +126,11 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Terms</label>
                             <select name="terms" class="form-select form-select-sm">
-                                <option value=""></option>
+                                <option value="">-- Select Terms --</option>
+                                @foreach($terms as $term)
+                                    @php $label = ($term->days == 0) ? 'Cash Only' : ($term->days.' Days Credit'); @endphp
+                                    <option value="{{ $term->days }}" {{ old('terms') == $term->days ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -136,6 +140,10 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Manual No</label>
                             <input type="text" name="manual_no" class="form-control form-control-sm" value="{{ old('manual_no') }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold mb-1">Dispatch No</label>
+                            <input type="text" name="dispatch_no" class="form-control form-control-sm" value="{{ old('dispatch_no') }}">
                         </div>
                     </div>
 
@@ -242,7 +250,42 @@
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <!-- Removed SSCL and VAT sections as requested -->
+                            <div class="card bg-light border-0 shadow-none">
+                                <div class="card-body p-2">
+                                    <div class="d-flex justify-content-between mb-2 align-items-center">
+                                        <span class="small fw-bold">Sub Total</span>
+                                        <input type="text" class="form-control form-control-sm text-end w-50 bg-white" value="0.00" readonly>
+                                    </div>
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="svatSwitch">
+                                        <label class="form-check-label" for="svatSwitch">SVAT</label>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="small fw-bold mb-0">SSCL %</label>
+                                            <input type="text" class="form-control form-control-sm text-center" value="0.00">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="small fw-bold mb-0">SSCL</label>
+                                            <input type="text" class="form-control form-control-sm text-end" value="0.00">
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="small fw-bold mb-0">VAT %</label>
+                                            <input type="text" class="form-control form-control-sm text-center" value="0.00">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="small fw-bold mb-0">VAT</label>
+                                            <input type="text" class="form-control form-control-sm text-end" value="0.00">
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="small fw-bold h6 text-primary mb-0">Total</span>
+                                        <input type="text" class="form-control form-control-sm text-end w-50 bg-white fw-bold text-primary" readonly>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </form>

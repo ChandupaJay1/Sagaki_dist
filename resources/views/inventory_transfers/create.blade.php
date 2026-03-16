@@ -110,6 +110,7 @@
                                             @endforeach
                                         </select>
                                     </td>
+                                    <td><select class="form-select form-select-sm border-0"><option></option></select></td>
                                     <td><button type="button" class="btn btn-link text-danger p-0"><i class="ri-delete-bin-line fs-18"></i></button></td>
                                 </tr>
                             </tbody>
