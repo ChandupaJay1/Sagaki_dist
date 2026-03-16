@@ -7,6 +7,8 @@ use App\Models\Vendor;
 use App\Models\Product;
 use App\Models\Unit;
 use App\Models\Location;
+use App\Models\User;
+use App\Models\PaymentTerm;
 use Illuminate\Http\Request;
 
 class GrnController extends Controller
@@ -23,8 +25,9 @@ class GrnController extends Controller
         $products = Product::orderBy('name')->get();
         $units = Unit::orderBy('name')->get();
         $locations = Location::orderBy('name')->get();
-        $terms = PaymentTerm::orderBy('name')->get();
-        return view('grns.create', compact('vendors', 'products', 'units', 'locations', 'terms'));
+        $terms = PaymentTerm::orderBy('days')->get();
+        $reps = User::where('is_active', 1)->orderBy('name')->get();
+        return view('grns.create', compact('vendors', 'products', 'units', 'locations', 'terms', 'reps'));
     }
 
     public function store(Request $request)

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\SalesReturn;
 use App\Models\Customer;
+use App\Models\User;
+use App\Models\PaymentTerm;
 use Illuminate\Http\Request;
 
 class SalesReturnController extends Controller
@@ -18,7 +20,7 @@ class SalesReturnController extends Controller
     {
         $customers = Customer::orderBy('name')->get();
         $reps = User::where('is_active', 1)->orderBy('name')->get();
-        $terms = PaymentTerm::orderBy('name')->get();
+        $terms = PaymentTerm::orderBy('days')->get();
         return view('sales_returns.create', compact('customers', 'reps', 'terms'));
     }
 
