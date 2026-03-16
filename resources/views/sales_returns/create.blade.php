@@ -133,7 +133,10 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Terms</label>
                             <select name="terms" class="form-select form-select-sm">
-                                <option value=""></option>
+                                <option value="">-- Select Terms --</option>
+                                @foreach($terms as $term)
+                                    <option value="{{ $term->name }}" {{ old('terms') == $term->name ? 'selected' : '' }}>{{ $term->name }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-3">

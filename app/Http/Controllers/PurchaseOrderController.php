@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\PurchaseOrder;
 use App\Models\Vendor;
+use App\Models\User;
+use App\Models\PaymentTerm;
 use Illuminate\Http\Request;
 
 class PurchaseOrderController extends Controller
@@ -17,7 +19,9 @@ class PurchaseOrderController extends Controller
     public function create()
     {
         $vendors = Vendor::orderBy('name')->get();
-        return view('purchase_orders.create', compact('vendors'));
+        $reps = User::where('is_active', 1)->orderBy('name')->get();
+        $terms = PaymentTerm::orderBy('name')->get();
+        return view('purchase_orders.create', compact('vendors', 'reps', 'terms'));
     }
 
     public function store(Request $request)

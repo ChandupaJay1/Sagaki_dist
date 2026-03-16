@@ -17,7 +17,9 @@ class SalesReturnController extends Controller
     public function create()
     {
         $customers = Customer::orderBy('name')->get();
-        return view('sales_returns.create', compact('customers'));
+        $reps = User::where('is_active', 1)->orderBy('name')->get();
+        $terms = PaymentTerm::orderBy('name')->get();
+        return view('sales_returns.create', compact('customers', 'reps', 'terms'));
     }
 
     public function store(Request $request)
