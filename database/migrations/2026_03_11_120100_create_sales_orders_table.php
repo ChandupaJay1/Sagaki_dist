@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::create('sales_orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('customer_id')->nullable()->constrained('customers')->cascadeOnUpdate()->nullOnDelete();
+            $table->string('location')->nullable();
             $table->string('address')->nullable();
             $table->string('delivery_destination')->nullable();
             $table->string('reference_no')->nullable();

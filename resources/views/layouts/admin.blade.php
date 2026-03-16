@@ -863,33 +863,6 @@
                         </a>
                     </li>
 
-                    <li class="menu-title">User Network</li>
-
-                    <li class="menu-item">
-                        <a class="menu-link" href="{{ route('customers.index') }}">
-                            <span class="nav-icon">
-                                <i class="ri-group-2-line"></i>
-                            </span>
-                            <span class="nav-text"> Customers </span>
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a class="menu-link" href="{{ route('refs.index') }}">
-                            <span class="nav-icon">
-                                <i class="ri-user-star-line"></i>
-                            </span>
-                            <span class="nav-text"> Rep Agents </span>
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a class="menu-link" href="{{ route('vendors.index') }}">
-                            <span class="nav-icon">
-                                <i class="ri-user-settings-line"></i>
-                            </span>
-                            <span class="nav-text"> Vendors </span>
-                        </a>
-                    </li>
-
                     <li class="menu-title">Operations</li>
 
                     <li class="menu-item">
@@ -904,14 +877,6 @@
                             </span>
                         </a>
                     </li>
-                    <li class="menu-item">
-                        <a class="menu-link" href="{{ route('products.index') }}">
-                            <span class="nav-icon">
-                                <i class="ri-shopping-bag-3-line"></i>
-                            </span>
-                            <span class="nav-text"> Items </span>
-                        </a>
-                    </li>
 
                     <li class="menu-item">
                         <a class="menu-link" data-bs-toggle="collapse" href="#menuSales" role="button" aria-expanded="false" aria-controls="menuSales">
@@ -923,6 +888,16 @@
                         </a>
                         <div class="collapse" id="menuSales">
                             <ul class="sub-menu">
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('customers.index') }}">
+                                        <span class="nav-text">Customers</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('refs.index') }}">
+                                        <span class="nav-text">Rep Agents</span>
+                                    </a>
+                                </li>
                                 <li class="menu-item">
                                     <a class="menu-link" href="{{ route('sales-orders.index') }}">
                                         <span class="nav-text">Sales Order</span>
@@ -963,13 +938,18 @@
                                     </a>
                                 </li>
                                 <li class="menu-item">
-                                    <a class="menu-link" href="{{ route('not-found') }}">
-                                        <span class="nav-text">Debit Note</span>
+                                    <a class="menu-link" href="{{ route('grns.index') }}">
+                                        <span class="nav-text">GRN</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('grn-returns.index') }}">
+                                        <span class="nav-text">GRN Return</span>
                                     </a>
                                 </li>
                                 <li class="menu-item">
                                     <a class="menu-link" href="{{ route('not-found') }}">
-                                        <span class="nav-text">GRN</span>
+                                        <span class="nav-text">Debit Note</span>
                                     </a>
                                 </li>
                             </ul>
@@ -992,7 +972,7 @@
                                     </a>
                                 </li>
                                 <li class="menu-item">
-                                    <a class="menu-link" href="{{ route('not-found') }}">
+                                    <a class="menu-link" href="{{ route('inventory-transfers.index') }}">
                                         <span class="nav-text">Transfer Note</span>
                                     </a>
                                 </li>
@@ -1002,7 +982,7 @@
                                     </a>
                                 </li>
                                 <li class="menu-item">
-                                    <a class="menu-link" href="{{ route('not-found') }}">
+                                    <a class="menu-link" href="{{ route('stock-adjustments.index') }}">
                                         <span class="nav-text">Stock Adjustment</span>
                                     </a>
                                 </li>
