@@ -26,7 +26,7 @@ class GrnReturnController extends Controller
         $units = Unit::orderBy('name')->get();
         $locations = Location::orderBy('name')->get();
         $reps = User::where('is_active', 1)->orderBy('name')->get();
-        $terms = PaymentTerm::orderBy('name')->get();
+        $terms = PaymentTerm::orderBy('days')->get();
         return view('grn_returns.create', compact('vendors', 'products', 'units', 'locations', 'reps', 'terms'));
     }
 
