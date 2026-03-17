@@ -57,7 +57,10 @@
                         <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
                             <select name="site" class="form-select form-select-sm">
-                                <option value="Main">Main</option>
+                                <option value="">-- Select Location --</option>
+                                @foreach($locations as $location)
+                                    <option value="{{ $location->name }}" {{ old('site') == $location->name ? 'selected' : '' }}>{{ $location->name }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-4">

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\Customer;
+use App\Models\Location;
 use Illuminate\Http\Request;
 
 class InvoiceController extends Controller
@@ -17,7 +18,8 @@ class InvoiceController extends Controller
     public function create()
     {
         $customers = Customer::orderBy('company_name')->get();
-        return view('invoices.create', compact('customers'));
+        $locations = Location::where('is_active', 1)->orderBy('name')->get();
+        return view('invoices.create', compact('customers', 'locations'));
     }
 
     public function store(Request $request)
