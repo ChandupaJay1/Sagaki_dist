@@ -6,6 +6,9 @@ use App\Http\Controllers\Api\VendorController;
 use App\Http\Controllers\Api\AuthController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/customers/{id}', [CustomerController::class, 'show']);
+Route::get('/vendors/{id}', [VendorController::class, 'show']);
+
 Route::prefix('v1')->name('api.')->group(function () {
 
     // ==================== PUBLIC ROUTES ====================
