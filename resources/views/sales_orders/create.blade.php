@@ -48,7 +48,7 @@
                             <select name="customer_id" class="form-select form-select-sm" required>
                                 <option value="">-- Select Customer --</option>
                                 @foreach($customers as $c)
-                                    <option value="{{ $c->id }}" {{ old('customer_id') == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
+                                    <option value="{{ $c->id }}" {{ old('customer_id') == $c->id ? 'selected' : '' }}>{{ $c->company_name ?? $c->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -234,3 +234,39 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const customerSelect = document.querySelector('select[name="customer_id"]');
+        const addressTextarea = document.querySelector('textarea[name="address"]');
+        const deliveryDestinationTextarea = document.querySelector('textarea[name="delivery_destination"]');
+
+        function fetchCustomerDetails(customerId) {
+            if (customerId) {
+                fetch(`/api/customers/${customerId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (addressTextarea) addressTextarea.value = data.address || '';
+                        if (deliveryDestinationTextarea) deliveryDestinationTextarea.value = data.delivery_address || '';
+                    })
+                    .catch(error => console.error('Error fetching customer details:', error));
+            }
+        }
+
+        // Standard change event
+        customerSelect.addEventListener('change', function () {
+            fetchCustomerDetails(this.value);
+        });
+
+        // For TomSelect support
+        setTimeout(() => {
+            if (customerSelect.tomselect) {
+                customerSelect.tomselect.on('change', function (value) {
+                    fetchCustomerDetails(value);
+                });
+            }
+        }, 500);
+    });
+</script>
+@endpush

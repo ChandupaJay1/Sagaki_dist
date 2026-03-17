@@ -48,7 +48,7 @@
                             <select name="vendor_id" class="form-select form-select-sm" required>
                                 <option value="">-- Select Vendor --</option>
                                 @foreach($vendors as $v)
-                                    <option value="{{ $v->id }}" {{ old('vendor_id') == $v->id ? 'selected' : '' }}>{{ $v->name }}</option>
+                                    <option value="{{ $v->id }}" {{ old('vendor_id') == $v->id ? 'selected' : '' }}>{{ $v->company_name ?? $v->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -288,3 +288,39 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const vendorSelect = document.querySelector('select[name="vendor_id"]');
+        const addressTextarea = document.querySelector('textarea[name="address"]');
+        const deliveryDestinationTextarea = document.querySelector('textarea[name="delivery_destination"]');
+
+        function fetchVendorDetails(vendorId) {
+            if (vendorId) {
+                fetch(`/api/vendors/${vendorId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (addressTextarea) addressTextarea.value = data.address || '';
+                        if (deliveryDestinationTextarea) deliveryDestinationTextarea.value = data.delivery_address || '';
+                    })
+                    .catch(error => console.error('Error fetching vendor details:', error));
+            }
+        }
+
+        // Standard change event
+        vendorSelect.addEventListener('change', function () {
+            fetchVendorDetails(this.value);
+        });
+
+        // For TomSelect support
+        setTimeout(() => {
+            if (vendorSelect.tomselect) {
+                vendorSelect.tomselect.on('change', function (value) {
+                    fetchVendorDetails(value);
+                });
+            }
+        }, 500);
+    });
+</script>
+@endpush

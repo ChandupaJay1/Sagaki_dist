@@ -947,11 +947,7 @@
                                         <span class="nav-text">GRN Return</span>
                                     </a>
                                 </li>
-                                <li class="menu-item">
-                                    <a class="menu-link" href="{{ route('not-found') }}">
-                                        <span class="nav-text">Debit Note</span>
-                                    </a>
-                                </li>
+
                             </ul>
                         </div>
                     </li>
@@ -1259,8 +1255,9 @@
             setTimeout(poll, 1000);
         })();
     </script>
-    @yield('scripts')
+    @stack('scripts')
 
 </body>
 
 </html>
+ 

@@ -21,7 +21,7 @@ class GrnController extends Controller
 
     public function create()
     {
-        $vendors = Vendor::orderBy('name')->get();
+        $vendors = Vendor::orderBy('company_name')->get();
         $products = Product::orderBy('name')->get();
         $units = Unit::orderBy('name')->get();
         $locations = Location::orderBy('name')->get();
