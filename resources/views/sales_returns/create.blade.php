@@ -61,7 +61,10 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
                             <select name="site" class="form-select form-select-sm">
-                                <option value="Main">Main</option>
+                                <option value="">-- Select Location --</option>
+                                @foreach($locations as $location)
+                                    <option value="{{ $location->name }}" {{ old('site') == $location->name ? 'selected' : '' }}>{{ $location->name }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -187,7 +190,14 @@
                                     <td><input type="number" class="form-control form-control-sm border-0 text-center"></td>
                                     <td><input type="number" class="form-control form-control-sm border-0 text-end"></td>
                                     <td><input type="number" class="form-control form-control-sm border-0 text-end fw-bold" readonly></td>
-                                    <td><select class="form-select form-select-sm border-0"><option>Main</option></select></td>
+                                    <td>
+                                        <select class="form-select form-select-sm border-0">
+                                            <option value="">-- Select Location --</option>
+                                            @foreach($locations as $location)
+                                                <option value="{{ $location->name }}">{{ $location->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </td>
                                     <td><select class="form-select form-select-sm border-0"><option></option></select></td>
                                     <td><button type="button" class="btn btn-link text-danger p-0"><i class="ri-delete-bin-line fs-18"></i></button></td>
                                 </tr>
