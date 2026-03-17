@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
 
 class Customer extends Model
 {
@@ -12,6 +13,7 @@ class Customer extends Model
     protected $fillable = [
         'route_id',
         'customer_category_id',
+        'rep_id',
         'name',
         'email',
         'phone',
@@ -54,5 +56,10 @@ class Customer extends Model
     public function customerCategory()
     {
         return $this->belongsTo(CustomerCategory::class);
+    }
+
+    public function rep()
+    {
+        return $this->belongsTo(User::class, 'rep_id');
     }
 }

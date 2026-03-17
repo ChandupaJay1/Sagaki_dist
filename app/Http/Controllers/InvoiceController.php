@@ -16,7 +16,7 @@ class InvoiceController extends Controller
 
     public function create()
     {
-        $customers = Customer::orderBy('name')->get();
+        $customers = Customer::orderBy('company_name')->get();
         return view('invoices.create', compact('customers'));
     }
 
