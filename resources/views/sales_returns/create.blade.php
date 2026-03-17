@@ -52,13 +52,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label small fw-bold mb-1">Class</label>
-                            <select name="class" class="form-select form-select-sm">
-                                <option value="Administration department">Administration department</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
                             <select name="site" class="form-select form-select-sm">
                                 <option value="">-- Select Location --</option>
@@ -67,7 +61,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Load</label>
                             <select name="load" class="form-select form-select-sm">
                                 <option value=""></option>
