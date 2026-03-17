@@ -205,6 +205,26 @@
                                     </div>
                                 </div>
 
+                                <!-- Default Rep -->
+                                <div class="row mb-3 align-items-center">
+                                    <div class="col-sm-4">
+                                        <label for="rep_id" class="form-label-custom">Default Rep</label>
+                                    </div>
+                                    <div class="col-sm-8">
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="ri-user-star-line"></i></span>
+                                            <select class="form-select" id="rep_id" name="rep_id">
+                                                <option value="">-- Select Rep --</option>
+                                                @foreach($reps ?? [] as $rep)
+                                                    <option value="{{ $rep->id }}" {{ old('rep_id', $customer->rep_id) == $rep->id ? 'selected' : '' }}>
+                                                        {{ $rep->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- Distribution Route -->
                                 <div class="row mb-3 align-items-center">
                                     <div class="col-sm-4">

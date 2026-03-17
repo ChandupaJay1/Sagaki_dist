@@ -55,9 +55,9 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold mb-1">Site <span class="text-danger">*</span></label>
-                            <select name="site" class="form-select form-select-sm">
-                                <option value="">-- Select Site --</option>
+                            <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
+                            <select name="location" class="form-select form-select-sm">
+                                <option value="">-- Select Location --</option>
                                 @foreach($locations as $loc)
                                     <option value="{{ $loc->name }}">{{ $loc->name }}</option>
                                 @endforeach
@@ -301,6 +301,7 @@
         const vendorSelect = document.querySelector('select[name="vendor_id"]');
         const addressTextarea = document.querySelector('textarea[name="address"]');
         const deliveryDestinationTextarea = document.querySelector('textarea[name="delivery_destination"]');
+        const termsSelect = document.querySelector('select[name="terms"]');
 
         function fetchVendorDetails(vendorId) {
             if (vendorId) {
@@ -309,6 +310,29 @@
                     .then(data => {
                         if (addressTextarea) addressTextarea.value = data.address || '';
                         if (deliveryDestinationTextarea) deliveryDestinationTextarea.value = data.delivery_address || '';
+                        
+                        if (termsSelect && data.terms) {
+                            let matchedOption = Array.from(termsSelect.options).find(opt => opt.value === data.terms);
+                            
+                            if (!matchedOption && data.terms) {
+                                let daysMatch = data.terms.match(/\d+/);
+                                if (daysMatch) {
+                                    let parsedDays = daysMatch[0];
+                                    matchedOption = Array.from(termsSelect.options).find(opt => opt.value === parsedDays);
+                                }
+                                
+                                if (!matchedOption) {
+                                    matchedOption = Array.from(termsSelect.options).find(opt => opt.text && opt.text.includes(data.terms));
+                                }
+                            }
+                            
+                            if (matchedOption) {
+                                termsSelect.value = matchedOption.value;
+                                if (termsSelect.tomselect) {
+                                    termsSelect.tomselect.setValue(matchedOption.value);
+                                }
+                            }
+                        }
                     })
                     .catch(error => console.error('Error fetching vendor details:', error));
             }

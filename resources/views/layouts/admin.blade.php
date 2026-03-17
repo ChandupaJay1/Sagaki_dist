@@ -877,6 +877,14 @@
                             </span>
                         </a>
                     </li>
+                    <li class="menu-item">
+                        <a class="menu-link" href="{{ route('refs.index') }}">
+                            <span class="nav-icon">
+                                <i class="ri-user-star-line"></i>
+                            </span>
+                            <span class="nav-text"> Rep Agents </span>
+                        </a>
+                    </li>
 
                     <li class="menu-item">
                         <a class="menu-link" data-bs-toggle="collapse" href="#menuSales" role="button" aria-expanded="false" aria-controls="menuSales">
@@ -891,11 +899,6 @@
                                 <li class="menu-item">
                                     <a class="menu-link" href="{{ route('customers.index') }}">
                                         <span class="nav-text">Customers</span>
-                                    </a>
-                                </li>
-                                <li class="menu-item">
-                                    <a class="menu-link" href="{{ route('refs.index') }}">
-                                        <span class="nav-text">Rep Agents</span>
                                     </a>
                                 </li>
                                 <li class="menu-item">
@@ -928,13 +931,13 @@
                         <div class="collapse" id="menuPurchasing">
                             <ul class="sub-menu">
                                 <li class="menu-item">
-                                    <a class="menu-link" href="{{ route('purchase-orders.index') }}">
-                                        <span class="nav-text">Purchase Order</span>
+                                    <a class="menu-link" href="{{ route('vendors.index') }}">
+                                        <span class="nav-text">Vendors</span>
                                     </a>
                                 </li>
                                 <li class="menu-item">
-                                    <a class="menu-link" href="{{ route('vendors.index') }}">
-                                        <span class="nav-text">Vendors</span>
+                                    <a class="menu-link" href="{{ route('purchase-orders.index') }}">
+                                        <span class="nav-text">Purchase Order</span>
                                     </a>
                                 </li>
                                 <li class="menu-item">
@@ -947,7 +950,6 @@
                                         <span class="nav-text">GRN Return</span>
                                     </a>
                                 </li>
-
                             </ul>
                         </div>
                     </li>

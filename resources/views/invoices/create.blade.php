@@ -55,7 +55,7 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold mb-1">Site <span class="text-danger">*</span></label>
+                            <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
                             <select name="site" class="form-select form-select-sm">
                                 <option value="Main">Main</option>
                             </select>
