@@ -19,7 +19,7 @@ class SalesOrderController extends Controller
 
     public function create()
     {
-        $customers = Customer::orderBy('name')->get();
+        $customers = Customer::orderBy('company_name')->get();
         $locations = Location::orderBy('name')->get();
         $reps = User::where('is_active', 1)->orderBy('name')->get(); // Assuming reps are users
         $terms = PaymentTerm::orderBy('days')->get();

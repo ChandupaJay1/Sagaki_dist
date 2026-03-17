@@ -18,7 +18,7 @@ class PurchaseOrderController extends Controller
 
     public function create()
     {
-        $vendors = Vendor::orderBy('name')->get();
+        $vendors = Vendor::orderBy('company_name')->get();
         $reps = User::where('is_active', 1)->orderBy('name')->get();
         $terms = PaymentTerm::orderBy('days')->get();
         return view('purchase_orders.create', compact('vendors', 'reps', 'terms'));

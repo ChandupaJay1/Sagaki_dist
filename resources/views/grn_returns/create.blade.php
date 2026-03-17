@@ -48,12 +48,12 @@
                             <select name="vendor_id" class="form-select form-select-sm" required>
                                 <option value="">-- Select Vendor --</option>
                                 @foreach($vendors as $v)
-                                    <option value="{{ $v->id }}" {{ old('vendor_id') == $v->id ? 'selected' : '' }}>{{ $v->name }}</option>
+                                    <option value="{{ $v->id }}" {{ old('vendor_id') == $v->id ? 'selected' : '' }}>{{ $v->company_name ?? $v->name }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold mb-1">Site <span class="text-danger">*</span></label>
+                            <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
                             <select name="site" class="form-select form-select-sm">
                                 <option value="">-- Select Site --</option>
                                 @foreach($locations as $loc)
@@ -288,3 +288,63 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const vendorSelect = document.querySelector('select[name="vendor_id"]');
+        const addressTextarea = document.querySelector('textarea[name="address"]');
+        const deliveryDestinationTextarea = document.querySelector('textarea[name="delivery_destination"]');
+        const termsSelect = document.querySelector('select[name="terms"]');
+
+        function fetchVendorDetails(vendorId) {
+            if (vendorId) {
+                fetch(`/api/vendors/${vendorId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (addressTextarea) addressTextarea.value = data.address || '';
+                        if (deliveryDestinationTextarea) deliveryDestinationTextarea.value = data.delivery_address || '';
+                        
+                        if (termsSelect && data.terms) {
+                            let matchedOption = Array.from(termsSelect.options).find(opt => opt.value === data.terms);
+                            
+                            if (!matchedOption && data.terms) {
+                                let daysMatch = data.terms.match(/\d+/);
+                                if (daysMatch) {
+                                    let parsedDays = daysMatch[0];
+                                    matchedOption = Array.from(termsSelect.options).find(opt => opt.value === parsedDays);
+                                }
+                                
+                                if (!matchedOption) {
+                                    matchedOption = Array.from(termsSelect.options).find(opt => opt.text && opt.text.includes(data.terms));
+                                }
+                            }
+                            
+                            if (matchedOption) {
+                                termsSelect.value = matchedOption.value;
+                                if (termsSelect.tomselect) {
+                                    termsSelect.tomselect.setValue(matchedOption.value);
+                                }
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error fetching vendor details:', error));
+            }
+        }
+
+        // Standard change event
+        vendorSelect.addEventListener('change', function () {
+            fetchVendorDetails(this.value);
+        });
+
+        // For TomSelect support
+        setTimeout(() => {
+            if (vendorSelect.tomselect) {
+                vendorSelect.tomselect.on('change', function (value) {
+                    fetchVendorDetails(value);
+                });
+            }
+        }, 500);
+    });
+</script>
+@endpush
