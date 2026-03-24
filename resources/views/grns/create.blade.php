@@ -59,7 +59,7 @@
                             <select name="site" class="form-select form-select-sm">
                                 <option value="">-- Select Site --</option>
                                 @foreach($locations as $loc)
-                                    <option value="{{ $loc->name }}">{{ $loc->name }}</option>
+                                    <option value="{{ $loc->name }}" {{ (old('site') == $loc->name || $loc->name == 'Main Stock') ? 'selected' : '' }}>{{ $loc->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -185,7 +185,7 @@
                                     <td>
                                         <select name="items[0][location_id]" class="form-select form-select-sm border-0">
                                             @foreach($locations as $loc)
-                                                <option value="{{ $loc->id }}">{{ $loc->name }}</option>
+                                                <option value="{{ $loc->id }}" {{ $loc->name == 'Main Stock' ? 'selected' : '' }}>{{ $loc->name }}</option>
                                             @endforeach
                                         </select>
                                     </td>

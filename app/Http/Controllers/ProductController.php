@@ -49,7 +49,7 @@ class ProductController extends Controller
     {
         $vendors = \App\Models\Vendor::all();
         $mainProducts = \App\Models\Product::where('is_main_product', true)->get();
-        $locations = \App\Models\Location::where('is_active', true)->orderBy('name')->get();
+        $locations = \App\Models\Location::where('is_active', true)->where('name', 'not like', '%Transit%')->orderBy('name')->get();
         $units = \App\Models\Unit::where('is_active', true)->orderBy('name')->get();
         $brands = \App\Models\Brand::where('is_active', true)->orderBy('name')->get();
         $models = \App\Models\ModelMaster::where('is_active', true)->orderBy('name')->get();
@@ -132,7 +132,7 @@ class ProductController extends Controller
         $product = \App\Models\Product::findOrFail($id);
         $vendors = \App\Models\Vendor::all();
         $mainProducts = \App\Models\Product::where('is_main_product', true)->where('id', '!=', $id)->get();
-        $locations = \App\Models\Location::where('is_active', true)->orderBy('name')->get();
+        $locations = \App\Models\Location::where('is_active', true)->where('name', 'not like', '%Transit%')->orderBy('name')->get();
         $units = \App\Models\Unit::where('is_active', true)->orderBy('name')->get();
         $brands = \App\Models\Brand::where('is_active', true)->orderBy('name')->get();
         $models = \App\Models\ModelMaster::where('is_active', true)->orderBy('name')->get();

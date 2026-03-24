@@ -56,8 +56,8 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Site <span class="text-danger">*</span></label>
-                            <select name="site" class="form-select form-select-sm">
-                                <option value="Main">Main</option>
+                            <select name="site" class="form-select form-select-sm" required>
+                                <option value="Main Stock">Main Stock</option>
                             </select>
                         </div>
                         <div class="col-md-4">
@@ -129,50 +129,103 @@
                         <table class="table table-sm table-bordered mb-0 align-middle text-center small">
                             <thead class="bg-primary text-white">
                                 <tr>
-                                    <th style="width: 15%;">Item Code</th>
-                                    <th style="width: 35%;">Description</th>
-                                    <th style="width: 10%;">OnHand</th>
-                                    <th style="width: 10%;">Qty</th>
-                                    <th style="width: 10%;">Rate(LKR)</th>
-                                    <th style="width: 10%;">Amount</th>
-                                    <th style="width: 10%;">Disc %</th>
-                                    <th style="width: 10%;">Discount</th>
-                                    <th style="width: 10%;">Total</th>
+                                    <th style="width: 12%;">Item Code</th>
+                                    <th style="width: 18%;">Description</th>
+                                    <th style="width: 7%;">OnHand</th>
+                                    <th style="width: 7%;">Qty</th>
+                                    <th style="width: 9%;">Rate(LKR)</th>
+                                    <th style="width: 9%;">Amount</th>
+                                    <th style="width: 7%;">Disc %</th>
+                                    <th style="width: 9%;">Discount</th>
+                                    <th style="width: 9%;">Total</th>
+                                    <th style="width: 10%;">Site</th>
+                                    <th style="width: 4%;">Unit</th>
+                                    <th style="width: 4%;"></th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="invoice-item-table-body">
                                 <tr>
-                                    <td><select class="form-select form-select-sm border-0"><option></option></select></td>
+                                    <td>
+                                        <select class="form-select form-select-sm border-0 item-select">
+                                            <option value="">Select Item</option>
+                                            @foreach($products as $product)
+                                                <option value="{{ $product->id }}">{{ $product->code }} - {{ $product->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </td>
                                     <td><input type="text" class="form-control form-control-sm border-0" readonly></td>
                                     <td><input type="text" class="form-control form-control-sm border-0 text-center" readonly></td>
-                                    <td><input type="number" class="form-control form-control-sm border-0 text-center"></td>
-                                    <td><input type="number" class="form-control form-control-sm border-0 text-end"></td>
-                                    <td><input type="number" class="form-control form-control-sm border-0 text-end" readonly></td>
-                                    <td><input type="number" class="form-control form-control-sm border-0 text-center"></td>
-                                    <td><input type="number" class="form-control form-control-sm border-0 text-end"></td>
-                                    <td><input type="number" class="form-control form-control-sm border-0 text-end fw-bold" readonly></td>
+                                    <td><input type="number" class="form-control form-control-sm border-0 text-center qty-input"></td>
+                                    <td><input type="number" class="form-control form-control-sm border-0 text-end rate-input"></td>
+                                    <td><input type="number" class="form-control form-control-sm border-0 text-end amount-input" readonly></td>
+                                    <td><input type="number" class="form-control form-control-sm border-0 text-center disc-percent-input"></td>
+                                    <td><input type="number" class="form-control form-control-sm border-0 text-end discount-input"></td>
+                                    <td><input type="number" class="form-control form-control-sm border-0 text-end fw-bold total-input" readonly></td>
+                                    <td>
+                                        <select class="form-select form-select-sm border-0 site-select">
+                                            <option value="Main Stock">Main Stock</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="form-control form-control-sm border-0 text-center unit-field" readonly></td>
+                                    <td>
+                                        <button type="button" class="btn btn-link btn-sm text-danger p-0 border-0 delete-row-btn" tabindex="-1">
+                                            <i class="ri-delete-bin-line fs-18"></i>
+                                        </button>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
 
+                    <template id="row-template">
+                        <tr>
+                            <td>
+                                <select class="form-select form-select-sm border-0 item-select">
+                                    <option value="">Select Item</option>
+                                    @foreach($products as $product)
+                                        <option value="{{ $product->id }}">{{ $product->code }} - {{ $product->name }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
+                            <td><input type="text" class="form-control form-control-sm border-0" readonly></td>
+                            <td><input type="text" class="form-control form-control-sm border-0 text-center" readonly></td>
+                            <td><input type="number" class="form-control form-control-sm border-0 text-center qty-input"></td>
+                            <td><input type="number" class="form-control form-control-sm border-0 text-end rate-input"></td>
+                            <td><input type="number" class="form-control form-control-sm border-0 text-end amount-input" readonly></td>
+                            <td><input type="number" class="form-control form-control-sm border-0 text-center disc-percent-input"></td>
+                            <td><input type="number" class="form-control form-control-sm border-0 text-end discount-input"></td>
+                            <td><input type="number" class="form-control form-control-sm border-0 text-end fw-bold total-input" readonly></td>
+                            <td>
+                                <select class="form-select form-select-sm border-0 site-select">
+                                    <option value="Main Stock">Main Stock</option>
+                                </select>
+                            </td>
+                            <td><input type="text" class="form-control form-control-sm border-0 text-center unit-field" readonly></td>
+                            <td>
+                                <button type="button" class="btn btn-link btn-sm text-danger p-0 border-0 delete-row-btn" tabindex="-1">
+                                    <i class="ri-delete-bin-line fs-18"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </template>
+
                     <!-- Table Footer Row -->
                     <div class="row g-2 mb-3 justify-content-end align-items-center">
                         <div class="col-md-1 text-end small fw-bold">Qty</div>
                         <div class="col-md-1">
-                            <input type="text" class="form-control form-control-sm text-center bg-light" readonly>
+                            <input type="text" id="footer-qty" class="form-control form-control-sm text-center bg-light" readonly>
                         </div>
                         <div class="col-md-1 text-end small fw-bold">Amount</div>
                         <div class="col-md-2">
-                            <input type="text" class="form-control form-control-sm text-end bg-light" readonly>
+                            <input type="text" id="footer-amount" class="form-control form-control-sm text-end bg-light" readonly>
                         </div>
                         <div class="col-md-1 text-end small fw-bold">Discount</div>
                         <div class="col-md-1">
-                            <input type="text" class="form-control form-control-sm text-end bg-light" readonly>
+                            <input type="text" id="footer-discount" class="form-control form-control-sm text-end bg-light" readonly>
                         </div>
                         <div class="col-md-1 text-end small fw-bold">Total Amount</div>
                         <div class="col-md-2">
-                            <input type="text" class="form-control form-control-sm text-end bg-light fw-bold" readonly>
+                            <input type="text" id="footer-total" class="form-control form-control-sm text-end bg-light fw-bold" readonly>
                         </div>
                     </div>
 
@@ -184,7 +237,7 @@
                                     <label class="form-label small fw-bold mb-1">LKR Total Amount</label>
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text bg-light">LKR</span>
-                                        <input type="text" class="form-control text-end bg-light" readonly>
+                                        <input type="text" id="lkr-total" class="form-control text-end bg-light" readonly>
                                     </div>
                                 </div>
                                 <div class="col-md-7">
@@ -205,20 +258,20 @@
                                     <div class="row g-2 mb-2">
                                         <div class="col-6">
                                             <label class="small fw-bold mb-0">Discount %</label>
-                                            <input type="text" class="form-control form-control-sm text-center">
+                                            <input type="text" id="final-discount-percent" class="form-control form-control-sm text-center">
                                         </div>
                                         <div class="col-6">
                                             <label class="small fw-bold mb-0">Discount</label>
-                                            <input type="text" class="form-control form-control-sm text-end">
+                                            <input type="text" id="final-discount-amount" class="form-control form-control-sm text-end">
                                         </div>
                                     </div>
                                     <div class="d-flex justify-content-between mb-2 align-items-center">
                                         <span class="small fw-bold">Sub Total</span>
-                                        <input type="text" class="form-control form-control-sm text-end w-50 bg-white" readonly>
+                                        <input type="text" id="final-sub-total" class="form-control form-control-sm text-end w-50 bg-white" readonly>
                                     </div>
                                     <div class="d-flex justify-content-between align-items-center">
                                         <span class="small fw-bold h6 text-primary mb-0">Total</span>
-                                        <input type="text" class="form-control form-control-sm text-end w-50 bg-white fw-bold text-primary" readonly>
+                                        <input type="text" id="final-grand-total" class="form-control form-control-sm text-end w-50 bg-white fw-bold text-primary" readonly>
                                     </div>
                                 </div>
                             </div>
@@ -263,6 +316,174 @@
                 });
             }
         }, 500);
+
+        const itemTableBody = document.getElementById('invoice-item-table-body');
+
+        function initItemSelect(selectEl) {
+            if (selectEl.tomselect) return;
+            
+            const ts = new TomSelect(selectEl, {
+                create: false,
+                allowEmptyOption: true,
+                plugins: ['clear_button'],
+                maxOptions: 1000,
+                searchField: ['text'],
+                selectOnTab: true,
+                closeAfterSelect: true,
+                onItemAdd: function(value) {
+                    const row = this.input.closest('tr');
+                    // Add new row if this is the last row
+                    if (!row.nextElementSibling) {
+                        addNewRow();
+                    }
+                },
+                onChange: function(productId) {
+                    const row = selectEl.closest('tr');
+                    
+                    if (productId) {
+                        fetch(`/api/products/${productId}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                row.querySelector('td:nth-child(2) input').value = data.description || data.name || '';
+                                row.querySelector('.unit-field').value = data.unit || '';
+                                
+                                const rateInput = row.querySelector('.rate-input');
+                                rateInput.value = data.max_sale_price || data.cost || '';
+                                rateInput.dispatchEvent(new Event('input', { bubbles: true }));
+                            })
+                            .catch(error => console.error('Error fetching product details:', error));
+                    } else {
+                        // Clear row
+                        row.querySelectorAll('input').forEach(input => input.value = '');
+                        calculateGrandTotals();
+                    }
+                }
+            });
+        }
+
+        // Handle delete row
+        itemTableBody.addEventListener('click', function(event) {
+            if (event.target.closest('.delete-row-btn')) {
+                const row = event.target.closest('tr');
+                const allRows = itemTableBody.querySelectorAll('tr');
+                
+                // Don't delete if it's the only row
+                if (allRows.length > 1) {
+                    // Destroy TomSelect instance if it exists to prevent memory leaks
+                    const select = row.querySelector('.item-select');
+                    if (select && select.tomselect) {
+                        select.tomselect.destroy();
+                    }
+                    row.remove();
+                    calculateGrandTotals();
+                } else {
+                    // Just clear the first row if it's the only one
+                    const select = row.querySelector('.item-select');
+                    if (select && select.tomselect) {
+                        select.tomselect.clear();
+                    }
+                    row.querySelectorAll('input').forEach(input => input.value = '');
+                    calculateGrandTotals();
+                }
+            }
+        });
+
+        function initSiteSelect(selectEl) {
+            if (selectEl.tomselect) return;
+            new TomSelect(selectEl, {
+                create: false,
+                allowEmptyOption: false,
+            });
+        }
+
+        function addNewRow() {
+            const template = document.getElementById('row-template');
+            const newRow = template.content.cloneNode(true).querySelector('tr');
+            itemTableBody.appendChild(newRow);
+            
+            const newSelect = newRow.querySelector('.item-select');
+            const newSiteSelect = newRow.querySelector('.site-select');
+            
+            initItemSelect(newSelect);
+            initSiteSelect(newSiteSelect);
+        }
+
+        // Initialize existing rows
+        document.querySelectorAll('.item-select').forEach(initItemSelect);
+        document.querySelectorAll('.site-select').forEach(initSiteSelect);
+
+        function calculateGrandTotals() {
+            let totalQty = 0;
+            let totalAmount = 0;
+            let totalDiscount = 0;
+            let netTotal = 0;
+
+            itemTableBody.querySelectorAll('tr').forEach(row => {
+                const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+                const amount = parseFloat(row.querySelector('.amount-input').value) || 0;
+                const discount = parseFloat(row.querySelector('.discount-input').value) || 0;
+                const total = parseFloat(row.querySelector('.total-input').value) || 0;
+
+                totalQty += qty;
+                totalAmount += amount;
+                totalDiscount += discount;
+                netTotal += total;
+            });
+
+            document.getElementById('footer-qty').value = totalQty.toFixed(2);
+            document.getElementById('footer-amount').value = totalAmount.toFixed(2);
+            document.getElementById('footer-discount').value = totalDiscount.toFixed(2);
+            document.getElementById('footer-total').value = netTotal.toFixed(2);
+            
+            document.getElementById('final-sub-total').value = netTotal.toFixed(2);
+            
+            calculateFinalTotal();
+        }
+
+        function calculateFinalTotal() {
+            const subTotal = parseFloat(document.getElementById('final-sub-total').value) || 0;
+            const finalDiscPercent = parseFloat(document.getElementById('final-discount-percent').value) || 0;
+            let finalDiscAmount = parseFloat(document.getElementById('final-discount-amount').value) || 0;
+            
+            if (document.activeElement === document.getElementById('final-discount-percent')) {
+                finalDiscAmount = subTotal * (finalDiscPercent / 100);
+                document.getElementById('final-discount-amount').value = finalDiscAmount.toFixed(2);
+            } else if (document.activeElement === document.getElementById('final-discount-amount')) {
+                if (subTotal > 0) {
+                    const percent = (finalDiscAmount / subTotal) * 100;
+                    document.getElementById('final-discount-percent').value = percent.toFixed(2);
+                }
+            } else {
+                finalDiscAmount = subTotal * (finalDiscPercent / 100);
+                document.getElementById('final-discount-amount').value = finalDiscAmount.toFixed(2);
+            }
+
+            const grandTotal = subTotal - finalDiscAmount;
+            document.getElementById('final-grand-total').value = grandTotal.toFixed(2);
+            document.getElementById('lkr-total').value = grandTotal.toFixed(2);
+        }
+
+        document.getElementById('final-discount-percent').addEventListener('input', calculateFinalTotal);
+        document.getElementById('final-discount-amount').addEventListener('input', calculateFinalTotal);
+
+        itemTableBody.addEventListener('input', function(event) {
+            if (event.target.matches('input[type="number"]')) {
+                const row = event.target.closest('tr');
+                const qty = parseFloat(row.querySelector('.qty-input').value) || 0;
+                const rate = parseFloat(row.querySelector('.rate-input').value) || 0;
+                const discPercent = parseFloat(row.querySelector('.disc-percent-input').value) || 0;
+
+                const amount = qty * rate;
+                const discount = amount * (discPercent / 100);
+                const total = amount - discount;
+
+                row.querySelector('.amount-input').value = amount.toFixed(2);
+                row.querySelector('.discount-input').value = discount.toFixed(2);
+                row.querySelector('.total-input').value = total.toFixed(2);
+                
+                calculateGrandTotals();
+            }
+        });
     });
 </script>
 @endpush
