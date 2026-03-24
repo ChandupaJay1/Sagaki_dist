@@ -52,6 +52,7 @@
                                 @endforeach
                             </select>
                         </div>
+<<<<<<< HEAD
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Class</label>
                             <select name="class" class="form-select form-select-sm">
@@ -62,9 +63,18 @@
                             <label class="form-label small fw-bold mb-1">Site <span class="text-danger">*</span></label>
                             <select name="site" class="form-select form-select-sm" required>
                                 <option value="Main Stock">Main Stock</option>
+=======
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
+                            <select name="site" class="form-select form-select-sm">
+                                <option value="">-- Select Location --</option>
+                                @foreach($locations as $location)
+                                    <option value="{{ $location->name }}" {{ old('site') == $location->name ? 'selected' : '' }}>{{ $location->name }}</option>
+                                @endforeach
+>>>>>>> ad8733eccfa2c587183a585c273c03b6324de5b2
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Load</label>
                             <select name="load" class="form-select form-select-sm">
                                 <option value=""></option>
@@ -110,8 +120,11 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label small fw-bold mb-1">Rep</label>
-                            <select name="rep" class="form-select form-select-sm">
-                                <option value=""></option>
+                            <select name="rep" id="repSelect" class="form-select form-select-sm">
+                                <option value="">-- Select Rep --</option>
+                                @foreach($reps as $rep)
+                                    <option value="{{ $rep->id }}" {{ old('rep') == $rep->id ? 'selected' : '' }}>{{ $rep->name }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -138,10 +151,11 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Terms</label>
-                            <select name="terms" class="form-select form-select-sm">
+                            <select name="terms" id="termsSelect" class="form-select form-select-sm">
                                 <option value="">-- Select Terms --</option>
                                 @foreach($terms as $term)
-                                    <option value="{{ $term->name }}" {{ old('terms') == $term->name ? 'selected' : '' }}>{{ $term->name }}</option>
+                                    @php $label = ($term->days == 0) ? 'Cash Only' : ($term->days.' Days Credit'); @endphp
+                                    <option value="{{ $term->days }}" {{ old('terms') == $term->days ? 'selected' : '' }}>{{ $label }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -183,7 +197,14 @@
                                     <td><input type="number" class="form-control form-control-sm border-0 text-center"></td>
                                     <td><input type="number" class="form-control form-control-sm border-0 text-end"></td>
                                     <td><input type="number" class="form-control form-control-sm border-0 text-end fw-bold" readonly></td>
-                                    <td><select class="form-select form-select-sm border-0"><option>Main</option></select></td>
+                                    <td>
+                                        <select class="form-select form-select-sm border-0">
+                                            <option value="">-- Select Location --</option>
+                                            @foreach($locations as $location)
+                                                <option value="{{ $location->name }}">{{ $location->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </td>
                                     <td><select class="form-select form-select-sm border-0"><option></option></select></td>
                                     <td><button type="button" class="btn btn-link text-danger p-0"><i class="ri-delete-bin-line fs-18"></i></button></td>
                                 </tr>
@@ -300,6 +321,8 @@
         const customerSelect = document.querySelector('select[name="customer_id"]');
         const addressTextarea = document.querySelector('textarea[name="address"]');
         const deliveryDestinationTextarea = document.querySelector('textarea[name="delivery_destination"]');
+        const repSelect = document.getElementById('repSelect');
+        const termsSelect = document.getElementById('termsSelect');
 
         function fetchCustomerDetails(customerId) {
             if (customerId) {
@@ -308,6 +331,44 @@
                     .then(data => {
                         if (addressTextarea) addressTextarea.value = data.address || '';
                         if (deliveryDestinationTextarea) deliveryDestinationTextarea.value = data.delivery_address || '';
+                        
+                        if (repSelect && data.rep_id) {
+                            repSelect.value = data.rep_id;
+                            if (repSelect.tomselect) {
+                                repSelect.tomselect.setValue(data.rep_id);
+                            }
+                        }
+                        
+                        if (termsSelect && data.terms) {
+                            // Try to match exact value first
+                            let matchedOption = Array.from(termsSelect.options).find(opt => opt.value === data.terms);
+                            
+                            // If not found, try to extract the number of days or match by text
+                            if (!matchedOption && data.terms) {
+                                let daysMatch = data.terms.match(/\d+/);
+                                if (daysMatch) {
+                                    let parsedDays = daysMatch[0];
+                                    matchedOption = Array.from(termsSelect.options).find(opt => opt.value === parsedDays);
+                                }
+                                
+                                // Alternatively, check if the option text includes the term
+                                if (!matchedOption) {
+                                    matchedOption = Array.from(termsSelect.options).find(opt => opt.text && opt.text.includes(data.terms));
+                                }
+                            }
+                            
+                            if (matchedOption) {
+                                termsSelect.value = matchedOption.value;
+                                if (termsSelect.tomselect) {
+                                    termsSelect.tomselect.setValue(matchedOption.value);
+                                }
+                            } else {
+                                termsSelect.value = data.terms;
+                                if (termsSelect.tomselect) {
+                                    termsSelect.tomselect.setValue(data.terms);
+                                }
+                            }
+                        }
                     })
                     .catch(error => console.error('Error fetching customer details:', error));
             }
