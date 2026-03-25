@@ -272,14 +272,9 @@
         const customerSelect = document.querySelector('select[name="customer_id"]');
         const addressTextarea = document.querySelector('textarea[name="address"]');
         const deliveryDestinationTextarea = document.querySelector('textarea[name="delivery_destination"]');
-<<<<<<< HEAD
         const itemsTableBody = document.querySelector('#itemsTable tbody');
-        
-=======
         const repSelect = document.getElementById('repSelect');
         const termsSelect = document.getElementById('termsSelect');
-
->>>>>>> ad8733eccfa2c587183a585c273c03b6324de5b2
         function fetchCustomerDetails(customerId) {
             if (customerId) {
                 fetch(`/api/customers/${customerId}`)
