@@ -48,6 +48,10 @@ use App\Http\Controllers\GrnReturnController;
 use App\Http\Controllers\InventoryTransferController;
 use App\Http\Controllers\StockAdjustmentController;
 
+Route::get('/test-customer', function() {
+    return App\Models\Customer::first();
+});
+
 Route::middleware('auth')->group(function () {
     Route::get('/master-tables', function () {
         return view('master_tables');

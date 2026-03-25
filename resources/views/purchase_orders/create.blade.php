@@ -48,14 +48,23 @@
                             <select name="vendor_id" class="form-select form-select-sm" required>
                                 <option value="">-- Select Vendor --</option>
                                 @foreach($vendors as $v)
-                                    <option value="{{ $v->id }}" {{ old('vendor_id') == $v->id ? 'selected' : '' }}>{{ $v->name }}</option>
+                                    <option value="{{ $v->id }}" {{ old('vendor_id') == $v->id ? 'selected' : '' }}>{{ $v->company_name ?? $v->name }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div class="col-md-4">
+<<<<<<< HEAD
                             <label class="form-label small fw-bold mb-1">Site <span class="text-danger">*</span></label>
+                            <select name="site" class="form-select form-select-sm" required>
+                                <option value="Main Stock">Main Stock</option>
+=======
+                            <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
                             <select name="site" class="form-select form-select-sm">
-                                <option value="Main">Main</option>
+                                <option value="">-- Select Location --</option>
+                                @foreach($locations as $location)
+                                    <option value="{{ $location->name }}" {{ old('site') == $location->name ? 'selected' : '' }}>{{ $location->name }}</option>
+                                @endforeach
+>>>>>>> ad8733eccfa2c587183a585c273c03b6324de5b2
                             </select>
                         </div>
                         <div class="col-md-4">
@@ -168,9 +177,14 @@
                                     <td><input type="number" class="form-control form-control-sm border-0 text-center"></td>
                                     <td><input type="number" class="form-control form-control-sm border-0 text-end"></td>
                                     <td><input type="number" class="form-control form-control-sm border-0 text-end fw-bold" readonly></td>
-                                    <td><select class="form-select form-select-sm border-0"><option></option></select></td>
-                                    <td><select class="form-select form-select-sm border-0"><option>Main</option></select></td>
-                                    <td><select class="form-select form-select-sm border-0"><option></option></select></td>
+                                    <td>
+                                        <select class="form-select form-select-sm border-0">
+                                            <option value="">-- Select Location --</option>
+                                            @foreach($locations as $location)
+                                                <option value="{{ $location->name }}">{{ $location->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </td>
                                     <td><button type="button" class="btn btn-link text-danger p-0"><i class="ri-delete-bin-line fs-18"></i></button></td>
                                 </tr>
                             </tbody>
@@ -275,3 +289,63 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const vendorSelect = document.querySelector('select[name="vendor_id"]');
+        const addressTextarea = document.querySelector('textarea[name="address"]');
+        const deliveryDestinationTextarea = document.querySelector('textarea[name="delivery_destination"]');
+        const termsSelect = document.querySelector('select[name="terms"]');
+
+        function fetchVendorDetails(vendorId) {
+            if (vendorId) {
+                fetch(`/api/vendors/${vendorId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (addressTextarea) addressTextarea.value = data.address || '';
+                        if (deliveryDestinationTextarea) deliveryDestinationTextarea.value = data.delivery_address || '';
+                        
+                        if (termsSelect && data.terms) {
+                            let matchedOption = Array.from(termsSelect.options).find(opt => opt.value === data.terms);
+                            
+                            if (!matchedOption && data.terms) {
+                                let daysMatch = data.terms.match(/\d+/);
+                                if (daysMatch) {
+                                    let parsedDays = daysMatch[0];
+                                    matchedOption = Array.from(termsSelect.options).find(opt => opt.value === parsedDays);
+                                }
+                                
+                                if (!matchedOption) {
+                                    matchedOption = Array.from(termsSelect.options).find(opt => opt.text && opt.text.includes(data.terms));
+                                }
+                            }
+                            
+                            if (matchedOption) {
+                                termsSelect.value = matchedOption.value;
+                                if (termsSelect.tomselect) {
+                                    termsSelect.tomselect.setValue(matchedOption.value);
+                                }
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error fetching vendor details:', error));
+            }
+        }
+
+        // Standard change event
+        vendorSelect.addEventListener('change', function () {
+            fetchVendorDetails(this.value);
+        });
+
+        // For TomSelect support
+        setTimeout(() => {
+            if (vendorSelect.tomselect) {
+                vendorSelect.tomselect.on('change', function (value) {
+                    fetchVendorDetails(value);
+                });
+            }
+        }, 500);
+    });
+</script>
+@endpush

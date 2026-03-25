@@ -33,11 +33,17 @@ class LocationController extends Controller
 
     public function edit(Location $location)
     {
+        if ($location->name === 'Main Stock') {
+            return redirect()->route('locations.index')->with('error', 'Main Stock location cannot be edited.');
+        }
         return view('locations.edit', compact('location'));
     }
 
     public function update(Request $request, Location $location)
     {
+        if ($location->name === 'Main Stock') {
+            return redirect()->route('locations.index')->with('error', 'Main Stock location cannot be updated.');
+        }
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:locations,name,' . $location->id],
             'code' => ['nullable', 'string', 'max:50', 'unique:locations,code,' . $location->id],
@@ -52,6 +58,9 @@ class LocationController extends Controller
 
     public function destroy(Location $location)
     {
+        if ($location->name === 'Main Stock') {
+            return redirect()->route('locations.index')->with('error', 'Main Stock location cannot be deleted.');
+        }
         $location->delete();
         return redirect()->route('locations.index')->with('success', 'Location deleted successfully.');
     }

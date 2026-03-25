@@ -21,6 +21,12 @@
                 {{ session('success') }}
             </div>
         @endif
+        @if(session('error'))
+            <div class="alert alert-danger border-0 bg-danger-subtle text-danger mx-4 mt-4 rounded-3 d-flex align-items-center" role="alert">
+                <i class="ri-error-warning-line me-2 fs-18"></i>
+                {{ session('error') }}
+            </div>
+        @endif
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="bg-light">
@@ -55,16 +61,20 @@
                             </td>
                             <td class="pe-4 text-end">
                                 <div class="d-flex justify-content-end gap-2">
-                                    <a href="{{ route('locations.edit', $location->id) }}" class="btn btn-sm btn-light border-0 rounded-circle text-primary" title="Edit">
-                                        <i class="ri-edit-2-line fs-16"></i>
-                                    </a>
-                                    <form action="{{ route('locations.destroy', $location->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this location?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-light border-0 rounded-circle text-danger" title="Delete">
-                                            <i class="ri-delete-bin-line fs-16"></i>
-                                        </button>
-                                    </form>
+                                    @if($location->name !== 'Main Stock')
+                                        <a href="{{ route('locations.edit', $location->id) }}" class="btn btn-sm btn-light border-0 rounded-circle text-primary" title="Edit">
+                                            <i class="ri-edit-2-line fs-16"></i>
+                                        </a>
+                                        <form action="{{ route('locations.destroy', $location->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this location?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-light border-0 rounded-circle text-danger" title="Delete">
+                                                <i class="ri-delete-bin-line fs-16"></i>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <span class="badge bg-light text-muted border fw-normal px-2 py-1">System Protected</span>
+                                    @endif
                                 </div>
                             </td>
                         </tr>

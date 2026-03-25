@@ -27,7 +27,8 @@ class CustomerController extends Controller
         $terms = \App\Models\PaymentTerm::where('is_active', true)->orderBy('days')->get();
         $accounts = \App\Models\Account::where('is_active', true)->orderBy('name')->get();
         $categories = Category::where('is_active', true)->orderBy('name')->get();
-        return view('customers.create', compact('routes', 'customerCategories', 'terms', 'accounts', 'categories'));
+        $reps = \App\Models\User::where('is_active', 1)->orderBy('name')->get();
+        return view('customers.create', compact('routes', 'customerCategories', 'terms', 'accounts', 'categories', 'reps'));
     }
 
     public function store(Request $request)
@@ -62,6 +63,7 @@ class CustomerController extends Controller
             // Name is handled via company_name or contact person usually, but keeping it if needed or defaulting
             'name' => 'nullable|string|max:255',
             'route_id' => 'nullable|exists:routes,id',
+            'rep_id' => 'nullable|exists:users,id',
         ]);
 
         // If 'name' is empty, use company_name as the primary name
@@ -98,6 +100,7 @@ class CustomerController extends Controller
             'bank_branch' => $request->bank_branch,
             'bank_account_number' => $request->bank_account_number,
             'password' => null, // No password for CRM customers
+            'rep_id' => $request->rep_id,
         ]);
 
         return redirect()->route('customers.index')->with('success', 'Customer registered successfully.');
@@ -111,7 +114,8 @@ class CustomerController extends Controller
         $terms = \App\Models\PaymentTerm::where('is_active', true)->orderBy('days')->get();
         $accounts = \App\Models\Account::where('is_active', true)->orderBy('name')->get();
         $categories = Category::where('is_active', true)->orderBy('name')->get();
-        return view('customers.edit', compact('customer', 'routes', 'customerCategories', 'terms', 'accounts', 'categories'));
+        $reps = \App\Models\User::where('is_active', 1)->orderBy('name')->get();
+        return view('customers.edit', compact('customer', 'routes', 'customerCategories', 'terms', 'accounts', 'categories', 'reps'));
     }
 
     public function update(Request $request, $id)
@@ -147,6 +151,7 @@ class CustomerController extends Controller
             'bank_account_number' => 'nullable|string|max:50',
             'name' => 'nullable|string|max:255',
             'route_id' => 'nullable|exists:routes,id',
+            'rep_id' => 'nullable|exists:users,id',
         ]);
 
         // If 'name' is empty, use company_name as the primary name
