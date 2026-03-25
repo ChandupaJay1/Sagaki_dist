@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Location;
 use App\Models\User;
 use App\Models\PaymentTerm;
+use App\Models\Product;
 use Illuminate\Http\Request;
 
 class SalesOrderController extends Controller
@@ -20,10 +21,11 @@ class SalesOrderController extends Controller
     public function create()
     {
         $customers = Customer::orderBy('company_name')->get();
-        $locations = Location::orderBy('name')->get();
+        $locations = Location::where('name', 'not like', '%Transit%')->orderBy('name')->get();
         $reps = User::where('is_active', 1)->orderBy('name')->get(); // Assuming reps are users
         $terms = PaymentTerm::orderBy('days')->get();
-        return view('sales_orders.create', compact('customers', 'locations', 'reps', 'terms'));
+        $products = Product::where('is_main_product', false)->orderBy('name')->get();
+        return view('sales_orders.create', compact('customers', 'locations', 'reps', 'terms', 'products'));
     }
 
     public function store(Request $request)

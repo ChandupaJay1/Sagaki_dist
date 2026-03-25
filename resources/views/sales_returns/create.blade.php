@@ -52,6 +52,18 @@
                                 @endforeach
                             </select>
                         </div>
+<<<<<<< HEAD
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold mb-1">Class</label>
+                            <select name="class" class="form-select form-select-sm">
+                                <option value="Administration department">Administration department</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold mb-1">Site <span class="text-danger">*</span></label>
+                            <select name="site" class="form-select form-select-sm" required>
+                                <option value="Main Stock">Main Stock</option>
+=======
                         <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
                             <select name="site" class="form-select form-select-sm">
@@ -59,6 +71,7 @@
                                 @foreach($locations as $location)
                                     <option value="{{ $location->name }}" {{ old('site') == $location->name ? 'selected' : '' }}>{{ $location->name }}</option>
                                 @endforeach
+>>>>>>> ad8733eccfa2c587183a585c273c03b6324de5b2
                             </select>
                         </div>
                         <div class="col-md-4">
