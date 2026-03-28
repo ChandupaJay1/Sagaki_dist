@@ -170,7 +170,7 @@
                                     <th class="fw-bold py-2 text-uppercase" style="width: 55px;">Disc%</th>
                                     <th class="fw-bold py-2 text-uppercase" style="width: 75px;">Discount</th>
                                     <th class="fw-bold py-2 text-uppercase" style="width: 85px;">Total</th>
-                                    <th class="fw-bold py-2 text-uppercase" style="width: 80px;">Site</th>
+                                    <th class="fw-bold py-2 text-uppercase" style="width: 80px;">Location</th>
                                     <th class="fw-bold py-2 text-uppercase" style="width: 50px;">Unit</th>
                                 </tr>
                             </thead>
@@ -193,11 +193,7 @@
                                     <td><input type="number" name="items[0][discount]" class="form-control form-control-sm text-end discount-input bg-light" readonly></td>
                                     <td><input type="number" name="items[0][total]" class="form-control form-control-sm text-end fw-bold total-input bg-light" readonly></td>
                                     <td>
-                                        <select name="items[0][location]" class="form-select form-select-sm">
-                                            @foreach($locations as $loc)
-                                                <option value="{{ $loc->name }}" {{ $loc->name == 'Main Stock' ? 'selected' : '' }}>{{ $loc->name }}</option>
-                                            @endforeach
-                                        </select>
+                                        <input type="text" name="items[0][location]" class="form-control form-control-sm text-center location-input bg-light" value="Main Stock" readonly>
                                     </td>
                                     <td><input type="text" name="items[0][unit]" class="form-control form-control-sm unit-input bg-light" readonly></td>
                                 </tr>
@@ -216,6 +212,11 @@
                             </tfoot>
                         </table>
                     </div>
+                    
+                    <!-- Blade generated Product List for Guaranteed Client-Side Usage (Safe JSON) -->
+                    <script>
+                        window.serverProductList = @json($products);
+                    </script>
 
                     <!-- Footer Section -->
                     <div class="row g-3">
@@ -325,6 +326,11 @@
             }
         }
 
+        function getDefaultLocation() {
+            const locNode = document.querySelector('select[name="location"]');
+            return locNode ? locNode.value : '';
+        }
+
         // --- Table Controller (Data Source Level) ---
         const salesOrderController = {
             data: [
@@ -339,11 +345,12 @@
                     disc_percent: 0,
                     discount: 0,
                     total: 0,
-                    location: 'Main Stock',
+                    location: getDefaultLocation(),
                     unit: ''
                 }
             ],
             rowCount: 1,
+            rowTemplateHTML: '',
 
             checkAndAppendRow(rowIndex) {
                 // If it is the last row and an item is selected, push a new empty object
@@ -356,6 +363,8 @@
             },
 
             appendRow() {
+                const currentLoc = getDefaultLocation();
+                
                 // Push a new empty object (Blank Row) into the table's data array
                 this.data.push({
                     rowId: this.rowCount,
@@ -368,32 +377,35 @@
                     disc_percent: 0,
                     discount: 0,
                     total: 0,
-                    location: 'Main Stock',
+                    location: currentLoc,
                     unit: ''
                 });
                 
                 // Inject Row into UI
-                this.injectRowUI();
+                this.injectRowUI(currentLoc);
                 this.rowCount++;
             },
 
-            injectRowUI() {
-                const templateRow = document.querySelector('.item-row');
-                const newRow = templateRow.cloneNode(true);
+            injectRowUI(currentLoc) {
+                // Use a deeply primitive DOM string replacement to bypass ALL plugin bugs
+                const newRow = document.createElement('tr');
+                newRow.className = 'item-row';
+                newRow.innerHTML = this.rowTemplateHTML;
                 
-                // Clear UI values
+                // Clear UI values just in case
                 newRow.querySelectorAll('input').forEach(input => {
                     input.value = '';
                     if (input.classList.contains('qty-input')) input.value = '1';
+                    if (input.classList.contains('location-input')) input.value = currentLoc;
                 });
                 
-                // Cleanup TomSelect
+                // Full Select Cleanup just to be absolutely safe
                 newRow.querySelectorAll('.ts-wrapper').forEach(wrapper => wrapper.remove());
                 newRow.querySelectorAll('select').forEach(select => {
                     select.classList.remove('tomselected', 'ts-hidden-accessible');
                     select.style.display = '';
                     if (select.hasAttribute('id')) select.removeAttribute('id');
-                    if (!select.name.includes('[location]')) select.value = '';
+                    select.value = '';
                 });
 
                 // Update input names for form submission
@@ -458,11 +470,38 @@
             }
         };
 
-        // --- UI Binding --- //
-        
-        // Initialize first row DOM index
+        // Save raw string template from the first row BEFORE any scripts run
         const firstRow = document.querySelector('.item-row');
+        salesOrderController.rowTemplateHTML = firstRow.innerHTML;
         firstRow.dataset.rowIndex = 0;
+
+        // Fetch stock from backend
+        function fetchItemStock(productId, location, rowIndex, row) {
+            const onhandInput = row.querySelector('.onhand-input');
+            if (!productId || !location) {
+                onhandInput.value = '';
+                salesOrderController.updateRowData(rowIndex, 'onhand', '');
+                return;
+            }
+            
+            onhandInput.value = '...';
+            
+            fetch(`/api/products/${productId}/stock?location=${encodeURIComponent(location)}`)
+                .then(response => {
+                    if (response.ok) return response.json();
+                    throw new Error('Network response error');
+                })
+                .then(data => {
+                    const balance = data.stock || 0; 
+                    onhandInput.value = balance;
+                    salesOrderController.updateRowData(rowIndex, 'onhand', balance);
+                })
+                .catch(error => {
+                    console.error('Error fetching stock:', error);
+                    onhandInput.value = '0';
+                    salesOrderController.updateRowData(rowIndex, 'onhand', 0);
+                });
+        }
 
         function initRowEvents(row) {
             const rowIndex = parseInt(row.dataset.rowIndex);
@@ -490,10 +529,32 @@
                     row.querySelector('.unit-input').value = unit;
                     row.querySelector('.rate-input').value = rate;
                     
+                    const currentLoc = row.querySelector('.location-input') ? row.querySelector('.location-input').value : '';
+                    fetchItemStock(value, currentLoc, rowIndex, row);
+
                     salesOrderController.calculateRow(rowIndex, row);
-                    // Instantly render so the user can immediately tab into the new row
                     salesOrderController.checkAndAppendRow(rowIndex);
+                } else {
+                    row.querySelector('.description-input').value = '';
+                    row.querySelector('.unit-input').value = '';
+                    row.querySelector('.rate-input').value = '';
+                    row.querySelector('.onhand-input').value = '';
+                    salesOrderController.calculateRow(rowIndex, row);
                 }
+            }
+
+            // Absolutely Force Options natively onto the select BEFORE any plugins initialize
+            if (productSelect) {
+                let optionsHTML = '<option value="">-- Select --</option>';
+                if (window.serverProductList && Array.isArray(window.serverProductList)) {
+                    window.serverProductList.forEach(p => {
+                        let safeName = (p.name || '').replace(/"/g, '&quot;');
+                        let safeCode = (p.code || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        let rate = p.max_sale_price !== null && p.max_sale_price !== undefined ? p.max_sale_price : (p.cost || 0);
+                        optionsHTML += `<option value="${p.id}" data-name="${safeName}" data-unit="${p.unit || ''}" data-rate="${rate}">${safeCode}</option>`;
+                    });
+                }
+                productSelect.innerHTML = optionsHTML;
             }
 
             if (window.TomSelect) {
@@ -505,13 +566,18 @@
                     create: false,
                     sortField: { field: "text", order: "asc" },
                     onChange: function(value) {
-                        // Use querySelector to reliably get the underlying option element
                         let selectedOption = null;
                         if (value) {
                             selectedOption = productSelect.querySelector(`option[value="${value}"]`);
                         }
                         handleProductChange(selectedOption, value);
                     }
+                });
+            } else if (window.jQuery && $(productSelect).select2) {
+                $(productSelect).select2();
+                $(productSelect).on('change', function() {
+                    let selectedOption = this.options[this.selectedIndex];
+                    handleProductChange(selectedOption, this.value);
                 });
             } else {
                 productSelect.addEventListener('change', function() {
@@ -538,6 +604,40 @@
         salesOrderController.appendRow();
 
         // Header events
+        const mainLocationSelect = document.querySelector('select[name="location"]');
+        
+        // --- 1. Header to Table Sync ---
+        if (mainLocationSelect) {
+            mainLocationSelect.addEventListener('change', function(e) {
+                // e.detail.isSyncTrigger prevents infinite loops if this change was triggered by the row
+                if (e.detail && e.detail.isSyncTrigger) return; 
+
+                const newLocation = this.value;
+                
+                // Loop through all existing rows in the items table
+                document.querySelectorAll('#itemsTable tbody tr.item-row').forEach(row => {
+                    const rowLocationInput = row.querySelector('.location-input');
+                    const rowIndex = parseInt(row.dataset.rowIndex);
+                    
+                    if (rowLocationInput && rowLocationInput.value !== newLocation) {
+                        rowLocationInput.value = newLocation;
+                        
+                        if (!isNaN(rowIndex)) {
+                            salesOrderController.updateRowData(rowIndex, 'location', newLocation);
+                            
+                            const productSelect = row.querySelector('.product-select');
+                            const productId = productSelect ? productSelect.value : '';
+                            if (productId) {
+                                fetchItemStock(productId, newLocation, rowIndex, row);
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        // Handled completely by header dropdown now.
+
         customerSelect.addEventListener('change', function () {
             fetchCustomerDetails(this.value);
         });
