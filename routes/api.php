@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/customers/{id}', [CustomerController::class, 'show']);
 Route::get('/vendors/{id}', [VendorController::class, 'show']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
+Route::get('/products/{id}/stock', [ProductController::class, 'stock']);
 
 Route::prefix('v1')->name('api.')->group(function () {
 

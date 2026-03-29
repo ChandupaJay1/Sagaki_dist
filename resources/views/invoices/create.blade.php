@@ -55,18 +55,13 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-<<<<<<< HEAD
-                            <label class="form-label small fw-bold mb-1">Site <span class="text-danger">*</span></label>
-                            <select name="site" class="form-select form-select-sm" required>
-                                <option value="Main Stock">Main Stock</option>
-=======
-                            <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
-                            <select name="site" class="form-select form-select-sm">
-                                <option value="">-- Select Location --</option>
-                                @foreach($locations as $location)
-                                    <option value="{{ $location->name }}" {{ old('site') == $location->name ? 'selected' : '' }}>{{ $location->name }}</option>
-                                @endforeach
->>>>>>> ad8733eccfa2c587183a585c273c03b6324de5b2
+                             <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
+                             <select name="site" class="form-select form-select-sm" required>
+                                 <option value="">-- Select Location --</option>
+                                 @foreach($locations as $location)
+                                     <option value="{{ $location->name }}" {{ old('site') == $location->name ? 'selected' : '' }}>{{ $location->name }}</option>
+                                 @endforeach
+                             </select>
                             </select>
                         </div>
                         <div class="col-md-4">
@@ -171,9 +166,12 @@
                                     <td><input type="number" class="form-control form-control-sm border-0 text-end discount-input"></td>
                                     <td><input type="number" class="form-control form-control-sm border-0 text-end fw-bold total-input" readonly></td>
                                     <td>
-                                        <select class="form-select form-select-sm border-0 site-select">
-                                            <option value="Main Stock">Main Stock</option>
-                                        </select>
+                                         <select class="form-select form-select-sm border-0 site-select">
+                                             <option value="">-- Select Location --</option>
+                                             @foreach($locations as $location)
+                                                 <option value="{{ $location->name }}" {{ old('site') == $location->name ? 'selected' : '' }}>{{ $location->name }}</option>
+                                             @endforeach
+                                         </select>
                                     </td>
                                     <td><input type="text" class="form-control form-control-sm border-0 text-center unit-field" readonly></td>
                                     <td>
@@ -204,11 +202,14 @@
                             <td><input type="number" class="form-control form-control-sm border-0 text-center disc-percent-input"></td>
                             <td><input type="number" class="form-control form-control-sm border-0 text-end discount-input"></td>
                             <td><input type="number" class="form-control form-control-sm border-0 text-end fw-bold total-input" readonly></td>
-                            <td>
-                                <select class="form-select form-select-sm border-0 site-select">
-                                    <option value="Main Stock">Main Stock</option>
-                                </select>
-                            </td>
+                             <td>
+                                 <select class="form-select form-select-sm border-0 site-select">
+                                     <option value="">-- Select Location --</option>
+                                     @foreach($locations as $location)
+                                         <option value="{{ $location->name }}" {{ old('site') == $location->name ? 'selected' : '' }}>{{ $location->name }}</option>
+                                     @endforeach
+                                 </select>
+                             </td>
                             <td><input type="text" class="form-control form-control-sm border-0 text-center unit-field" readonly></td>
                             <td>
                                 <button type="button" class="btn btn-link btn-sm text-danger p-0 border-0 delete-row-btn" tabindex="-1">
@@ -401,7 +402,7 @@
             if (selectEl.tomselect) return;
             new TomSelect(selectEl, {
                 create: false,
-                allowEmptyOption: false,
+                allowEmptyOption: true,
             });
         }
 

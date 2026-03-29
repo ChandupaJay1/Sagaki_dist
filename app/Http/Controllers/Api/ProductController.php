@@ -47,6 +47,25 @@ class ProductController extends Controller
     }
 
     /**
+     * Get stock balance for a product at a specific location.
+     */
+    public function stock(Request $request, string $id)
+    {
+        $location = $request->input('location');
+        
+        // As requested: executing a query like SELECT quantity FROM stock_table WHERE item_id = ? AND location_id = ?
+        // Using Laravel's Query Builder for safe parameter binding
+        $stock = \Illuminate\Support\Facades\DB::table('stock_table')
+            ->where('item_id', $id)
+            ->where('location_id', $location)
+            ->value('quantity');
+            
+        $stock = $stock ? (float) $stock : 0;
+        
+        return response()->json(['stock' => $stock], 200);
+    }
+
+    /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
