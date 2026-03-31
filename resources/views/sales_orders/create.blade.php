@@ -138,40 +138,31 @@
                         </div>
                     </div>
 
-                    <!-- Items Table -->
                     <style>
-                        #itemsTable th, #itemsTable td {
-                            padding: 0.25rem !important;
-                            font-size: 0.75rem !important;
-                        }
-                        #itemsTable .form-control-sm, #itemsTable .form-select-sm {
-                            padding: 0.15rem 0.25rem !important;
-                            font-size: 0.75rem !important;
-                            min-height: 24px !important;
-                            border-radius: 0.2rem;
-                        }
-                        #itemsTable .ts-wrapper .ts-control {
-                            padding: 0.15rem 0.25rem !important;
-                            font-size: 0.75rem !important;
-                            min-height: 24px !important;
-                            border-radius: 0.2rem;
-                        }
+                        #itemsTable th, #itemsTable td { padding: 0.15rem !important; font-size: 0.7rem !important; white-space: nowrap; }
+                        #itemsTable .form-control-sm, #itemsTable .form-select-sm { padding: 0.1rem 0.2rem !important; font-size: 0.7rem !important; min-height: 22px !important; border-radius: 0.15rem; }
+                        #itemsTable .ts-wrapper .ts-control { padding: 0.1rem 0.2rem !important; font-size: 0.7rem !important; min-height: 22px !important; border-radius: 0.15rem; }
+                        #itemsTable { width: 100% !important; table-layout: auto !important; }
+                        /* Ensure critical columns don't vanish */
+                        #itemsTable .location-input { min-width: 90px !important; }
+                        #itemsTable .unit-input { min-width: 60px !important; }
+                        #itemsTable .product-select { min-width: 120px !important; }
                     </style>
-                    <div class="table-responsive mb-3 border rounded" style="overflow-x: hidden;">
-                        <table class="table table-sm table-bordered mb-0 align-middle text-center" id="itemsTable" style="table-layout: auto; width: 100%;">
+                    <div class="table-responsive mb-3 border rounded">
+                        <table class="table table-sm table-bordered mb-0 align-middle text-center" id="itemsTable">
                             <thead class="bg-primary text-white">
                                 <tr>
-                                    <th class="fw-bold py-2 text-uppercase" style="width: 120px;">Item Code</th>
-                                    <th class="fw-bold py-2 text-uppercase" style="width: auto;">Description</th>
-                                    <th class="fw-bold py-2 text-uppercase" style="width: 55px;">OnHand</th>
-                                    <th class="fw-bold py-2 text-uppercase" style="width: 60px;">Qty</th>
-                                    <th class="fw-bold py-2 text-uppercase" style="width: 80px;">Rate(LKR)</th>
-                                    <th class="fw-bold py-2 text-uppercase" style="width: 85px;">Amount</th>
-                                    <th class="fw-bold py-2 text-uppercase" style="width: 55px;">Disc%</th>
-                                    <th class="fw-bold py-2 text-uppercase" style="width: 75px;">Discount</th>
-                                    <th class="fw-bold py-2 text-uppercase" style="width: 85px;">Total</th>
-                                    <th class="fw-bold py-2 text-uppercase" style="width: 80px;">Location</th>
-                                    <th class="fw-bold py-2 text-uppercase" style="width: 50px;">Unit</th>
+                                    <th class="fw-bold py-2 text-uppercase">Item Code</th>
+                                    <th class="fw-bold py-2 text-uppercase">Description</th>
+                                    <th class="fw-bold py-2 text-uppercase">OnHand</th>
+                                    <th class="fw-bold py-2 text-uppercase">Qty</th>
+                                    <th class="fw-bold py-2 text-uppercase">Rate(LKR)</th>
+                                    <th class="fw-bold py-2 text-uppercase">Amount</th>
+                                    <th class="fw-bold py-2 text-uppercase">Disc%</th>
+                                    <th class="fw-bold py-2 text-uppercase">Discount</th>
+                                    <th class="fw-bold py-2 text-uppercase">Total</th>
+                                    <th class="fw-bold py-2 text-uppercase">Location</th>
+                                    <th class="fw-bold py-2 text-uppercase">Unit</th>
                                 </tr>
                             </thead>
                             <tbody>

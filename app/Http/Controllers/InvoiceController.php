@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\Customer;
 use App\Models\Location;
+use App\Models\Product;
+use App\Models\Unit;
+use App\Models\PaymentTerm;
 use Illuminate\Http\Request;
 
 class InvoiceController extends Controller
@@ -18,9 +21,11 @@ class InvoiceController extends Controller
     public function create()
     {
         $customers = Customer::orderBy('company_name')->get();
-        $products = \App\Models\Product::orderBy('name')->get();
-        $locations = Location::where('is_active', 1)->orderBy('name')->get();
-        return view('invoices.create', compact('customers', 'products', 'locations'));
+        $products = Product::orderBy('name')->get();
+        $units = Unit::orderBy('name')->get();
+        $locations = Location::where('is_active', 1)->where('name', 'not like', '%Transit%')->orderBy('name')->get();
+        $terms = PaymentTerm::orderBy('days')->get();
+        return view('invoices.create', compact('customers', 'products', 'locations', 'units', 'terms'));
     }
 
     public function store(Request $request)

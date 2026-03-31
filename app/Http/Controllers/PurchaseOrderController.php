@@ -7,6 +7,7 @@ use App\Models\Vendor;
 use App\Models\User;
 use App\Models\PaymentTerm;
 use App\Models\Location;
+use App\Models\Product;
 use Illuminate\Http\Request;
 
 class PurchaseOrderController extends Controller
@@ -22,8 +23,9 @@ class PurchaseOrderController extends Controller
         $vendors = Vendor::orderBy('company_name')->get();
         $reps = User::where('is_active', 1)->orderBy('name')->get();
         $terms = PaymentTerm::orderBy('days')->get();
-        $locations = Location::where('is_active', 1)->orderBy('name')->get();
-        return view('purchase_orders.create', compact('vendors', 'reps', 'terms', 'locations'));
+        $locations = Location::where('is_active', 1)->where('name', 'not like', '%Transit%')->orderBy('name')->get();
+        $products = Product::orderBy('name')->get();
+        return view('purchase_orders.create', compact('vendors', 'reps', 'terms', 'locations', 'products'));
     }
 
     public function store(Request $request)

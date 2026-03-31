@@ -20,7 +20,7 @@ class StockAdjustmentController extends Controller
     {
         $accounts = Account::orderBy('name')->get();
         $products = Product::orderBy('name')->get();
-        $locations = Location::where('name', 'not like', '%Transit%')->orderBy('name')->get();
+        $locations = Location::where('is_active', 1)->where('name', 'not like', '%Transit%')->orderBy('name')->get();
         return view('stock_adjustments.create', compact('accounts', 'products', 'locations'));
     }
 

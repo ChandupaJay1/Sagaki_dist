@@ -77,48 +77,287 @@
                         </div>
                     </div>
 
-                    <!-- Items Table -->
-                    <div class="table-responsive mb-2 border rounded">
-                        <table class="table table-sm table-bordered mb-0 align-middle text-center small">
+                    <style>
+                        #itemsTable th, #itemsTable td { padding: 0.15rem !important; font-size: 0.7rem !important; white-space: nowrap; }
+                        #itemsTable .form-control-sm, #itemsTable .form-select-sm { padding: 0.1rem 0.2rem !important; font-size: 0.7rem !important; min-height: 22px !important; border-radius: 0.15rem; }
+                        #itemsTable .ts-wrapper .ts-control { padding: 0.1rem 0.2rem !important; font-size: 0.7rem !important; min-height: 22px !important; border-radius: 0.15rem; }
+                        #itemsTable { width: 100% !important; table-layout: auto !important; }
+                        /* Ensure critical columns don't vanish */
+                        #itemsTable .product-select { min-width: 120px !important; }
+                        #itemsTable .unit-input { min-width: 70px !important; }
+                    </style>
+                    <div class="table-responsive mb-3 border rounded">
+                        <table class="table table-sm table-bordered mb-0 align-middle text-center" id="itemsTable">
                             <thead class="bg-primary text-white">
                                 <tr>
-                                    <th style="width: 20%;">Item</th>
-                                    <th style="width: 35%;">Description</th>
-                                    <th style="width: 15%;">OnHand</th>
-                                    <th style="width: 15%;">Qty</th>
-                                    <th style="width: 15%;">Unit</th>
-                                    <th style="width: 5%;">Action</th>
+                                    <th>Item Code</th>
+                                    <th>Description</th>
+                                    <th>OnHand (From Site)</th>
+                                    <th>Qty</th>
+                                    <th>Unit</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
+                                <tr class="item-row">
                                     <td>
-                                        <select name="items[0][product_id]" class="form-select form-select-sm border-0">
-                                            <option value="">-- Select Item --</option>
-                                            @foreach($products as $p)
-                                                <option value="{{ $p->id }}">{{ $p->code }} - {{ $p->name }}</option>
-                                            @endforeach
-                                        </select>
+                                        <select class="form-select form-select-sm product-select border-0"><option></option></select>
                                     </td>
-                                    <td><input type="text" class="form-control form-control-sm border-0" readonly></td>
-                                    <td><input type="text" class="form-control form-control-sm border-0 text-center" readonly></td>
-                                    <td><input type="number" class="form-control form-control-sm border-0 text-center" value="1"></td>
-                                    <td>
-                                        <select name="items[0][unit_id]" class="form-select form-select-sm border-0">
-                                            @foreach($units as $u)
-                                                <option value="{{ $u->id }}">{{ $u->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </td>
-                                    <td><select class="form-select form-select-sm border-0"><option></option></select></td>
-                                    <td><button type="button" class="btn btn-link text-danger p-0"><i class="ri-delete-bin-line fs-18"></i></button></td>
+                                    <td><input type="text" class="form-control form-control-sm description-input bg-light" readonly></td>
+                                    <td><input type="text" class="form-control form-control-sm onhand-input text-center bg-light" readonly></td>
+                                    <td><input type="number" class="form-control form-control-sm text-center qty-input" step="any"></td>
+                                    <td><input type="text" class="form-control form-control-sm unit-input bg-light text-center" readonly></td>
                                 </tr>
                             </tbody>
+                            <tfoot class="bg-light">
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold">Total Qty</td>
+                                    <td><input type="text" class="form-control form-control-sm text-center bg-white footer-qty" readonly></td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
+
+                    <!-- Javascript Hydration Source -->
+                    <script>
+                        window.serverProductList = @json($products ?? []);
+                    </script>
                 </form>
             </div>
         </div>
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // --- Table Controller (Data Source Level) --- //
+        function getSiteFrom() {
+            const locNode = document.querySelector('select[name="site_from"]');
+            return locNode ? locNode.value : '';
+        }
+
+        const transferNoteController = {
+            data: [],
+            rowCount: 0,
+            rowTemplateHTML: '',
+
+            init() {
+                const firstRow = document.querySelector('.item-row');
+                this.rowTemplateHTML = firstRow.innerHTML;
+                firstRow.remove();
+
+                this.appendRow();
+                this.appendRow();
+            },
+
+            checkAndAppendRow(rowIndex) {
+                if (rowIndex === this.data.length - 1) {
+                    const currentRow = this.data[rowIndex];
+                    if (currentRow.product_id) {
+                        this.appendRow();
+                    }
+                }
+            },
+
+            appendRow() {
+                this.data.push({
+                    rowId: this.rowCount,
+                    product_id: '',
+                    description: '',
+                    onhand: '',
+                    qty: 1,
+                    unit: ''
+                });
+                
+                this.injectRowUI();
+                this.rowCount++;
+            },
+
+            injectRowUI() {
+                const newRow = document.createElement('tr');
+                newRow.className = 'item-row';
+                newRow.innerHTML = this.rowTemplateHTML;
+                
+                newRow.querySelectorAll('input').forEach(input => {
+                    input.value = '';
+                    if (input.classList.contains('qty-input')) input.value = '1';
+                });
+                
+                newRow.querySelectorAll('.ts-wrapper').forEach(wrapper => wrapper.remove());
+                newRow.querySelectorAll('select').forEach(select => {
+                    select.classList.remove('tomselected', 'ts-hidden-accessible');
+                    select.style.display = '';
+                    if (select.hasAttribute('id')) select.removeAttribute('id');
+                    select.value = '';
+                });
+
+                const newIndex = this.rowCount;
+                newRow.querySelectorAll('input, select').forEach(el => {
+                    if (el.classList.contains('product-select')) el.name = `items[${newIndex}][product_id]`;
+                    if (el.classList.contains('description-input')) el.name = `items[${newIndex}][description]`;
+                    if (el.classList.contains('onhand-input')) el.name = `items[${newIndex}][onhand]`;
+                    if (el.classList.contains('qty-input')) el.name = `items[${newIndex}][qty]`;
+                    if (el.classList.contains('unit-input')) el.name = `items[${newIndex}][unit]`;
+                });
+
+                newRow.dataset.rowIndex = this.data.length - 1;
+                document.querySelector('#itemsTable tbody').appendChild(newRow);
+                
+                initRowEvents(newRow);
+            },
+
+            updateRowData(rowIndex, field, value) {
+                if (this.data[rowIndex]) {
+                    this.data[rowIndex][field] = value;
+                }
+            },
+
+            calculateRow(rowIndex, rowElement) {
+                this.calculateGrandTotal();
+            },
+
+            calculateGrandTotal() {
+                let grandQty = 0;
+
+                this.data.forEach(row => {
+                    grandQty += parseFloat(row.qty) || 0;
+                });
+    
+                document.querySelector('.footer-qty').value = grandQty.toFixed(2);
+            }
+        };
+
+        function fetchItemStock(productId, location, rowIndex, row) {
+            const onhandInput = row.querySelector('.onhand-input');
+            if(!onhandInput) return;
+
+            if (!productId || !location) {
+                onhandInput.value = '';
+                transferNoteController.updateRowData(rowIndex, 'onhand', '');
+                return;
+            }
+            
+            onhandInput.value = '...';
+            
+            fetch(`/api/products/${productId}/stock?location=${encodeURIComponent(location)}`)
+                .then(response => {
+                    if (response.ok) return response.json();
+                    throw new Error('Network response error');
+                })
+                .then(data => {
+                    const balance = data.stock || 0; 
+                    onhandInput.value = balance;
+                    transferNoteController.updateRowData(rowIndex, 'onhand', balance);
+                })
+                .catch(error => {
+                    console.error('Error fetching stock:', error);
+                    onhandInput.value = '0';
+                    transferNoteController.updateRowData(rowIndex, 'onhand', 0);
+                });
+        }
+
+        function initRowEvents(row) {
+            const rowIndex = parseInt(row.dataset.rowIndex);
+            const productSelect = row.querySelector('.product-select');
+            const qtyInput = row.querySelector('.qty-input');
+
+            if (!qtyInput.value) qtyInput.value = '1';
+
+            function handleProductChange(value) {
+                transferNoteController.updateRowData(rowIndex, 'product_id', value);
+                
+                if (value) {
+                    const selectedObj = window.serverProductList && Array.isArray(window.serverProductList) ? window.serverProductList.find(opt => opt.id == value) : null;
+                    if (selectedObj) {
+                        const desc = selectedObj.name || '';
+                        const unit = selectedObj.unit || '';
+
+                        transferNoteController.updateRowData(rowIndex, 'description', desc);
+                        transferNoteController.updateRowData(rowIndex, 'unit', unit);
+
+                        row.querySelector('.description-input').value = desc;
+                        row.querySelector('.unit-input').value = unit;
+                        
+                        const currentLoc = getSiteFrom();
+                        fetchItemStock(value, currentLoc, rowIndex, row);
+
+                        transferNoteController.calculateRow(rowIndex, row);
+                        transferNoteController.checkAndAppendRow(rowIndex);
+                    }
+                } else {
+                    row.querySelector('.description-input').value = '';
+                    row.querySelector('.unit-input').value = '';
+                    if(row.querySelector('.onhand-input')) row.querySelector('.onhand-input').value = '';
+                    transferNoteController.calculateRow(rowIndex, row);
+                }
+            }
+
+            if (productSelect) {
+                let optionsHTML = '<option value="">-- Select --</option>';
+                if (window.serverProductList && Array.isArray(window.serverProductList)) {
+                    window.serverProductList.forEach(p => {
+                        let safeName = (p.name || '').replace(/"/g, '&quot;');
+                        let safeCode = (p.code || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        optionsHTML += `<option value="${p.id}" data-name="${safeName}" data-unit="${p.unit || ''}">${safeCode}</option>`;
+                    });
+                }
+                productSelect.innerHTML = optionsHTML;
+            }
+
+            if (window.TomSelect) {
+                if (productSelect.tomselect) {
+                    productSelect.tomselect.destroy();
+                }
+
+                new TomSelect(productSelect, {
+                    create: false,
+                    sortField: { field: "text", order: "asc" },
+                    onChange: function(value) {
+                        handleProductChange(value);
+                    }
+                });
+            } else if (window.jQuery && $(productSelect).select2) {
+                $(productSelect).select2();
+                $(productSelect).on('change', function() {
+                    handleProductChange(this.value);
+                });
+            } else {
+                productSelect.addEventListener('change', function() {
+                    handleProductChange(this.value);
+                });
+            }
+
+            [qtyInput].forEach(input => {
+                input.addEventListener('input', function() {
+                    transferNoteController.updateRowData(rowIndex, 'qty', parseFloat(this.value) || 0);
+                    transferNoteController.calculateRow(rowIndex, row);
+                });
+            });
+        }
+
+        transferNoteController.init();
+
+        const siteFromSelect = document.querySelector('select[name="site_from"]');
+        if (siteFromSelect) {
+            siteFromSelect.addEventListener('change', function(e) {
+                if (e.detail && e.detail.isSyncTrigger) return; 
+                const newLocation = this.value;
+                document.querySelectorAll('#itemsTable tbody tr.item-row').forEach(row => {
+                    const rowIndex = parseInt(row.dataset.rowIndex);
+                    
+                    if (!isNaN(rowIndex)) {
+                        const productSelect = row.querySelector('.product-select');
+                        const productId = productSelect ? productSelect.value : '';
+                        if (productId) {
+                            fetchItemStock(productId, newLocation, rowIndex, row);
+                        }
+                    }
+                });
+            });
+        }
+
+    });
+</script>
+@endpush

@@ -20,7 +20,7 @@ class InventoryTransferController extends Controller
     {
         $products = Product::orderBy('name')->get();
         $units = Unit::orderBy('name')->get();
-        $locations = Location::where('name', 'not like', '%Transit%')->orderBy('name')->get();
+        $locations = Location::where('is_active', 1)->where('name', 'not like', '%Transit%')->orderBy('name')->get();
         return view('inventory_transfers.create', compact('products', 'units', 'locations'));
     }
 

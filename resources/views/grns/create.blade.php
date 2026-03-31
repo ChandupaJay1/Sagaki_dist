@@ -59,7 +59,7 @@
                             <select name="location" class="form-select form-select-sm">
                                 <option value="">-- Select Location --</option>
                                 @foreach($locations as $loc)
-                                    <option value="{{ $loc->name }}" {{ (old('site') == $loc->name || $loc->name == 'Main Stock') ? 'selected' : '' }}>{{ $loc->name }}</option>
+                                    <option value="{{ $loc->name }}" {{ (old('location') == $loc->name || $loc->name == 'Main Stock') ? 'selected' : '' }}>{{ $loc->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -148,59 +148,69 @@
                     </div>
 
                     <!-- Items Table -->
-                    <div class="table-responsive mb-2 border rounded">
-                        <table class="table table-sm table-bordered mb-0 align-middle text-center small">
+                    <style>
+                        #itemsTable th, #itemsTable td { padding: 0.15rem !important; font-size: 0.7rem !important; white-space: nowrap; }
+                        #itemsTable .form-control-sm, #itemsTable .form-select-sm { padding: 0.1rem 0.2rem !important; font-size: 0.7rem !important; min-height: 22px !important; border-radius: 0.15rem; }
+                        #itemsTable .ts-wrapper .ts-control { padding: 0.1rem 0.2rem !important; font-size: 0.7rem !important; min-height: 22px !important; border-radius: 0.15rem; }
+                        #itemsTable { width: 100% !important; table-layout: auto !important; }
+                        /* Ensure critical columns don't vanish */
+                        #itemsTable .location-input { min-width: 90px !important; }
+                        #itemsTable .unit-input { min-width: 60px !important; }
+                        #itemsTable .product-select { min-width: 120px !important; }
+                    </style>
+                    <div class="table-responsive mb-3 border rounded">
+                        <table class="table table-sm table-bordered mb-0 align-middle text-center" id="itemsTable">
                             <thead class="bg-primary text-white">
                                 <tr>
-                                    <th style="width: 15%;">Item Code</th>
-                                    <th style="width: 35%;">Description</th>
-                                    <th style="width: 10%;">Qty</th>
-                                    <th style="width: 10%;">Rate(LKR)</th>
-                                    <th style="width: 10%;">Amount</th>
-                                    <th style="width: 10%;">Disc %</th>
-                                    <th style="width: 10%;">Discount</th>
-                                    <th style="width: 10%;">Total</th>
-                                    <th style="width: 10%;">Site</th>
-                                    <th style="width: 10%;">Unit</th>
-                                    <th style="width: 5%;">Action</th>
+                                    <th>Item Code</th>
+                                    <th>Description</th>
+                                    <th>OnHand</th>
+                                    <th>Qty</th>
+                                    <th>Rate(LKR)</th>
+                                    <th>Amount</th>
+                                    <th>Disc%</th>
+                                    <th>Discount</th>
+                                    <th>Total</th>
+                                    <th>Location</th>
+                                    <th>Unit</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
+                                <tr class="item-row">
                                     <td>
-                                        <select name="items[0][product_id]" class="form-select form-select-sm border-0">
-                                            <option value="">-- Select Item --</option>
-                                            @foreach($products as $p)
-                                                <option value="{{ $p->id }}">{{ $p->code }} - {{ $p->name }}</option>
-                                            @endforeach
-                                        </select>
+                                        <select class="form-select form-select-sm product-select border-0"><option></option></select>
                                     </td>
-                                    <td><input type="text" class="form-control form-control-sm border-0" readonly></td>
-                                    <td><input type="number" class="form-control form-control-sm border-0 text-center"></td>
-                                    <td><input type="number" class="form-control form-control-sm border-0 text-end"></td>
-                                    <td><input type="number" class="form-control form-control-sm border-0 text-end" readonly></td>
-                                    <td><input type="number" class="form-control form-control-sm border-0 text-center" value="0"></td>
-                                    <td><input type="number" class="form-control form-control-sm border-0 text-end"></td>
-                                    <td><input type="number" class="form-control form-control-sm border-0 text-end fw-bold" readonly></td>
-                                    <td>
-                                        <select name="items[0][location_id]" class="form-select form-select-sm border-0">
-                                            @foreach($locations as $loc)
-                                                <option value="{{ $loc->id }}" {{ $loc->name == 'Main Stock' ? 'selected' : '' }}>{{ $loc->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </td>
-                                    <td>
-                                        <select name="items[0][unit_id]" class="form-select form-select-sm border-0">
-                                            @foreach($units as $u)
-                                                <option value="{{ $u->id }}">{{ $u->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </td>
-                                    <td><button type="button" class="btn btn-link text-danger p-0"><i class="ri-delete-bin-line fs-18"></i></button></td>
+                                    <td><input type="text" class="form-control form-control-sm description-input bg-light" readonly></td>
+                                    <td><input type="text" class="form-control form-control-sm onhand-input text-center bg-light" readonly></td>
+                                    <td><input type="number" class="form-control form-control-sm text-center qty-input" step="any"></td>
+                                    <td><input type="number" class="form-control form-control-sm text-end rate-input" step="any"></td>
+                                    <td><input type="number" class="form-control form-control-sm text-end amount-input bg-light" readonly></td>
+                                    <td><input type="number" class="form-control form-control-sm text-center disc-percent-input" step="any"></td>
+                                    <td><input type="number" class="form-control form-control-sm text-end discount-input bg-light" readonly></td>
+                                    <td><input type="number" class="form-control form-control-sm text-end total-input bg-light fw-bold" readonly></td>
+                                    <td><input type="text" class="form-control form-control-sm location-input text-center bg-light" value="Main Stock" readonly></td>
+                                    <td><input type="text" class="form-control form-control-sm unit-input bg-light text-center" readonly></td>
                                 </tr>
                             </tbody>
+                            <tfoot class="bg-light">
+                                <tr>
+                                    <td colspan="3" class="text-end fw-bold">Qty</td>
+                                    <td><input type="text" class="form-control form-control-sm text-center bg-white footer-qty" readonly></td>
+                                    <td class="text-end fw-bold">Amount</td>
+                                    <td><input type="text" class="form-control form-control-sm text-end bg-white footer-amount" readonly></td>
+                                    <td class="text-end fw-bold">Discount</td>
+                                    <td><input type="text" class="form-control form-control-sm text-end bg-white footer-discount" readonly></td>
+                                    <td class="text-end fw-bold">Total</td>
+                                    <td colspan="2"><input type="text" class="form-control form-control-sm text-end bg-white fw-bold footer-total" readonly></td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
+
+                    <!-- Javascript Hydration Source -->
+                    <script>
+                        window.serverProductList = @json($products ?? []);
+                    </script>
 
                     <!-- Table Footer Row -->
                     <div class="row g-2 mb-3 justify-content-end align-items-center">
@@ -234,7 +244,7 @@
                                     <label class="form-label small fw-bold mb-1">LKR Total Amount</label>
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text bg-light">LKR</span>
-                                        <input type="text" class="form-control text-end bg-light" readonly>
+                                        <input type="text" class="form-control text-end bg-light footer-grand-total" readonly>
                                     </div>
                                 </div>
                                 <div class="col-md-5">
@@ -254,7 +264,7 @@
                                 <div class="card-body p-2">
                                     <div class="d-flex justify-content-between mb-2 align-items-center">
                                         <span class="small fw-bold">Sub Total</span>
-                                        <input type="text" class="form-control form-control-sm text-end w-50 bg-white" value="0.00" readonly>
+                                        <input type="text" class="form-control form-control-sm text-end w-50 bg-white summary-subtotal" value="0.00" readonly>
                                     </div>
                                     <div class="form-check form-switch mb-2">
                                         <input class="form-check-input" type="checkbox" role="switch" id="svatSwitch">
@@ -282,7 +292,7 @@
                                     </div>
                                     <div class="d-flex justify-content-between align-items-center">
                                         <span class="small fw-bold h6 text-primary mb-0">Total</span>
-                                        <input type="text" class="form-control form-control-sm text-end w-50 bg-white fw-bold text-primary" readonly>
+                                        <input type="text" class="form-control form-control-sm text-end w-50 bg-white fw-bold text-primary summary-total" readonly>
                                     </div>
                                 </div>
                             </div>
@@ -343,7 +353,6 @@
             fetchVendorDetails(this.value);
         });
 
-        // For TomSelect support
         setTimeout(() => {
             if (vendorSelect.tomselect) {
                 vendorSelect.tomselect.on('change', function (value) {
@@ -351,6 +360,294 @@
                 });
             }
         }, 500);
+
+        // --- Table Controller (Data Source Level) --- //
+        function getDefaultLocation() {
+            const locNode = document.querySelector('select[name="location"]');
+            return locNode ? locNode.value : '';
+        }
+
+        const grnController = {
+            data: [],
+            rowCount: 0,
+            rowTemplateHTML: '',
+
+            init() {
+                const firstRow = document.querySelector('.item-row');
+                this.rowTemplateHTML = firstRow.innerHTML;
+                firstRow.remove(); // Clear template row
+
+                // Start with TWO empty rows
+                this.appendRow();
+                this.appendRow();
+            },
+
+            checkAndAppendRow(rowIndex) {
+                if (rowIndex === this.data.length - 1) {
+                    const currentRow = this.data[rowIndex];
+                    if (currentRow.product_id) {
+                        this.appendRow();
+                    }
+                }
+            },
+
+            appendRow() {
+                const currentLoc = getDefaultLocation();
+                
+                this.data.push({
+                    rowId: this.rowCount,
+                    product_id: '',
+                    description: '',
+                    onhand: '',
+                    qty: 1,
+                    rate: 0,
+                    amount: 0,
+                    disc_percent: 0,
+                    discount: 0,
+                    total: 0,
+                    location: currentLoc,
+                    unit: ''
+                });
+                
+                this.injectRowUI(currentLoc);
+                this.rowCount++;
+            },
+
+            injectRowUI(currentLoc) {
+                const newRow = document.createElement('tr');
+                newRow.className = 'item-row';
+                newRow.innerHTML = this.rowTemplateHTML;
+                
+                newRow.querySelectorAll('input').forEach(input => {
+                    input.value = '';
+                    if (input.classList.contains('qty-input')) input.value = '1';
+                    if (input.classList.contains('location-input')) input.value = currentLoc;
+                });
+                
+                newRow.querySelectorAll('.ts-wrapper').forEach(wrapper => wrapper.remove());
+                newRow.querySelectorAll('select').forEach(select => {
+                    select.classList.remove('tomselected', 'ts-hidden-accessible');
+                    select.style.display = '';
+                    if (select.hasAttribute('id')) select.removeAttribute('id');
+                    select.value = '';
+                });
+
+                const newIndex = this.rowCount;
+                newRow.querySelectorAll('input, select').forEach(el => {
+                    if (el.classList.contains('product-select')) el.name = `items[${newIndex}][product_id]`;
+                    if (el.classList.contains('description-input')) el.name = `items[${newIndex}][description]`;
+                    if (el.classList.contains('onhand-input')) el.name = `items[${newIndex}][onhand]`;
+                    if (el.classList.contains('qty-input')) el.name = `items[${newIndex}][qty]`;
+                    if (el.classList.contains('rate-input')) el.name = `items[${newIndex}][rate]`;
+                    if (el.classList.contains('amount-input')) el.name = `items[${newIndex}][amount]`;
+                    if (el.classList.contains('disc-percent-input')) el.name = `items[${newIndex}][disc_percent]`;
+                    if (el.classList.contains('discount-input')) el.name = `items[${newIndex}][discount]`;
+                    if (el.classList.contains('total-input')) el.name = `items[${newIndex}][total]`;
+                    if (el.classList.contains('location-input')) el.name = `items[${newIndex}][location]`;
+                    if (el.classList.contains('unit-input')) el.name = `items[${newIndex}][unit]`;
+                });
+
+                newRow.dataset.rowIndex = this.data.length - 1;
+                document.querySelector('#itemsTable tbody').appendChild(newRow);
+                
+                initRowEvents(newRow);
+            },
+
+            updateRowData(rowIndex, field, value) {
+                if (this.data[rowIndex]) {
+                    this.data[rowIndex][field] = value;
+                }
+            },
+
+            calculateRow(rowIndex, rowElement) {
+                if (!this.data[rowIndex]) return;
+                
+                const dataRow = this.data[rowIndex];
+                dataRow.amount = dataRow.qty * dataRow.rate;
+                dataRow.discount = (dataRow.amount * dataRow.disc_percent) / 100;
+                dataRow.total = dataRow.amount - dataRow.discount;
+
+                rowElement.querySelector('.amount-input').value = dataRow.amount.toFixed(2);
+                rowElement.querySelector('.discount-input').value = dataRow.discount.toFixed(2);
+                rowElement.querySelector('.total-input').value = dataRow.total.toFixed(2);
+
+                this.calculateGrandTotal();
+            },
+
+            calculateGrandTotal() {
+                let grandQty = 0;
+                let grandAmount = 0;
+                let grandDiscount = 0;
+                let grandTotal = 0;
+
+                this.data.forEach(row => {
+                    grandQty += parseFloat(row.qty) || 0;
+                    grandAmount += parseFloat(row.amount) || 0;
+                    grandDiscount += parseFloat(row.discount) || 0;
+                    grandTotal += parseFloat(row.total) || 0;
+                });
+    
+                document.querySelector('.footer-qty').value = grandQty.toFixed(2);
+                document.querySelector('.footer-amount').value = grandAmount.toFixed(2);
+                document.querySelector('.footer-discount').value = grandDiscount.toFixed(2);
+                document.querySelector('.footer-total').value = grandTotal.toFixed(2);
+
+                const lkrSummary = document.querySelector('.footer-grand-total');
+                if(lkrSummary) lkrSummary.value = grandTotal.toFixed(2);
+
+                const subTotalInput = document.querySelector('.summary-subtotal');
+                if(subTotalInput) subTotalInput.value = grandAmount.toFixed(2);
+
+                const totalInput = document.querySelector('.summary-total');
+                if(totalInput) totalInput.value = grandTotal.toFixed(2);
+            }
+        };
+
+        function fetchItemStock(productId, location, rowIndex, row) {
+            const onhandInput = row.querySelector('.onhand-input');
+            if(!onhandInput) return;
+
+            if (!productId || !location) {
+                onhandInput.value = '';
+                grnController.updateRowData(rowIndex, 'onhand', '');
+                return;
+            }
+            
+            onhandInput.value = '...';
+            
+            fetch(`/api/products/${productId}/stock?location=${encodeURIComponent(location)}`)
+                .then(response => {
+                    if (response.ok) return response.json();
+                    throw new Error('Network response error');
+                })
+                .then(data => {
+                    const balance = data.stock || 0; 
+                    onhandInput.value = balance;
+                    grnController.updateRowData(rowIndex, 'onhand', balance);
+                })
+                .catch(error => {
+                    console.error('Error fetching stock:', error);
+                    onhandInput.value = '0';
+                    grnController.updateRowData(rowIndex, 'onhand', 0);
+                });
+        }
+
+        function initRowEvents(row) {
+            const rowIndex = parseInt(row.dataset.rowIndex);
+            const productSelect = row.querySelector('.product-select');
+            const qtyInput = row.querySelector('.qty-input');
+            const rateInput = row.querySelector('.rate-input');
+            const discPercentInput = row.querySelector('.disc-percent-input');
+
+            if (!qtyInput.value) qtyInput.value = '1';
+
+            function handleProductChange(value) {
+                grnController.updateRowData(rowIndex, 'product_id', value);
+                
+                if (value) {
+                    const selectedObj = window.serverProductList && Array.isArray(window.serverProductList) ? window.serverProductList.find(opt => opt.id == value) : null;
+                    if (selectedObj) {
+                        const desc = selectedObj.name || '';
+                        const unit = selectedObj.unit || '';
+                        const rate = parseFloat(selectedObj.cost) || parseFloat(selectedObj.max_sale_price) || 0; // PO/GRN Uses cost first
+
+                        grnController.updateRowData(rowIndex, 'description', desc);
+                        grnController.updateRowData(rowIndex, 'unit', unit);
+                        grnController.updateRowData(rowIndex, 'rate', rate);
+
+                        row.querySelector('.description-input').value = desc;
+                        row.querySelector('.unit-input').value = unit;
+                        row.querySelector('.rate-input').value = rate;
+                        
+                        const currentLoc = row.querySelector('.location-input') ? row.querySelector('.location-input').value : '';
+                        fetchItemStock(value, currentLoc, rowIndex, row);
+
+                        grnController.calculateRow(rowIndex, row);
+                        grnController.checkAndAppendRow(rowIndex);
+                    }
+                } else {
+                    row.querySelector('.description-input').value = '';
+                    row.querySelector('.unit-input').value = '';
+                    row.querySelector('.rate-input').value = '';
+                    if(row.querySelector('.onhand-input')) row.querySelector('.onhand-input').value = '';
+                    grnController.calculateRow(rowIndex, row);
+                }
+            }
+
+            if (productSelect) {
+                let optionsHTML = '<option value="">-- Select --</option>';
+                if (window.serverProductList && Array.isArray(window.serverProductList)) {
+                    window.serverProductList.forEach(p => {
+                        let safeName = (p.name || '').replace(/"/g, '&quot;');
+                        let safeCode = (p.code || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        let rate = parseFloat(p.cost) || parseFloat(p.max_sale_price) || 0;
+                        optionsHTML += `<option value="${p.id}" data-name="${safeName}" data-unit="${p.unit || ''}" data-rate="${rate}">${safeCode}</option>`;
+                    });
+                }
+                productSelect.innerHTML = optionsHTML;
+            }
+
+            if (window.TomSelect) {
+                if (productSelect.tomselect) {
+                    productSelect.tomselect.destroy();
+                }
+
+                new TomSelect(productSelect, {
+                    create: false,
+                    sortField: { field: "text", order: "asc" },
+                    onChange: function(value) {
+                        handleProductChange(value);
+                    }
+                });
+            } else if (window.jQuery && $(productSelect).select2) {
+                $(productSelect).select2();
+                $(productSelect).on('change', function() {
+                    handleProductChange(this.value);
+                });
+            } else {
+                productSelect.addEventListener('change', function() {
+                    handleProductChange(this.value);
+                });
+            }
+
+            [qtyInput, rateInput, discPercentInput].forEach(input => {
+                input.addEventListener('input', function() {
+                    let fieldName = 'qty';
+                    if (this.classList.contains('rate-input')) fieldName = 'rate';
+                    if (this.classList.contains('disc-percent-input')) fieldName = 'disc_percent';
+                    
+                    grnController.updateRowData(rowIndex, fieldName, parseFloat(this.value) || 0);
+                    grnController.calculateRow(rowIndex, row);
+                });
+            });
+        }
+
+        grnController.init();
+
+        const mainLocationSelect = document.querySelector('select[name="location"]');
+        if (mainLocationSelect) {
+            mainLocationSelect.addEventListener('change', function(e) {
+                if (e.detail && e.detail.isSyncTrigger) return; 
+                const newLocation = this.value;
+                document.querySelectorAll('#itemsTable tbody tr.item-row').forEach(row => {
+                    const rowLocationInput = row.querySelector('.location-input');
+                    const rowIndex = parseInt(row.dataset.rowIndex);
+                    
+                    if (rowLocationInput && rowLocationInput.value !== newLocation) {
+                        rowLocationInput.value = newLocation;
+                        if (!isNaN(rowIndex)) {
+                            grnController.updateRowData(rowIndex, 'location', newLocation);
+                            const productSelect = row.querySelector('.product-select');
+                            const productId = productSelect ? productSelect.value : '';
+                            if (productId) {
+                                fetchItemStock(productId, newLocation, rowIndex, row);
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
     });
 </script>
 @endpush

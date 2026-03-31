@@ -24,7 +24,7 @@ class GrnController extends Controller
         $vendors = Vendor::orderBy('company_name')->get();
         $products = Product::orderBy('name')->get();
         $units = Unit::orderBy('name')->get();
-        $locations = Location::where('name', 'not like', '%Transit%')->orderBy('name')->get();
+        $locations = Location::where('is_active', 1)->where('name', 'not like', '%Transit%')->orderBy('name')->get();
         $terms = PaymentTerm::orderBy('days')->get();
         $reps = User::where('is_active', 1)->orderBy('name')->get();
         return view('grns.create', compact('vendors', 'products', 'units', 'locations', 'terms', 'reps'));

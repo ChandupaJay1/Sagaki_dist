@@ -21,7 +21,7 @@ class SalesOrderController extends Controller
     public function create()
     {
         $customers = Customer::orderBy('company_name')->get();
-        $locations = Location::where('name', 'not like', '%Transit%')->orderBy('name')->get();
+        $locations = Location::where('is_active', 1)->where('name', 'not like', '%Transit%')->orderBy('name')->get();
         $reps = User::where('is_active', 1)->orderBy('name')->get(); // Assuming reps are users
         $terms = PaymentTerm::orderBy('days')->get();
         $products = Product::where('is_main_product', false)->orderBy('name')->get();
