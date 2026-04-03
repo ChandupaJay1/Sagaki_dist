@@ -152,6 +152,10 @@
                         #itemsTable .location-input { min-width: 90px !important; }
                         #itemsTable .unit-input { min-width: 60px !important; }
                         #itemsTable .product-select { min-width: 120px !important; }
+                        /* TomSelect Dropdown Custom Height */
+                        .ts-dropdown .ts-dropdown-content {
+                            max-height: 450px !important;
+                        }
                     </style>
                     <div class="table-responsive mb-3 border rounded">
                         <table class="table table-sm table-bordered mb-0 align-middle text-center" id="itemsTable">
@@ -600,6 +604,7 @@
                 new TomSelect(productSelect, {
                     create: false,
                     sortField: { field: "text", order: "asc" },
+                    dropdownParent: 'body',
                     onChange: function(value) {
                         handleProductChange(value);
                     }
