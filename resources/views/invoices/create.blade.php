@@ -165,8 +165,8 @@
                                     <td><input type="number" class="form-control form-control-sm text-center qty-input" step="any"></td>
                                     <td><input type="number" class="form-control form-control-sm text-end rate-input" step="any"></td>
                                     <td><input type="number" class="form-control form-control-sm text-end amount-input bg-light" readonly></td>
-                                    <td><input type="number" class="form-control form-control-sm text-center disc-percent-input" step="any"></td>
-                                    <td><input type="number" class="form-control form-control-sm text-end discount-input bg-light" readonly></td>
+                                    <td><input type="number" class="form-control form-control-sm text-center disc-percent-input" step="any" placeholder="0"></td>
+                                    <td><input type="number" class="form-control form-control-sm text-end discount-input" step="any" placeholder="0.00"></td>
                                     <td><input type="number" class="form-control form-control-sm text-end total-input bg-light fw-bold" readonly></td>
                                     <td><input type="text" class="form-control form-control-sm location-input text-center bg-light" value="Main Stock" readonly></td>
                                     <td><input type="text" class="form-control form-control-sm unit-input bg-light text-center" readonly></td>
@@ -223,11 +223,11 @@
                                     <div class="row g-2 mb-2">
                                         <div class="col-6">
                                             <label class="small fw-bold mb-0">Discount %</label>
-                                            <input type="text" id="final-discount-percent" class="form-control form-control-sm text-center">
+                                            <input type="number" id="final-discount-percent" class="form-control form-control-sm text-center" placeholder="0">
                                         </div>
                                         <div class="col-6">
                                             <label class="small fw-bold mb-0">Discount</label>
-                                            <input type="text" id="final-discount-amount" class="form-control form-control-sm text-end">
+                                            <input type="number" id="final-discount-amount" class="form-control form-control-sm text-end" placeholder="0.00">
                                         </div>
                                     </div>
                                     <div class="d-flex justify-content-between mb-2 align-items-center">
@@ -378,16 +378,23 @@
                 }
             },
 
-            calculateRow(rowIndex, rowElement) {
+            calculateRow(rowIndex, rowElement, sourceField = 'disc_percent') {
                 if (!this.data[rowIndex]) return;
                 
                 const dataRow = this.data[rowIndex];
                 dataRow.amount = dataRow.qty * dataRow.rate;
-                dataRow.discount = (dataRow.amount * dataRow.disc_percent) / 100;
+                
+                if (sourceField === 'disc_percent') {
+                    dataRow.discount = (dataRow.amount * dataRow.disc_percent) / 100;
+                    rowElement.querySelector('.discount-input').value = dataRow.discount > 0 ? dataRow.discount.toFixed(2) : '';
+                } else if (sourceField === 'discount') {
+                    dataRow.disc_percent = 0;
+                    rowElement.querySelector('.disc-percent-input').value = '';
+                }
+
                 dataRow.total = dataRow.amount - dataRow.discount;
 
                 rowElement.querySelector('.amount-input').value = dataRow.amount.toFixed(2);
-                rowElement.querySelector('.discount-input').value = dataRow.discount.toFixed(2);
                 rowElement.querySelector('.total-input').value = dataRow.total.toFixed(2);
 
                 this.calculateGrandTotal();
@@ -524,14 +531,25 @@
                 });
             }
 
-            [qtyInput, rateInput, discPercentInput].forEach(input => {
+            const discountInput = row.querySelector('.discount-input');
+
+            [qtyInput, rateInput, discPercentInput, discountInput].forEach(input => {
                 input.addEventListener('input', function() {
                     let fieldName = 'qty';
+                    let sourceField = 'disc_percent';
+
                     if (this.classList.contains('rate-input')) fieldName = 'rate';
-                    if (this.classList.contains('disc-percent-input')) fieldName = 'disc_percent';
+                    if (this.classList.contains('disc-percent-input')) {
+                        fieldName = 'disc_percent';
+                        sourceField = 'disc_percent';
+                    }
+                    if (this.classList.contains('discount-input')) {
+                        fieldName = 'discount';
+                        sourceField = 'discount';
+                    }
                     
                     invoiceController.updateRowData(rowIndex, fieldName, parseFloat(this.value) || 0);
-                    invoiceController.calculateRow(rowIndex, row);
+                    invoiceController.calculateRow(rowIndex, row, sourceField);
                 });
             });
         }
@@ -562,32 +580,8 @@
             });
         }
 
-        function calculateFinalTotal() {
-            const subTotal = parseFloat(document.getElementById('final-sub-total').value) || 0;
-            const finalDiscPercent = parseFloat(document.getElementById('final-discount-percent').value) || 0;
-            let finalDiscAmount = parseFloat(document.getElementById('final-discount-amount').value) || 0;
-            
-            if (document.activeElement === document.getElementById('final-discount-percent')) {
-                finalDiscAmount = subTotal * (finalDiscPercent / 100);
-                document.getElementById('final-discount-amount').value = finalDiscAmount.toFixed(2);
-            } else if (document.activeElement === document.getElementById('final-discount-amount')) {
-                if (subTotal > 0) {
-                    const percent = (finalDiscAmount / subTotal) * 100;
-                    document.getElementById('final-discount-percent').value = percent.toFixed(2);
-                }
-            } else {
-                finalDiscAmount = subTotal * (finalDiscPercent / 100);
-                document.getElementById('final-discount-amount').value = finalDiscAmount.toFixed(2);
-            }
-
-            const grandTotal = subTotal - finalDiscAmount;
-            document.getElementById('final-grand-total').value = grandTotal.toFixed(2);
-            document.getElementById('lkr-total').value = grandTotal.toFixed(2);
-        }
-
-        document.getElementById('final-discount-percent').addEventListener('input', calculateFinalTotal);
-        document.getElementById('final-discount-amount').addEventListener('input', calculateFinalTotal);
+        document.getElementById('final-discount-percent').addEventListener('input', () => calculateFinalTotal('header_percent'));
+        document.getElementById('final-discount-amount').addEventListener('input', () => calculateFinalTotal('header_amount'));
 
     });
 </script>
-@endpush
