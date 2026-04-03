@@ -29,16 +29,34 @@
                         <th class="text-muted small fw-bold text-uppercase">Order Date</th>
                         <th class="text-muted small fw-bold text-uppercase">Expected Date</th>
                         <th class="text-muted small fw-bold text-uppercase">Total</th>
+                        <th class="text-end pe-4 text-muted small fw-bold text-uppercase">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($orders as $o)
                         <tr>
-                            <td class="ps-4">{{ $o->customer->name ?? '—' }}</td>
+                            <td class="ps-4">{{ $o->customer->company_name ?? $o->customer->name ?? '—' }}</td>
                             <td>{{ $o->reference_no ?? '—' }}</td>
                             <td>{{ $o->order_date ?? '—' }}</td>
                             <td>{{ $o->expected_date ?? '—' }}</td>
                             <td>{{ number_format($o->total_amount, 2) }}</td>
+                            <td class="text-end pe-4">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{{ route('sales-orders.show', $o->id) }}" class="btn btn-soft-info btn-sm icon-btn" title="View Detail">
+                                        <i class="ri-eye-line"></i>
+                                    </a>
+                                    <a href="{{ route('sales-orders.edit', $o->id) }}" class="btn btn-soft-success btn-sm icon-btn" title="Edit Order">
+                                        <i class="ri-pencil-line"></i>
+                                    </a>
+                                    <form action="{{ route('sales-orders.destroy', $o->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this order?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-soft-danger btn-sm icon-btn" title="Delete">
+                                            <i class="ri-delete-bin-line"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                     @empty
                         <tr>

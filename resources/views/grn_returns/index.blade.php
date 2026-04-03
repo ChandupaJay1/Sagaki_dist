@@ -28,15 +28,33 @@
                         <th class="text-muted small fw-bold text-uppercase">Return No</th>
                         <th class="text-muted small fw-bold text-uppercase">Date</th>
                         <th class="text-muted small fw-bold text-uppercase">Total</th>
+                        <th class="text-end pe-4 text-muted small fw-bold text-uppercase">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($returns as $r)
                         <tr>
-                            <td class="ps-4">{{ $r->vendor->name ?? '—' }}</td>
-                            <td>{{ $r->return_no ?? '—' }}</td>
+                            <td class="ps-4">{{ $r->vendor->company_name ?? $r->vendor->name ?? '—' }}</td>
+                            <td>{{ $r->reference_no ?? '—' }}</td>
                             <td>{{ $r->date ?? '—' }}</td>
                             <td>{{ number_format($r->total_amount, 2) }}</td>
+                            <td class="text-end pe-4">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{{ route('grn-returns.show', $r->id) }}" class="btn btn-soft-info btn-sm icon-btn">
+                                        <i class="ri-eye-line"></i>
+                                    </a>
+                                    <a href="{{ route('grn-returns.edit', $r->id) }}" class="btn btn-soft-success btn-sm icon-btn">
+                                        <i class="ri-pencil-line"></i>
+                                    </a>
+                                    <form action="{{ route('grn-returns.destroy', $r->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-soft-danger btn-sm icon-btn">
+                                            <i class="ri-delete-bin-line"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                     @empty
                         <tr>

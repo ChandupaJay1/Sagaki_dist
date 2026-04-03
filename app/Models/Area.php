@@ -14,12 +14,11 @@ class Area extends Model
         'name',
         'code',
         'is_active',
-        'territory_id',
     ];
 
-    public function territory()
+    public function territories()
     {
-        return $this->belongsTo(Territory::class);
+        return $this->belongsToMany(Territory::class);
     }
 }
 

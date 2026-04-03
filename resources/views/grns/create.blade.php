@@ -389,7 +389,7 @@
             init() {
                 const firstRow = document.querySelector('.item-row');
                 this.rowTemplateHTML = firstRow.innerHTML;
-                firstRow.remove(); // Clear template row
+                firstRow.remove();
 
                 // Start with TWO empty rows
                 this.appendRow();
@@ -407,9 +407,10 @@
 
             appendRow() {
                 const currentLoc = getDefaultLocation();
+                const newIdx = this.data.length;
                 
                 this.data.push({
-                    rowId: this.rowCount,
+                    rowId: newIdx,
                     product_id: '',
                     description: '',
                     onhand: '',
@@ -423,13 +424,14 @@
                     unit: ''
                 });
                 
-                this.injectRowUI(currentLoc);
+                this.injectRowUI(currentLoc, newIdx);
                 this.rowCount++;
             },
 
-            injectRowUI(currentLoc) {
+            injectRowUI(currentLoc, index) {
                 const newRow = document.createElement('tr');
                 newRow.className = 'item-row';
+                newRow.dataset.rowIndex = index;
                 newRow.innerHTML = this.rowTemplateHTML;
                 
                 newRow.querySelectorAll('input').forEach(input => {
@@ -446,24 +448,21 @@
                     select.value = '';
                 });
 
-                const newIndex = this.rowCount;
                 newRow.querySelectorAll('input, select').forEach(el => {
-                    if (el.classList.contains('product-select')) el.name = `items[${newIndex}][product_id]`;
-                    if (el.classList.contains('description-input')) el.name = `items[${newIndex}][description]`;
-                    if (el.classList.contains('onhand-input')) el.name = `items[${newIndex}][onhand]`;
-                    if (el.classList.contains('qty-input')) el.name = `items[${newIndex}][qty]`;
-                    if (el.classList.contains('rate-input')) el.name = `items[${newIndex}][rate]`;
-                    if (el.classList.contains('amount-input')) el.name = `items[${newIndex}][amount]`;
-                    if (el.classList.contains('disc-percent-input')) el.name = `items[${newIndex}][disc_percent]`;
-                    if (el.classList.contains('discount-input')) el.name = `items[${newIndex}][discount]`;
-                    if (el.classList.contains('total-input')) el.name = `items[${newIndex}][total]`;
-                    if (el.classList.contains('location-input')) el.name = `items[${newIndex}][location]`;
-                    if (el.classList.contains('unit-input')) el.name = `items[${newIndex}][unit]`;
+                    if (el.classList.contains('product-select')) el.name = `items[${index}][product_id]`;
+                    if (el.classList.contains('description-input')) el.name = `items[${index}][description]`;
+                    if (el.classList.contains('onhand-input')) el.name = `items[${index}][onhand]`;
+                    if (el.classList.contains('qty-input')) el.name = `items[${index}][qty]`;
+                    if (el.classList.contains('rate-input')) el.name = `items[${index}][rate]`;
+                    if (el.classList.contains('amount-input')) el.name = `items[${index}][amount]`;
+                    if (el.classList.contains('disc-percent-input')) el.name = `items[${index}][disc_percent]`;
+                    if (el.classList.contains('discount-input')) el.name = `items[${index}][discount]`;
+                    if (el.classList.contains('total-input')) el.name = `items[${index}][total]`;
+                    if (el.classList.contains('location-input')) el.name = `items[${index}][location]`;
+                    if (el.classList.contains('unit-input')) el.name = `items[${index}][unit]`;
                 });
 
-                newRow.dataset.rowIndex = this.data.length - 1;
                 document.querySelector('#itemsTable tbody').appendChild(newRow);
-                
                 initRowEvents(newRow);
             },
 
@@ -528,12 +527,7 @@
                     headerDiscPercentInput.value = '';
                 }
 
-                // Taxes logic
-                const ssclPercent = parseFloat(document.querySelector('input[value="0.00"]:not(.summary-subtotal):not(.summary-total)').value) || 0; // This selection logic is a bit weak, need to be careful
-                // Actually let's just use the existing labels if possible, but the view is static mostly.
-                
                 const finalSubTotal = subTotal - headerDiscAmount;
-                
                 const lkrSummary = document.querySelector('.footer-grand-total');
                 if(lkrSummary) lkrSummary.value = finalSubTotal.toFixed(2);
 
@@ -554,21 +548,15 @@
                 grnController.updateRowData(rowIndex, 'onhand', '');
                 return;
             }
-            
             onhandInput.value = '...';
-            
             fetch(`/api/products/${productId}/stock?location=${encodeURIComponent(location)}`)
-                .then(response => {
-                    if (response.ok) return response.json();
-                    throw new Error('Network response error');
-                })
+                .then(response => response.json())
                 .then(data => {
                     const balance = data.stock || 0; 
                     onhandInput.value = balance;
                     grnController.updateRowData(rowIndex, 'onhand', balance);
                 })
                 .catch(error => {
-                    console.error('Error fetching stock:', error);
                     onhandInput.value = '0';
                     grnController.updateRowData(rowIndex, 'onhand', 0);
                 });
@@ -580,18 +568,18 @@
             const qtyInput = row.querySelector('.qty-input');
             const rateInput = row.querySelector('.rate-input');
             const discPercentInput = row.querySelector('.disc-percent-input');
+            const discountInput = row.querySelector('.discount-input');
 
             if (!qtyInput.value) qtyInput.value = '1';
 
             function handleProductChange(value) {
                 grnController.updateRowData(rowIndex, 'product_id', value);
-                
                 if (value) {
                     const selectedObj = window.serverProductList && Array.isArray(window.serverProductList) ? window.serverProductList.find(opt => opt.id == value) : null;
                     if (selectedObj) {
                         const desc = selectedObj.name || '';
                         const unit = selectedObj.unit || '';
-                        const rate = parseFloat(selectedObj.cost) || parseFloat(selectedObj.max_sale_price) || 0; // PO/GRN Uses cost first
+                        const rate = parseFloat(selectedObj.cost) || parseFloat(selectedObj.max_sale_price) || 0;
 
                         grnController.updateRowData(rowIndex, 'description', desc);
                         grnController.updateRowData(rowIndex, 'unit', unit);
@@ -630,14 +618,38 @@
             }
 
             if (window.TomSelect) {
-                if (productSelect.tomselect) {
-                    productSelect.tomselect.destroy();
-                }
-
                 new TomSelect(productSelect, {
                     create: false,
                     sortField: { field: "text", order: "asc" },
                     dropdownParent: 'body',
+                    render: {
+                        option: function(data, escape) {
+                            return `<div class="px-2 py-1">
+                                        <div class="fw-bold fs-12">${escape(data.text)}</div>
+                                        <div class="text-muted fs-10">${escape(data.name)}</div>
+                                    </div>`;
+                        },
+                        item: function(data, escape) {
+                            return `<div title="${escape(data.name)}">${escape(data.text)}</div>`;
+                        }
+                    },
+                    onChange: (val) => {
+                        grnController.updateRowData(rowIndex, 'product_id', val);
+                        handleProductChange(val);
+                    }
+                });
+            }
+                    render: {
+                        option: function(data, escape) {
+                            return `<div class="px-2 py-1">
+                                        <div class="fw-bold fs-12">${escape(data.text)}</div>
+                                        <div class="text-muted fs-10">${escape(data.name)}</div>
+                                    </div>`;
+                        },
+                        item: function(data, escape) {
+                            return `<div title="${escape(data.name)}">${escape(data.text)}</div>`;
+                        }
+                    },
                     onChange: function(value) {
                         handleProductChange(value);
                     }

@@ -27,6 +27,7 @@
                     <tr>
                         <th class="ps-4 text-muted small fw-bold text-uppercase">Code</th>
                         <th class="text-muted small fw-bold text-uppercase">Area Name</th>
+                        <th class="text-muted small fw-bold text-uppercase">Territories</th>
                         <th class="text-muted small fw-bold text-uppercase">Status</th>
                         <th class="pe-4 text-muted small fw-bold text-uppercase text-end">Action</th>
                     </tr>
@@ -42,6 +43,15 @@
                                 @endif
                             </td>
                             <td class="fw-bold text-dark">{{ $area->name }}</td>
+                            <td class="text-muted">
+                                @if($area->territories->count())
+                                    @foreach($area->territories as $territory)
+                                        <span class="badge bg-light text-dark border fw-medium px-2 py-1 me-1">{{ $territory->name }}</span>
+                                    @endforeach
+                                @else
+                                    <span class="text-muted small">—</span>
+                                @endif
+                            </td>
                             <td>
                                 @if($area->is_active)
                                     <span class="badge bg-success-subtle text-success border-0 px-2 py-1 rounded-pill">Active</span>

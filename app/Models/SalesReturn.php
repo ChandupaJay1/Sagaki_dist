@@ -8,17 +8,21 @@ class SalesReturn extends Model
 {
     protected $fillable = [
         'customer_id',
-        'address',
-        'delivery_destination',
-        'load',
-        'return_no',
         'date',
-        'create_user',
+        'reference_no',
+        'memo',
+        'header_discount_percent',
+        'header_discount_amount',
         'total_amount',
     ];
 
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function items()
+    {
+        return $this->hasMany(SalesReturnItem::class);
     }
 }
