@@ -597,6 +597,17 @@
                     create: false,
                     sortField: { field: "text", order: "asc" },
                     dropdownParent: 'body',
+                    render: {
+                        option: function(data, escape) {
+                            return `<div class="px-2 py-1">
+                                        <div class="fw-bold fs-12">${escape(data.text)}</div>
+                                        <div class="text-muted fs-10">${escape(data.name)}</div>
+                                    </div>`;
+                        },
+                        item: function(data, escape) {
+                            return `<div title="${escape(data.name)}">${escape(data.text)}</div>`;
+                        }
+                    },
                     onChange: function(value) {
                         let selectedOption = null;
                         if (value) {

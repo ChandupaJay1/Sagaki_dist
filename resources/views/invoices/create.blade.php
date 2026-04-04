@@ -301,6 +301,7 @@
                 this.rowTemplateHTML = firstRow.innerHTML;
                 firstRow.remove();
 
+                // Start with two empty rows
                 this.appendRow();
                 this.appendRow();
             },
@@ -316,9 +317,10 @@
 
             appendRow() {
                 const currentLoc = getDefaultLocation();
+                const newIdx = this.data.length;
                 
                 this.data.push({
-                    rowId: this.rowCount,
+                    rowId: newIdx,
                     product_id: '',
                     description: '',
                     onhand: '',
@@ -332,13 +334,14 @@
                     unit: ''
                 });
                 
-                this.injectRowUI(currentLoc);
+                this.injectRowUI(currentLoc, newIdx);
                 this.rowCount++;
             },
 
-            injectRowUI(currentLoc) {
+            injectRowUI(currentLoc, index) {
                 const newRow = document.createElement('tr');
                 newRow.className = 'item-row';
+                newRow.dataset.rowIndex = index;
                 newRow.innerHTML = this.rowTemplateHTML;
                 
                 newRow.querySelectorAll('input').forEach(input => {
@@ -355,24 +358,21 @@
                     select.value = '';
                 });
 
-                const newIndex = this.rowCount;
                 newRow.querySelectorAll('input, select').forEach(el => {
-                    if (el.classList.contains('product-select')) el.name = `items[${newIndex}][product_id]`;
-                    if (el.classList.contains('description-input')) el.name = `items[${newIndex}][description]`;
-                    if (el.classList.contains('onhand-input')) el.name = `items[${newIndex}][onhand]`;
-                    if (el.classList.contains('qty-input')) el.name = `items[${newIndex}][qty]`;
-                    if (el.classList.contains('rate-input')) el.name = `items[${newIndex}][rate]`;
-                    if (el.classList.contains('amount-input')) el.name = `items[${newIndex}][amount]`;
-                    if (el.classList.contains('disc-percent-input')) el.name = `items[${newIndex}][disc_percent]`;
-                    if (el.classList.contains('discount-input')) el.name = `items[${newIndex}][discount]`;
-                    if (el.classList.contains('total-input')) el.name = `items[${newIndex}][total]`;
-                    if (el.classList.contains('location-input')) el.name = `items[${newIndex}][location]`;
-                    if (el.classList.contains('unit-input')) el.name = `items[${newIndex}][unit]`;
+                    if (el.classList.contains('product-select')) el.name = `items[${index}][product_id]`;
+                    if (el.classList.contains('description-input')) el.name = `items[${index}][description]`;
+                    if (el.classList.contains('onhand-input')) el.name = `items[${index}][onhand]`;
+                    if (el.classList.contains('qty-input')) el.name = `items[${index}][qty]`;
+                    if (el.classList.contains('rate-input')) el.name = `items[${index}][rate]`;
+                    if (el.classList.contains('amount-input')) el.name = `items[${index}][amount]`;
+                    if (el.classList.contains('disc-percent-input')) el.name = `items[${index}][disc_percent]`;
+                    if (el.classList.contains('discount-input')) el.name = `items[${index}][discount]`;
+                    if (el.classList.contains('total-input')) el.name = `items[${index}][total]`;
+                    if (el.classList.contains('location-input')) el.name = `items[${index}][location]`;
+                    if (el.classList.contains('unit-input')) el.name = `items[${index}][unit]`;
                 });
 
-                newRow.dataset.rowIndex = this.data.length - 1;
                 document.querySelector('#itemsTable tbody').appendChild(newRow);
-                
                 initRowEvents(newRow);
             },
 
@@ -521,17 +521,33 @@
                     create: false,
                     sortField: { field: "text", order: "asc" },
                     dropdownParent: 'body',
+                    render: {
+                        option: function(data, escape) {
+                            return `<div class="px-2 py-1">
+                                        <div class="fw-bold fs-12">${escape(data.text)}</div>
+                                        <div class="text-muted fs-10">${escape(data.name)}</div>
+                                    </div>`;
+                        },
+                        item: function(data, escape) {
+                            return `<div title="${escape(data.name)}">${escape(data.text)}</div>`;
+                        }
+                    },
                     onChange: function(value) {
+                        // Crucial: Update the data FIRST
+                        invoiceController.updateRowData(rowIndex, 'product_id', value);
+                        // Then trigger the row logic
                         handleProductChange(value);
                     }
                 });
             } else if (window.jQuery && $(productSelect).select2) {
                 $(productSelect).select2();
                 $(productSelect).on('change', function() {
+                    invoiceController.updateRowData(rowIndex, 'product_id', this.value);
                     handleProductChange(this.value);
                 });
             } else {
                 productSelect.addEventListener('change', function() {
+                    invoiceController.updateRowData(rowIndex, 'product_id', this.value);
                     handleProductChange(this.value);
                 });
             }

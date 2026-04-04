@@ -18,7 +18,7 @@ class Territory extends Model
 
     public function areas()
     {
-        return $this->hasMany(Area::class);
+        return $this->belongsToMany(Area::class);
     }
 }
 

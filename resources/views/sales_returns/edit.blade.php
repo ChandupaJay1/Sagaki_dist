@@ -1,12 +1,12 @@
 @extends('layouts.admin')
 
-@section('title', 'Purchase Order - Create')
+@section('title', 'Sales Return - Edit')
 
 @section('content')
 <div class="row">
     <div class="col-12">
         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-            <h4 class="mb-sm-0">Purchase Order</h4>
+            <h4 class="mb-sm-0">Edit Sales Return</h4>
             <div class="d-flex align-items-center gap-2">
                 <span class="badge bg-danger-subtle text-danger"><i class="ri-error-warning-line me-1"></i>Date Control is Inactive.</span>
             </div>
@@ -18,12 +18,10 @@
     <div class="col-lg-12">
         <div class="card">
             <div class="card-header bg-soft-secondary d-flex justify-content-between align-items-center py-2">
-                <h5 class="card-title mb-0"><i class="ri-shopping-basket-2-line me-1"></i>Purchase Order - Create</h5>
+                <h5 class="card-title mb-0"><i class="ri-arrow-go-back-line me-1"></i>Sales Return - Edit</h5>
                 <div class="float-end">
-                    <button type="submit" form="createPurchaseOrderForm" class="btn btn-info btn-sm me-1"><i class="ri-save-line me-1"></i>Save & New</button>
-                    <button type="submit" form="createPurchaseOrderForm" class="btn btn-success btn-sm me-1"><i class="ri-check-line me-1"></i>Save & Close</button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm me-1"><i class="ri-printer-line me-1"></i>Save & Print</button>
-                    <button type="reset" form="createPurchaseOrderForm" class="btn btn-warning btn-sm"><i class="ri-refresh-line me-1"></i>Reset</button>
+                    <button type="submit" form="editSalesReturnForm" class="btn btn-success btn-sm me-1"><i class="ri-check-line me-1"></i>Update Return</button>
+                    <a href="{{ route('sales-returns.index') }}" class="btn btn-warning btn-sm"><i class="ri-close-line me-1"></i>Cancel</a>
                 </div>
             </div>
             <div class="card-body p-3">
@@ -38,17 +36,18 @@
                     </div>
                 @endif
 
-                <form id="createPurchaseOrderForm" action="{{ route('purchase-orders.store') }}" method="POST">
+                <form id="editSalesReturnForm" action="{{ route('sales-returns.update', $return->id) }}" method="POST">
                     @csrf
+                    @method('PUT')
 
                     <!-- Header Row 1 -->
                     <div class="row g-2 mb-2">
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold mb-1">Vendor Name <span class="text-danger">*</span></label>
-                            <select name="vendor_id" class="form-select form-select-sm" required>
-                                <option value="">-- Select Vendor --</option>
-                                @foreach($vendors as $v)
-                                    <option value="{{ $v->id }}" {{ old('vendor_id') == $v->id ? 'selected' : '' }}>{{ $v->company_name ?? $v->name }}</option>
+                            <label class="form-label small fw-bold mb-1">Customer Name <span class="text-danger">*</span></label>
+                            <select name="customer_id" class="form-select form-select-sm" required>
+                                <option value="">-- Select Customer --</option>
+                                @foreach($customers as $c)
+                                    <option value="{{ $c->id }}" {{ old('customer_id', $return->customer_id) == $c->id ? 'selected' : '' }}>{{ $c->company_name ?? $c->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -57,15 +56,13 @@
                              <select name="location" class="form-select form-select-sm">
                                  <option value="">-- Select Location --</option>
                                  @foreach($locations as $location)
-                                     <option value="{{ $location->name }}" {{ (old('location') == $location->name || $location->name == 'Main Stock') ? 'selected' : '' }}>{{ $location->name }}</option>
+                                     <option value="{{ $location->name }}" {{ old('location', $return->location) == $location->name ? 'selected' : '' }}>{{ $location->name }}</option>
                                  @endforeach
                              </select>
                          </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Load</label>
-                            <select name="load" class="form-select form-select-sm">
-                                <option value=""></option>
-                            </select>
+                            <input type="text" name="load" class="form-control form-control-sm" value="{{ old('load', $return->load) }}">
                         </div>
                     </div>
 
@@ -73,73 +70,21 @@
                     <div class="row g-2 mb-2">
                         <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Address</label>
-                            <textarea name="address" class="form-control form-control-sm" rows="2" placeholder="address">{{ old('address') }}</textarea>
+                            <textarea name="address" class="form-control form-control-sm" rows="2" placeholder="address">{{ old('address', $return->address) }}</textarea>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Delivery Destination</label>
-                            <textarea name="delivery_destination" class="form-control form-control-sm" rows="2" placeholder="deliver destination">{{ old('delivery_destination') }}</textarea>
+                            <textarea name="delivery_destination" class="form-control form-control-sm" rows="2" placeholder="deliver destination">{{ old('delivery_destination', $return->delivery_destination) }}</textarea>
                         </div>
                         <div class="col-md-4">
                             <div class="mb-1">
-                                <label class="form-label small fw-bold mb-0">PO No</label>
-                                <input type="text" class="form-control form-control-sm bg-light" value="POND00053" readonly>
+                                <label class="form-label small fw-bold mb-0">Return No</label>
+                                <input type="text" class="form-control form-control-sm bg-light" value="{{ $return->reference_no }}" readonly>
                             </div>
                             <div>
                                 <label class="form-label small fw-bold mb-0">Date</label>
-                                <input type="date" name="date" class="form-control form-control-sm" value="{{ old('date', date('Y-m-d')) }}">
+                                <input type="date" name="date" class="form-control form-control-sm" value="{{ old('date', $return->date) }}">
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Header Row 3 -->
-                    <div class="row g-2 mb-3">
-                        <div class="col-md-2">
-                            <label class="form-label small fw-bold mb-1">Order By</label>
-                            <select name="order_by" class="form-select form-select-sm">
-                                <option value=""></option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label small fw-bold mb-1">Checked By</label>
-                            <select name="checked_by" class="form-select form-select-sm">
-                                <option value=""></option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label small fw-bold mb-1">Rep</label>
-                            <select name="rep" class="form-select form-select-sm">
-                                <option value=""></option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label small fw-bold mb-1">Reference No</label>
-                            <input type="text" name="reference_no" class="form-control form-control-sm" value="{{ old('reference_no') }}">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label small fw-bold mb-1">Expected Date</label>
-                            <input type="date" name="expected_date" class="form-control form-control-sm" value="{{ old('expected_date', date('Y-m-d')) }}">
-                        </div>
-                    </div>
-
-                    <!-- Header Row 4 -->
-                    <div class="row g-2 mb-3">
-                        <div class="col-md-3">
-                            <label class="form-label small fw-bold mb-1">Attent</label>
-                            <input type="text" name="attent" class="form-control form-control-sm" value="{{ old('attent') }}">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label small fw-bold mb-1">Terms</label>
-                            <select name="terms" class="form-select form-select-sm">
-                                <option value="">-- Select Terms --</option>
-                                @foreach($terms as $term)
-                                    @php $label = ($term->days == 0) ? 'Cash Only' : ($term->days.' Days Credit'); @endphp
-                                    <option value="{{ $term->days }}" {{ old('terms') == $term->days ? 'selected' : '' }}>{{ $label }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label small fw-bold mb-1">Due Date</label>
-                            <input type="date" name="due_date" class="form-control form-control-sm" value="{{ old('due_date', date('Y-m-d')) }}">
                         </div>
                     </div>
 
@@ -148,14 +93,10 @@
                         #itemsTable .form-control-sm, #itemsTable .form-select-sm { padding: 0.1rem 0.2rem !important; font-size: 0.7rem !important; min-height: 22px !important; border-radius: 0.15rem; }
                         #itemsTable .ts-wrapper .ts-control { padding: 0.1rem 0.2rem !important; font-size: 0.7rem !important; min-height: 22px !important; border-radius: 0.15rem; }
                         #itemsTable { width: 100% !important; table-layout: auto !important; }
-                        /* Ensure critical columns don't vanish */
                         #itemsTable .location-input { min-width: 90px !important; }
                         #itemsTable .unit-input { min-width: 60px !important; }
                         #itemsTable .product-select { min-width: 120px !important; }
-                        /* TomSelect Dropdown Custom Height */
-                        .ts-dropdown .ts-dropdown-content {
-                            max-height: 450px !important;
-                        }
+                        .ts-dropdown .ts-dropdown-content { max-height: 450px !important; }
                     </style>
                     <div class="table-responsive mb-3 border rounded">
                         <table class="table table-sm table-bordered mb-0 align-middle text-center" id="itemsTable">
@@ -175,7 +116,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr class="item-row">
+                                <tr class="item-row d-none" id="row-template">
                                     <td>
                                         <select class="form-select form-select-sm product-select border-0"><option></option></select>
                                     </td>
@@ -206,9 +147,9 @@
                         </table>
                     </div>
 
-                    <!-- Javascript Hydration Source -->
                     <script>
                         window.serverProductList = @json($products ?? []);
+                        window.existingItems = @json($return->items);
                     </script>
 
                     <!-- Footer Section -->
@@ -223,7 +164,7 @@
                                     <label class="form-label small fw-bold mb-1">LKR Total Amount</label>
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text bg-light">LKR</span>
-                                        <input type="text" class="form-control text-end bg-light" readonly>
+                                        <input type="text" class="form-control text-end bg-light footer-grand-total" value="{{ number_format($return->total_amount, 2, '.', '') }}" readonly>
                                     </div>
                                 </div>
                                 <div class="col-md-5">
@@ -235,7 +176,7 @@
                             </div>
                             <div>
                                 <label class="form-label small fw-bold mb-1">Memo</label>
-                                <textarea name="memo" class="form-control form-control-sm" rows="4">{{ old('memo') }}</textarea>
+                                <textarea name="memo" class="form-control form-control-sm" rows="4">{{ old('memo', $return->memo) }}</textarea>
                             </div>
                         </div>
                         <div class="col-md-5">
@@ -244,40 +185,20 @@
                                     <div class="row g-2 mb-2">
                                         <div class="col-6">
                                             <label class="small fw-bold mb-0">Discount %</label>
-                                            <input type="number" name="header_discount_percent" class="form-control form-control-sm text-center header-discount-percent" step="any" placeholder="0">
+                                            <input type="number" name="header_discount_percent" class="form-control form-control-sm text-center header-discount-percent" step="any" value="{{ old('header_discount_percent', $return->header_discount_percent) }}" placeholder="0">
                                         </div>
                                         <div class="col-6">
                                             <label class="small fw-bold mb-0">Discount</label>
-                                            <input type="number" name="header_discount_amount" class="form-control form-control-sm text-end header-discount-amount" step="any" placeholder="0.00">
+                                            <input type="number" name="header_discount_amount" class="form-control form-control-sm text-end header-discount-amount" step="any" value="{{ old('header_discount_amount', $return->header_discount_amount) }}" placeholder="0.00">
                                         </div>
                                     </div>
                                     <div class="d-flex justify-content-between mb-2 align-items-center">
                                         <span class="small fw-bold">Sub Total</span>
                                         <input type="text" class="form-control form-control-sm text-end w-50 bg-white summary-subtotal" value="0.00" readonly>
                                     </div>
-                                    <div class="row g-2 mb-2">
-                                        <div class="col-6">
-                                            <label class="small fw-bold mb-0">SSCL %</label>
-                                            <input type="text" class="form-control form-control-sm text-center" value="0.00">
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="small fw-bold mb-0">SSCL</label>
-                                            <input type="text" class="form-control form-control-sm text-end" value="0.00">
-                                        </div>
-                                    </div>
-                                    <div class="row g-2 mb-2">
-                                        <div class="col-6">
-                                            <label class="small fw-bold mb-0">VAT %</label>
-                                            <input type="text" class="form-control form-control-sm text-center" value="0.00">
-                                        </div>
-                                        <div class="col-6">
-                                            <label class="small fw-bold mb-0">VAT</label>
-                                            <input type="text" class="form-control form-control-sm text-end" value="0.00">
-                                        </div>
-                                    </div>
                                     <div class="d-flex justify-content-between align-items-center">
                                         <span class="small fw-bold h6 text-primary mb-0">Total</span>
-                                        <input type="text" class="form-control form-control-sm text-end w-50 bg-white fw-bold text-primary summary-total" readonly>
+                                        <input type="text" class="form-control form-control-sm text-end w-50 bg-white fw-bold text-primary summary-total" value="{{ number_format($return->total_amount, 2, '.', '') }}" readonly>
                                     </div>
                                 </div>
                             </div>
@@ -293,77 +214,57 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const vendorSelect = document.querySelector('select[name="vendor_id"]');
+        const customerSelect = document.querySelector('select[name="customer_id"]');
         const addressTextarea = document.querySelector('textarea[name="address"]');
         const deliveryDestinationTextarea = document.querySelector('textarea[name="delivery_destination"]');
-        const termsSelect = document.querySelector('select[name="terms"]');
+        const itemsTableBody = document.querySelector('#itemsTable tbody');
+        const templateRow = document.getElementById('row-template');
 
-        function fetchVendorDetails(vendorId) {
-            if (vendorId) {
-                fetch(`/api/vendors/${vendorId}`)
+        function fetchCustomerDetails(customerId) {
+            if (customerId) {
+                fetch(`/api/customers/${customerId}`)
                     .then(response => response.json())
                     .then(data => {
-                        if (addressTextarea) addressTextarea.value = data.address || '';
-                        if (deliveryDestinationTextarea) deliveryDestinationTextarea.value = data.delivery_address || '';
-                        
-                        if (termsSelect && data.terms) {
-                            let matchedOption = Array.from(termsSelect.options).find(opt => opt.value === data.terms);
-                            
-                            if (!matchedOption && data.terms) {
-                                let daysMatch = data.terms.match(/\d+/);
-                                if (daysMatch) {
-                                    let parsedDays = daysMatch[0];
-                                    matchedOption = Array.from(termsSelect.options).find(opt => opt.value === parsedDays);
-                                }
-                                
-                                if (!matchedOption) {
-                                    matchedOption = Array.from(termsSelect.options).find(opt => opt.text && opt.text.includes(data.terms));
-                                }
-                            }
-                            
-                            if (matchedOption) {
-                                termsSelect.value = matchedOption.value;
-                                if (termsSelect.tomselect) {
-                                    termsSelect.tomselect.setValue(matchedOption.value);
-                                }
-                            }
-                        }
+                        if (addressTextarea && !addressTextarea.value) addressTextarea.value = data.address || '';
+                        if (deliveryDestinationTextarea && !deliveryDestinationTextarea.value) deliveryDestinationTextarea.value = data.delivery_address || '';
                     })
-                    .catch(error => console.error('Error fetching vendor details:', error));
+                    .catch(error => console.error('Error fetching customer details:', error));
             }
         }
 
-        // Standard change event
-        vendorSelect.addEventListener('change', function () {
-            fetchVendorDetails(this.value);
-        });
-
-        setTimeout(() => {
-            if (vendorSelect.tomselect) {
-                vendorSelect.tomselect.on('change', function (value) {
-                    fetchVendorDetails(value);
-                });
-            }
-        }, 500);
-
-        // --- Table Controller (Data Source Level) --- //
         function getDefaultLocation() {
             const locNode = document.querySelector('select[name="location"]');
             return locNode ? locNode.value : '';
         }
 
-        const purchaseOrderController = {
+        const salesReturnController = {
             data: [],
             rowCount: 0,
-            rowTemplateHTML: '',
+            rowTemplateHTML: templateRow.innerHTML,
 
             init() {
-                const firstRow = document.querySelector('.item-row');
-                this.rowTemplateHTML = firstRow.innerHTML;
-                firstRow.remove();
-
-                // Start with TWO empty rows
-                this.appendRow();
+                if (window.existingItems && window.existingItems.length > 0) {
+                    window.existingItems.forEach((item, idx) => {
+                        const newIdx = this.data.length;
+                        this.data.push({
+                            rowId: newIdx,
+                            product_id: item.product_id,
+                            description: item.description,
+                            onhand: '',
+                            qty: parseFloat(item.qty) || 0,
+                            rate: parseFloat(item.rate) || 0,
+                            amount: parseFloat(item.amount) || 0,
+                            disc_percent: parseFloat(item.disc_percent) || 0,
+                            discount: parseFloat(item.discount) || 0,
+                            total: parseFloat(item.total) || 0,
+                            location: item.location || getDefaultLocation(),
+                            unit: item.unit || ''
+                        });
+                        this.injectRowUI(this.data[newIdx], newIdx);
+                        this.rowCount++;
+                    });
+                }
+                // Start with ONE empty row at the end
                 this.appendRow();
             },
 
@@ -395,30 +296,16 @@
                     unit: ''
                 });
                 
-                this.injectRowUI(currentLoc, newIdx);
+                this.injectRowUI(this.data[newIdx], newIdx);
                 this.rowCount++;
             },
 
-            injectRowUI(currentLoc, index) {
+            injectRowUI(data, index) {
                 const newRow = document.createElement('tr');
                 newRow.className = 'item-row';
                 newRow.dataset.rowIndex = index;
                 newRow.innerHTML = this.rowTemplateHTML;
                 
-                newRow.querySelectorAll('input').forEach(input => {
-                    input.value = '';
-                    if (input.classList.contains('qty-input')) input.value = '1';
-                    if (input.classList.contains('location-input')) input.value = currentLoc;
-                });
-                
-                newRow.querySelectorAll('.ts-wrapper').forEach(wrapper => wrapper.remove());
-                newRow.querySelectorAll('select').forEach(select => {
-                    select.classList.remove('tomselected', 'ts-hidden-accessible');
-                    select.style.display = '';
-                    if (select.hasAttribute('id')) select.removeAttribute('id');
-                    select.value = '';
-                });
-
                 newRow.querySelectorAll('input, select').forEach(el => {
                     if (el.classList.contains('product-select')) el.name = `items[${index}][product_id]`;
                     if (el.classList.contains('description-input')) el.name = `items[${index}][description]`;
@@ -433,8 +320,41 @@
                     if (el.classList.contains('unit-input')) el.name = `items[${index}][unit]`;
                 });
 
-                document.querySelector('#itemsTable tbody').appendChild(newRow);
+                itemsTableBody.appendChild(newRow);
+
+                if (data.product_id) {
+                    const sel = newRow.querySelector('.product-select');
+                    this.populateSel(sel, data.product_id);
+                    newRow.querySelector('.description-input').value = data.description || '';
+                    newRow.querySelector('.qty-input').value = data.qty;
+                    newRow.querySelector('.rate-input').value = data.rate;
+                    newRow.querySelector('.amount-input').value = data.amount.toFixed(2);
+                    newRow.querySelector('.disc-percent-input').value = data.disc_percent || '';
+                    newRow.querySelector('.discount-input').value = data.discount || '';
+                    newRow.querySelector('.total-input').value = data.total.toFixed(2);
+                    newRow.querySelector('.location-input').value = data.location;
+                    newRow.querySelector('.unit-input').value = data.unit || '';
+                    
+                    fetchItemStock(data.product_id, data.location, index, newRow);
+                } else {
+                    newRow.querySelector('.qty-input').value = '1';
+                    newRow.querySelector('.location-input').value = data.location;
+                }
+
                 initRowEvents(newRow);
+            },
+
+            populateSel(sel, val) {
+                let optionsHTML = '<option value="">-- Select --</option>';
+                if (window.serverProductList && Array.isArray(window.serverProductList)) {
+                    window.serverProductList.forEach(p => {
+                        let safeName = (p.name || '').replace(/"/g, '&quot;');
+                        let safeCode = (p.code || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        let rate = parseFloat(p.max_sale_price) || 0;
+                        optionsHTML += `<option value="${p.id}" data-name="${safeName}" data-unit="${p.unit || ''}" data-rate="${rate}" ${p.id == val ? 'selected' : ''}>${safeCode}</option>`;
+                    });
+                }
+                sel.innerHTML = optionsHTML;
             },
 
             updateRowData(rowIndex, field, value) {
@@ -444,9 +364,9 @@
             },
 
             calculateRow(rowIndex, rowElement, sourceField = 'disc_percent') {
-                if (!this.data[rowIndex]) return;
-                
                 const dataRow = this.data[rowIndex];
+                if (!dataRow) return;
+
                 dataRow.amount = dataRow.qty * dataRow.rate;
                 
                 if (sourceField === 'disc_percent') {
@@ -458,7 +378,6 @@
                 }
 
                 dataRow.total = dataRow.amount - dataRow.discount;
-
                 rowElement.querySelector('.amount-input').value = dataRow.amount.toFixed(2);
                 rowElement.querySelector('.total-input').value = dataRow.total.toFixed(2);
 
@@ -466,10 +385,7 @@
             },
 
             calculateGrandTotal(sourceField = 'none') {
-                let grandQty = 0;
-                let grandAmount = 0;
-                let grandDiscount = 0;
-                let grandTotal = 0;
+                let grandQty = 0, grandAmount = 0, grandDiscount = 0, grandTotal = 0;
 
                 this.data.forEach(row => {
                     grandQty += parseFloat(row.qty) || 0;
@@ -499,37 +415,31 @@
                 }
 
                 const finalTotal = subTotal - headerDiscAmount;
-                const lkrSummary = document.querySelector('.footer-grand-total');
-                if(lkrSummary) lkrSummary.value = finalTotal.toFixed(2);
-
-                const subTotalInput = document.querySelector('.summary-subtotal');
-                if(subTotalInput) subTotalInput.value = subTotal.toFixed(2);
-
-                const totalInput = document.querySelector('.summary-total');
-                if(totalInput) totalInput.value = finalTotal.toFixed(2);
+                document.querySelector('.footer-grand-total').value = finalTotal.toFixed(2);
+                document.querySelector('.summary-subtotal').value = subTotal.toFixed(2);
+                document.querySelector('.summary-total').value = finalTotal.toFixed(2);
             }
         };
 
         function fetchItemStock(productId, location, rowIndex, row) {
             const onhandInput = row.querySelector('.onhand-input');
             if(!onhandInput) return;
-
             if (!productId || !location) {
                 onhandInput.value = '';
-                purchaseOrderController.updateRowData(rowIndex, 'onhand', '');
+                salesReturnController.updateRowData(rowIndex, 'onhand', '');
                 return;
             }
             onhandInput.value = '...';
             fetch(`/api/products/${productId}/stock?location=${encodeURIComponent(location)}`)
                 .then(response => response.json())
                 .then(data => {
-                    const balance = data.stock || 0; 
+                    const balance = data.stock || 0;
                     onhandInput.value = balance;
-                    purchaseOrderController.updateRowData(rowIndex, 'onhand', balance);
+                    salesReturnController.updateRowData(rowIndex, 'onhand', balance);
                 })
                 .catch(error => {
                     onhandInput.value = '0';
-                    purchaseOrderController.updateRowData(rowIndex, 'onhand', 0);
+                    salesReturnController.updateRowData(rowIndex, 'onhand', 0);
                 });
         }
 
@@ -540,21 +450,23 @@
             const rateInput = row.querySelector('.rate-input');
             const discPercentInput = row.querySelector('.disc-percent-input');
             const discountInput = row.querySelector('.discount-input');
-
-            if (!qtyInput.value) qtyInput.value = '1';
+            
+            if (productSelect.innerHTML == '<option></option>') {
+                salesReturnController.populateSel(productSelect, '');
+            }
 
             function handleProductChange(value) {
-                purchaseOrderController.updateRowData(rowIndex, 'product_id', value);
+                salesReturnController.updateRowData(rowIndex, 'product_id', value);
                 if (value) {
                     const selectedObj = window.serverProductList && Array.isArray(window.serverProductList) ? window.serverProductList.find(opt => opt.id == value) : null;
                     if (selectedObj) {
                         const desc = selectedObj.name || '';
                         const unit = selectedObj.unit || '';
-                        const rate = parseFloat(selectedObj.cost) || parseFloat(selectedObj.max_sale_price) || 0;
+                        const rate = parseFloat(selectedObj.max_sale_price) || parseFloat(selectedObj.cost) || 0;
 
-                        purchaseOrderController.updateRowData(rowIndex, 'description', desc);
-                        purchaseOrderController.updateRowData(rowIndex, 'unit', unit);
-                        purchaseOrderController.updateRowData(rowIndex, 'rate', rate);
+                        salesReturnController.updateRowData(rowIndex, 'description', desc);
+                        salesReturnController.updateRowData(rowIndex, 'unit', unit);
+                        salesReturnController.updateRowData(rowIndex, 'rate', rate);
 
                         row.querySelector('.description-input').value = desc;
                         row.querySelector('.unit-input').value = unit;
@@ -563,29 +475,16 @@
                         const currentLoc = row.querySelector('.location-input') ? row.querySelector('.location-input').value : '';
                         fetchItemStock(value, currentLoc, rowIndex, row);
 
-                        purchaseOrderController.calculateRow(rowIndex, row);
-                        purchaseOrderController.checkAndAppendRow(rowIndex);
+                        salesReturnController.calculateRow(rowIndex, row);
+                        salesReturnController.checkAndAppendRow(rowIndex);
                     }
                 } else {
                     row.querySelector('.description-input').value = '';
                     row.querySelector('.unit-input').value = '';
                     row.querySelector('.rate-input').value = '';
                     if(row.querySelector('.onhand-input')) row.querySelector('.onhand-input').value = '';
-                    purchaseOrderController.calculateRow(rowIndex, row);
+                    salesReturnController.calculateRow(rowIndex, row);
                 }
-            }
-
-            if (productSelect) {
-                let optionsHTML = '<option value="">-- Select --</option>';
-                if (window.serverProductList && Array.isArray(window.serverProductList)) {
-                    window.serverProductList.forEach(p => {
-                        let safeName = (p.name || '').replace(/"/g, '&quot;');
-                        let safeCode = (p.code || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                        let rate = parseFloat(p.cost) || parseFloat(p.max_sale_price) || 0;
-                        optionsHTML += `<option value="${p.id}" data-name="${safeName}" data-unit="${p.unit || ''}" data-rate="${rate}">${safeCode}</option>`;
-                    });
-                }
-                productSelect.innerHTML = optionsHTML;
             }
 
             if (window.TomSelect) {
@@ -605,65 +504,40 @@
                         }
                     },
                     onChange: (val) => {
-                        purchaseOrderController.updateRowData(rowIndex, 'product_id', val);
+                        salesReturnController.updateRowData(rowIndex, 'product_id', val);
                         handleProductChange(val);
                     }
                 });
             }
 
-            [qtyInput, rateInput, discPercentInput, discountInput].forEach(input => {
-                input.addEventListener('input', function() {
-                    let fieldName = 'qty';
-                    let sourceField = 'disc_percent';
-                    if (this.classList.contains('rate-input')) fieldName = 'rate';
-                    if (this.classList.contains('disc-percent-input')) { fieldName = 'disc_percent'; sourceField = 'disc_percent'; }
-                    if (this.classList.contains('discount-input')) { fieldName = 'discount'; sourceField = 'discount'; }
-                    purchaseOrderController.updateRowData(rowIndex, fieldName, parseFloat(this.value) || 0);
-                    purchaseOrderController.calculateRow(rowIndex, row, sourceField);
-                });
+            [qtyInput, rateInput, discPercentInput, discountInput].forEach(el => {
+                if (el) {
+                    el.addEventListener('input', function() {
+                        let fieldName = 'qty', sourceField = 'disc_percent';
+                        if (this.classList.contains('rate-input')) fieldName = 'rate';
+                        if (this.classList.contains('disc-percent-input')) { fieldName = 'disc_percent'; sourceField = 'disc_percent'; }
+                        if (this.classList.contains('discount-input')) { fieldName = 'discount'; sourceField = 'discount'; }
+                        
+                        salesReturnController.updateRowData(rowIndex, fieldName, parseFloat(this.value) || 0);
+                        salesReturnController.calculateRow(rowIndex, row, sourceField);
+                    });
+                }
             });
         }
 
-        purchaseOrderController.init();
+        salesReturnController.init();
+        salesReturnController.calculateGrandTotal();
 
-        const mainLocationSelect = document.querySelector('select[name="location"]');
-        if (mainLocationSelect) {
-            mainLocationSelect.addEventListener('change', function(e) {
-                if (e.detail && e.detail.isSyncTrigger) return; 
-                const newLocation = this.value;
-                document.querySelectorAll('#itemsTable tbody tr.item-row').forEach(row => {
-                    const rowLocationInput = row.querySelector('.location-input');
-                    const rowIndex = parseInt(row.dataset.rowIndex);
-                    
-                    if (rowLocationInput && rowLocationInput.value !== newLocation) {
-                        rowLocationInput.value = newLocation;
-                        if (!isNaN(rowIndex)) {
-                            purchaseOrderController.updateRowData(rowIndex, 'location', newLocation);
-                            const productSelect = row.querySelector('.product-select');
-                            const productId = productSelect ? productSelect.value : '';
-                            if (productId) {
-                                fetchItemStock(productId, newLocation, rowIndex, row);
-                            }
-                        }
-                    }
-                });
-            });
-        // Header Discount Events
-        const headerDiscPercentInput = document.querySelector('.header-discount-percent');
-        const headerDiscAmountInput = document.querySelector('.header-discount-amount');
-        
-        if (headerDiscPercentInput) {
-            headerDiscPercentInput.addEventListener('input', () => {
-                purchaseOrderController.calculateGrandTotal('header_percent');
-            });
-        }
-        
-        if (headerDiscAmountInput) {
-            headerDiscAmountInput.addEventListener('input', () => {
-                purchaseOrderController.calculateGrandTotal('header_amount');
-            });
-        }
+        document.querySelector('.header-discount-percent').addEventListener('input', () => salesReturnController.calculateGrandTotal('header_percent'));
+        document.querySelector('.header-discount-amount').addEventListener('input', () => salesReturnController.calculateGrandTotal('header_amount'));
+        if (customerSelect) customerSelect.addEventListener('change', function () { fetchCustomerDetails(this.value); });
 
+        salesReturnController.init();
+        salesReturnController.calculateGrandTotal();
+
+        document.querySelector('.header-discount-percent').addEventListener('input', () => salesReturnController.calculateGrandTotal('header_percent'));
+        document.querySelector('.header-discount-amount').addEventListener('input', () => salesReturnController.calculateGrandTotal('header_amount'));
+        if (customerSelect) customerSelect.addEventListener('change', function () { fetchCustomerDetails(this.value); });
     });
 </script>
 @endpush

@@ -19,11 +19,18 @@ class Invoice extends Model
         'check_in_date',
         'room_type',
         'check_out_date',
+        'header_discount_percent',
+        'header_discount_amount',
         'total_amount',
     ];
 
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function items()
+    {
+        return $this->hasMany(InvoiceItem::class);
     }
 }

@@ -7,13 +7,22 @@ use Illuminate\Database\Eloquent\Model;
 class GrnReturn extends Model
 {
     protected $fillable = [
-        'vendor_id', 'address', 'delivery_destination', 'load', 'return_no', 'date',
-        'order_by', 'checked_by', 'rep', 'reference_no', 'invoice_date', 'attent',
-        'terms', 'due_date', 'dispatch_no', 'total_amount'
+        'vendor_id',
+        'date',
+        'reference_no',
+        'memo',
+        'header_discount_percent',
+        'header_discount_amount',
+        'total_amount',
     ];
 
     public function vendor()
     {
         return $this->belongsTo(Vendor::class);
+    }
+
+    public function items()
+    {
+        return $this->hasMany(GrnReturnItem::class);
     }
 }
