@@ -16,7 +16,7 @@ class TerritoryController extends Controller
 
     public function create()
     {
-        $areas = Area::where('is_active', true)->orderBy('name')->get();
+        $areas = Area::whereNull('territory_id')->where('is_active', true)->orderBy('name')->get();
         return view('territories.create', compact('areas'));
     }
 
@@ -34,7 +34,7 @@ class TerritoryController extends Controller
         $territory = Territory::create($validated);
 
         if (!empty($validated['area_ids'])) {
-            $territory->areas()->sync($validated['area_ids']);
+            Area::whereIn('id', $validated['area_ids'])->update(['territory_id' => $territory->id]);
         }
 
         return redirect()->route('territories.index')->with('success', 'Territory created successfully.');
@@ -42,7 +42,14 @@ class TerritoryController extends Controller
 
     public function edit(Territory $territory)
     {
-        $areas = Area::orderBy('name')->get();
+        $areas = Area::where('is_active', true)
+            ->where(function ($query) use ($territory) {
+                $query->whereNull('territory_id')
+                      ->orWhere('territory_id', $territory->id);
+            })
+            ->orderBy('name')
+            ->get();
+            
         $selected = $territory->areas()->pluck('id')->toArray();
         return view('territories.edit', compact('territory', 'areas', 'selected'));
     }
@@ -60,10 +67,9 @@ class TerritoryController extends Controller
 
         $territory->update($validated);
 
-        if (isset($validated['area_ids'])) {
-            $territory->areas()->sync($validated['area_ids']);
-        } else {
-            $territory->areas()->sync([]);
+        Area::where('territory_id', $territory->id)->update(['territory_id' => null]);
+        if (!empty($validated['area_ids'])) {
+            Area::whereIn('id', $validated['area_ids'])->update(['territory_id' => $territory->id]);
         }
 
         return redirect()->route('territories.index')->with('success', 'Territory updated successfully.');
@@ -71,7 +77,7 @@ class TerritoryController extends Controller
 
     public function destroy(Territory $territory)
     {
-        $territory->areas()->sync([]);
+        Area::where('territory_id', $territory->id)->update(['territory_id' => null]);
         $territory->delete();
         return redirect()->route('territories.index')->with('success', 'Territory deleted successfully.');
     }

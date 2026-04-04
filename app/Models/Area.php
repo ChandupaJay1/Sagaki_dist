@@ -16,9 +16,9 @@ class Area extends Model
         'is_active',
     ];
 
-    public function territories()
+    public function territory()
     {
-        return $this->belongsToMany(Territory::class);
+        return $this->belongsTo(Territory::class);
     }
 }
 
