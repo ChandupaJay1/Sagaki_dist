@@ -43,7 +43,7 @@ class TerritoryController extends Controller
     public function edit(Territory $territory)
     {
         $areas = Area::orderBy('name')->get();
-        $selected = $territory->areas()->pluck('id')->toArray();
+        $selected = $territory->areas()->pluck('areas.id')->toArray();
         return view('territories.edit', compact('territory', 'areas', 'selected'));
     }
 
