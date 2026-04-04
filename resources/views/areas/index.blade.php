@@ -44,8 +44,10 @@
                             </td>
                             <td class="fw-bold text-dark">{{ $area->name }}</td>
                             <td class="text-muted">
-                                @if($area->territory)
-                                    <span class="badge bg-light text-dark border fw-medium px-2 py-1 me-1">{{ $area->territory->name }}</span>
+                                @if($area->territories->count())
+                                    @foreach($area->territories as $territory)
+                                        <span class="badge bg-light text-dark border fw-medium px-2 py-1 me-1">{{ $territory->name }}</span>
+                                    @endforeach
                                 @else
                                     <span class="text-muted small">—</span>
                                 @endif
