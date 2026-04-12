@@ -9,6 +9,7 @@
             <h4 class="mb-sm-0">Purchase Order</h4>
             <div class="d-flex align-items-center gap-2">
                 <span class="badge bg-danger-subtle text-danger"><i class="ri-error-warning-line me-1"></i>Date Control is Inactive.</span>
+                <span class="text-muted small fw-bold">Credit Limit: <span id="vendor-credit-limit">0.00</span></span>
             </div>
         </div>
     </div>
@@ -20,8 +21,8 @@
             <div class="card-header bg-soft-secondary d-flex justify-content-between align-items-center py-2">
                 <h5 class="card-title mb-0"><i class="ri-shopping-basket-2-line me-1"></i>Purchase Order - Create</h5>
                 <div class="float-end">
-                    <button type="submit" form="createPurchaseOrderForm" class="btn btn-info btn-sm me-1"><i class="ri-save-line me-1"></i>Save & New</button>
-                    <button type="submit" form="createPurchaseOrderForm" class="btn btn-success btn-sm me-1"><i class="ri-check-line me-1"></i>Save & Close</button>
+                    <button type="submit" name="action" value="save_and_new" form="createPurchaseOrderForm" class="btn btn-info btn-sm me-1"><i class="ri-save-line me-1"></i>Save & New</button>
+                    <button type="submit" name="action" value="save_and_close" form="createPurchaseOrderForm" class="btn btn-success btn-sm me-1"><i class="ri-check-line me-1"></i>Save & Close</button>
                     <button type="button" class="btn btn-outline-secondary btn-sm me-1"><i class="ri-printer-line me-1"></i>Save & Print</button>
                     <button type="reset" form="createPurchaseOrderForm" class="btn btn-warning btn-sm"><i class="ri-refresh-line me-1"></i>Reset</button>
                 </div>
@@ -54,10 +55,10 @@
                         </div>
                         <div class="col-md-4">
                              <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
-                             <select name="location" class="form-select form-select-sm">
+                             <select name="location_id" class="form-select form-select-sm" required>
                                  <option value="">-- Select Location --</option>
                                  @foreach($locations as $location)
-                                     <option value="{{ $location->name }}" {{ (old('location') == $location->name || $location->name == 'Main Stock') ? 'selected' : '' }}>{{ $location->name }}</option>
+                                     <option value="{{ $location->id }}" data-name="{{ $location->name }}" {{ (old('location_id') == $location->id || $location->name == 'Main Stock') ? 'selected' : '' }}>{{ $location->name }}</option>
                                  @endforeach
                              </select>
                          </div>
@@ -82,7 +83,7 @@
                         <div class="col-md-4">
                             <div class="mb-1">
                                 <label class="form-label small fw-bold mb-0">PO No</label>
-                                <input type="text" class="form-control form-control-sm bg-light" value="POND00053" readonly>
+                                <input type="text" class="form-control form-control-sm bg-light" value="{{ $nextPoNo }}" readonly>
                             </div>
                             <div>
                                 <label class="form-label small fw-bold mb-0">Date</label>
@@ -97,18 +98,27 @@
                             <label class="form-label small fw-bold mb-1">Order By</label>
                             <select name="order_by" class="form-select form-select-sm">
                                 <option value=""></option>
+                                @foreach($reps as $rep)
+                                    <option value="{{ $rep->name }}" {{ old('order_by') == $rep->name ? 'selected' : '' }}>{{ $rep->name }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label small fw-bold mb-1">Checked By</label>
                             <select name="checked_by" class="form-select form-select-sm">
                                 <option value=""></option>
+                                @foreach($reps as $rep)
+                                    <option value="{{ $rep->name }}" {{ old('checked_by') == $rep->name ? 'selected' : '' }}>{{ $rep->name }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label small fw-bold mb-1">Rep</label>
                             <select name="rep" class="form-select form-select-sm">
                                 <option value=""></option>
+                                @foreach($reps as $rep)
+                                    <option value="{{ $rep->name }}" {{ old('rep') == $rep->name ? 'selected' : '' }}>{{ $rep->name }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -129,11 +139,11 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Terms</label>
-                            <select name="terms" class="form-select form-select-sm">
+                            <select name="payment_term_id" id="termsSelect" class="form-select form-select-sm">
                                 <option value="">-- Select Terms --</option>
                                 @foreach($terms as $term)
                                     @php $label = ($term->days == 0) ? 'Cash Only' : ($term->days.' Days Credit'); @endphp
-                                    <option value="{{ $term->days }}" {{ old('terms') == $term->days ? 'selected' : '' }}>{{ $label }}</option>
+                                    <option value="{{ $term->id }}" data-days="{{ $term->days }}" {{ old('payment_term_id') == $term->id ? 'selected' : '' }}>{{ $label }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -223,13 +233,16 @@
                                     <label class="form-label small fw-bold mb-1">LKR Total Amount</label>
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text bg-light">LKR</span>
-                                        <input type="text" class="form-control text-end bg-light" readonly>
+                                        <input type="text" class="form-control text-end bg-light footer-grand-total" readonly>
                                     </div>
                                 </div>
                                 <div class="col-md-5">
                                     <label class="form-label small fw-bold mb-1">Account <span class="text-danger">*</span></label>
-                                    <select class="form-select form-select-sm border-danger">
-                                        <option value=""></option>
+                                    <select name="account_id" class="form-select form-select-sm border-danger" required>
+                                        <option value="">-- Select Account --</option>
+                                        @foreach($accounts as $account)
+                                            <option value="{{ $account->id }}" {{ old('account_id') == $account->id ? 'selected' : '' }}>{{ $account->name }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                             </div>
@@ -253,31 +266,31 @@
                                     </div>
                                     <div class="d-flex justify-content-between mb-2 align-items-center">
                                         <span class="small fw-bold">Sub Total</span>
-                                        <input type="text" class="form-control form-control-sm text-end w-50 bg-white summary-subtotal" value="0.00" readonly>
+                                        <input type="text" name="subtotal" class="form-control form-control-sm text-end w-50 bg-white summary-subtotal" value="0.00" readonly>
                                     </div>
                                     <div class="row g-2 mb-2">
                                         <div class="col-6">
                                             <label class="small fw-bold mb-0">SSCL %</label>
-                                            <input type="text" class="form-control form-control-sm text-center" value="0.00">
+                                            <input type="text" name="sscl_percent" class="form-control form-control-sm text-center" value="0.00">
                                         </div>
                                         <div class="col-6">
                                             <label class="small fw-bold mb-0">SSCL</label>
-                                            <input type="text" class="form-control form-control-sm text-end" value="0.00">
+                                            <input type="text" name="sscl_amount" class="form-control form-control-sm text-end" value="0.00">
                                         </div>
                                     </div>
                                     <div class="row g-2 mb-2">
                                         <div class="col-6">
                                             <label class="small fw-bold mb-0">VAT %</label>
-                                            <input type="text" class="form-control form-control-sm text-center" value="0.00">
+                                            <input type="text" name="vat_percent" class="form-control form-control-sm text-center" value="0.00">
                                         </div>
                                         <div class="col-6">
                                             <label class="small fw-bold mb-0">VAT</label>
-                                            <input type="text" class="form-control form-control-sm text-end" value="0.00">
+                                            <input type="text" name="vat_amount" class="form-control form-control-sm text-end" value="0.00">
                                         </div>
                                     </div>
                                     <div class="d-flex justify-content-between align-items-center">
                                         <span class="small fw-bold h6 text-primary mb-0">Total</span>
-                                        <input type="text" class="form-control form-control-sm text-end w-50 bg-white fw-bold text-primary summary-total" readonly>
+                                        <input type="text" name="total_amount" class="form-control form-control-sm text-end w-50 bg-white fw-bold text-primary summary-total" readonly>
                                     </div>
                                 </div>
                             </div>
@@ -296,7 +309,8 @@
         const vendorSelect = document.querySelector('select[name="vendor_id"]');
         const addressTextarea = document.querySelector('textarea[name="address"]');
         const deliveryDestinationTextarea = document.querySelector('textarea[name="delivery_destination"]');
-        const termsSelect = document.querySelector('select[name="terms"]');
+        const termsSelect = document.getElementById('termsSelect');
+        const creditLimitSpan = document.getElementById('vendor-credit-limit');
 
         function fetchVendorDetails(vendorId) {
             if (vendorId) {
@@ -306,18 +320,20 @@
                         if (addressTextarea) addressTextarea.value = data.address || '';
                         if (deliveryDestinationTextarea) deliveryDestinationTextarea.value = data.delivery_address || '';
                         
+                        if (creditLimitSpan) creditLimitSpan.innerText = parseFloat(data.credit_limit || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+
                         if (termsSelect && data.terms) {
-                            let matchedOption = Array.from(termsSelect.options).find(opt => opt.value === data.terms);
+                            let matchedOption = Array.from(termsSelect.options).find(opt => opt.value == data.terms);
                             
                             if (!matchedOption && data.terms) {
                                 let daysMatch = data.terms.match(/\d+/);
                                 if (daysMatch) {
-                                    let parsedDays = daysMatch[0];
-                                    matchedOption = Array.from(termsSelect.options).find(opt => opt.value === parsedDays);
+                                    let days = parseInt(daysMatch[0]);
+                                    matchedOption = Array.from(termsSelect.options).find(opt => opt.dataset.days == days);
                                 }
                                 
                                 if (!matchedOption) {
-                                    matchedOption = Array.from(termsSelect.options).find(opt => opt.text && opt.text.includes(data.terms));
+                                    matchedOption = Array.from(termsSelect.options).find(opt => opt.text && opt.text.toLowerCase().includes(data.terms.toLowerCase()));
                                 }
                             }
                             
@@ -348,8 +364,12 @@
 
         // --- Table Controller (Data Source Level) --- //
         function getDefaultLocation() {
-            const locNode = document.querySelector('select[name="location"]');
-            return locNode ? locNode.value : '';
+            const locNode = document.querySelector('select[name="location_id"]');
+            if (locNode && locNode.selectedIndex >= 0) {
+                const selectedOption = locNode.options[locNode.selectedIndex];
+                return selectedOption ? selectedOption.dataset.name || '' : '';
+            }
+            return '';
         }
 
         const purchaseOrderController = {
@@ -490,7 +510,7 @@
                 let headerDiscPercent = parseFloat(headerDiscPercentInput.value) || 0;
                 let headerDiscAmount = parseFloat(headerDiscAmountInput.value) || 0;
                 
-                if (sourceField === 'header_percent') {
+                if (sourceField === 'header_percent' || (sourceField === 'none' && headerDiscPercent > 0)) {
                     headerDiscAmount = (subTotal * headerDiscPercent) / 100;
                     headerDiscAmountInput.value = headerDiscAmount > 0 ? headerDiscAmount.toFixed(2) : '';
                 } else if (sourceField === 'header_amount') {
@@ -626,28 +646,31 @@
 
         purchaseOrderController.init();
 
-        const mainLocationSelect = document.querySelector('select[name="location"]');
+        const mainLocationSelect = document.querySelector('select[name="location_id"]');
         if (mainLocationSelect) {
             mainLocationSelect.addEventListener('change', function(e) {
                 if (e.detail && e.detail.isSyncTrigger) return; 
-                const newLocation = this.value;
+                const selectedOption = this.options[this.selectedIndex];
+                const locationName = selectedOption ? selectedOption.dataset.name : '';
+                
                 document.querySelectorAll('#itemsTable tbody tr.item-row').forEach(row => {
                     const rowLocationInput = row.querySelector('.location-input');
                     const rowIndex = parseInt(row.dataset.rowIndex);
                     
-                    if (rowLocationInput && rowLocationInput.value !== newLocation) {
-                        rowLocationInput.value = newLocation;
+                    if (rowLocationInput && rowLocationInput.value !== locationName) {
+                        rowLocationInput.value = locationName;
                         if (!isNaN(rowIndex)) {
-                            purchaseOrderController.updateRowData(rowIndex, 'location', newLocation);
+                            purchaseOrderController.updateRowData(rowIndex, 'location', locationName);
                             const productSelect = row.querySelector('.product-select');
                             const productId = productSelect ? productSelect.value : '';
                             if (productId) {
-                                fetchItemStock(productId, newLocation, rowIndex, row);
+                                fetchItemStock(productId, locationName, rowIndex, row);
                             }
                         }
                     }
                 });
             });
+        }
         // Header Discount Events
         const headerDiscPercentInput = document.querySelector('.header-discount-percent');
         const headerDiscAmountInput = document.querySelector('.header-discount-amount');
@@ -663,6 +686,22 @@
                 purchaseOrderController.calculateGrandTotal('header_amount');
             });
         }
+
+        // Vendor Select Change
+        vendorSelect.addEventListener('change', function () {
+            fetchVendorDetails(this.value);
+        });
+
+        setTimeout(() => {
+            if (vendorSelect.tomselect) {
+                vendorSelect.tomselect.on('change', function (value) {
+                    fetchVendorDetails(value);
+                });
+            }
+            if (termsSelect && window.TomSelect) {
+                new TomSelect(termsSelect, { create: false });
+            }
+        }, 500);
 
     });
 </script>

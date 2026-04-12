@@ -8,7 +8,12 @@ use App\Models\Location;
 use App\Models\Product;
 use App\Models\Unit;
 use App\Models\PaymentTerm;
+use App\Models\User;
 use Illuminate\Http\Request;
+
+use Illuminate\Support\Arr;
+
+use App\Models\Account;
 
 class InvoiceController extends Controller
 {
@@ -25,13 +30,23 @@ class InvoiceController extends Controller
         $units = Unit::orderBy('name')->get();
         $locations = Location::where('is_active', 1)->where('name', 'not like', '%Transit%')->orderBy('name')->get();
         $terms = PaymentTerm::orderBy('days')->get();
-        return view('invoices.create', compact('customers', 'products', 'locations', 'units', 'terms'));
+        $reps = User::where('is_active', 1)->orderBy('name')->get();
+        $accounts = Account::where('is_active', 1)->orderBy('name')->get();
+        return view('invoices.create', compact('customers', 'products', 'locations', 'units', 'terms', 'reps', 'accounts'));
     }
 
     public function store(Request $request)
     {
+        if ($request->has('items')) {
+            $items = collect($request->items)->filter(function($item) {
+                return !empty($item['product_id']);
+            })->toArray();
+            $request->merge(['items' => $items]);
+        }
+
         $validated = $request->validate([
             'customer_id' => ['required', 'exists:customers,id'],
+            'rep_id' => ['nullable', 'exists:users,id'],
             'address' => ['nullable', 'string', 'max:255'],
             'delivery_destination' => ['nullable', 'string', 'max:255'],
             'load' => ['nullable', 'string', 'max:255'],
@@ -43,9 +58,19 @@ class InvoiceController extends Controller
             'check_in_date' => ['nullable', 'date'],
             'room_type' => ['nullable', 'string', 'max:255'],
             'check_out_date' => ['nullable', 'date'],
+            'location_id' => ['nullable', 'exists:locations,id'],
+            'payment_term_id' => ['nullable', 'exists:terms,id'],
+            'account_id' => ['nullable', 'exists:accounts,id'],
+            'subtotal' => ['nullable', 'numeric'],
             'header_discount_percent' => ['nullable', 'numeric'],
             'header_discount_amount' => ['nullable', 'numeric'],
+            'tax_amount' => ['nullable', 'numeric'],
+            'sscl_percent' => ['nullable', 'numeric'],
+            'sscl_amount' => ['nullable', 'numeric'],
+            'vat_percent' => ['nullable', 'numeric'],
+            'vat_amount' => ['nullable', 'numeric'],
             'total_amount' => ['nullable', 'numeric'],
+            'status' => ['nullable', 'string'],
             'items' => ['required', 'array'],
             'items.*.product_id' => ['required', 'exists:products,id'],
             'items.*.qty' => ['required', 'numeric', 'gt:0'],
@@ -53,11 +78,33 @@ class InvoiceController extends Controller
         ]);
 
         \DB::transaction(function () use ($request, $validated) {
-            $invoice = Invoice::create($validated);
+            $data = Arr::except($validated, ['items']);
+            foreach (['subtotal', 'header_discount_percent', 'header_discount_amount', 'tax_amount', 'sscl_percent', 'sscl_amount', 'vat_percent', 'vat_amount', 'total_amount'] as $field) {
+                if (array_key_exists($field, $data)) {
+                    $data[$field] = $data[$field] ?: 0;
+                }
+            }
+            $invoice = Invoice::create($data);
 
             foreach ($request->items as $item) {
                 if (!empty($item['product_id'])) {
-                    $invoice->items()->create($item);
+                    $amountCalc = (float)($item['qty'] ?? 0) * (float)($item['rate'] ?? 0);
+                    $discPercent = isset($item['disc_percent']) && $item['disc_percent'] !== '' ? (float)$item['disc_percent'] : 0;
+                    $discountVal = isset($item['discount']) && $item['discount'] !== '' ? (float)$item['discount'] : 0;
+                    $amountVal = isset($item['amount']) && $item['amount'] !== '' ? (float)$item['amount'] : $amountCalc;
+                    $totalVal = isset($item['total']) && $item['total'] !== '' ? (float)$item['total'] : ($amountVal - $discountVal);
+                    $invoice->items()->create([
+                        'product_id' => $item['product_id'],
+                        'description' => $item['description'] ?? '',
+                        'qty' => (float)($item['qty'] ?? 0),
+                        'rate' => (float)($item['rate'] ?? 0),
+                        'amount' => $amountVal,
+                        'disc_percent' => $discPercent,
+                        'discount' => $discountVal,
+                        'total' => $totalVal,
+                        'location' => $item['location'] ?? null,
+                        'unit' => $item['unit'] ?? null,
+                    ]);
                 }
             }
         });
@@ -79,16 +126,26 @@ class InvoiceController extends Controller
         $units = Unit::orderBy('name')->get();
         $locations = Location::where('is_active', 1)->where('name', 'not like', '%Transit%')->orderBy('name')->get();
         $terms = PaymentTerm::orderBy('days')->get();
+        $reps = User::where('is_active', 1)->orderBy('name')->get();
+        $accounts = Account::where('is_active', 1)->orderBy('name')->get();
         
-        return view('invoices.edit', compact('invoice', 'customers', 'products', 'locations', 'units', 'terms'));
+        return view('invoices.edit', compact('invoice', 'customers', 'products', 'locations', 'units', 'terms', 'reps', 'accounts'));
     }
 
     public function update(Request $request, $id)
     {
         $invoice = Invoice::findOrFail($id);
 
+        if ($request->has('items')) {
+            $items = collect($request->items)->filter(function($item) {
+                return !empty($item['product_id']);
+            })->toArray();
+            $request->merge(['items' => $items]);
+        }
+
         $validated = $request->validate([
             'customer_id' => ['required', 'exists:customers,id'],
+            'rep_id' => ['nullable', 'exists:users,id'],
             'address' => ['nullable', 'string', 'max:255'],
             'delivery_destination' => ['nullable', 'string', 'max:255'],
             'load' => ['nullable', 'string', 'max:255'],
@@ -100,9 +157,19 @@ class InvoiceController extends Controller
             'check_in_date' => ['nullable', 'date'],
             'room_type' => ['nullable', 'string', 'max:255'],
             'check_out_date' => ['nullable', 'date'],
+            'location_id' => ['nullable', 'exists:locations,id'],
+            'payment_term_id' => ['nullable', 'exists:terms,id'],
+            'account_id' => ['nullable', 'exists:accounts,id'],
+            'subtotal' => ['nullable', 'numeric'],
             'header_discount_percent' => ['nullable', 'numeric'],
             'header_discount_amount' => ['nullable', 'numeric'],
+            'tax_amount' => ['nullable', 'numeric'],
+            'sscl_percent' => ['nullable', 'numeric'],
+            'sscl_amount' => ['nullable', 'numeric'],
+            'vat_percent' => ['nullable', 'numeric'],
+            'vat_amount' => ['nullable', 'numeric'],
             'total_amount' => ['nullable', 'numeric'],
+            'status' => ['nullable', 'string'],
             'items' => ['required', 'array'],
             'items.*.product_id' => ['required', 'exists:products,id'],
             'items.*.qty' => ['required', 'numeric', 'gt:0'],
@@ -110,12 +177,34 @@ class InvoiceController extends Controller
         ]);
 
         \DB::transaction(function () use ($request, $validated, $invoice) {
-            $invoice->update($validated);
+            $data = Arr::except($validated, ['items']);
+            foreach (['subtotal', 'header_discount_percent', 'header_discount_amount', 'tax_amount', 'sscl_percent', 'sscl_amount', 'vat_percent', 'vat_amount', 'total_amount'] as $field) {
+                if (array_key_exists($field, $data)) {
+                    $data[$field] = $data[$field] ?: 0;
+                }
+            }
+            $invoice->update($data);
 
             $invoice->items()->delete();
             foreach ($request->items as $item) {
                 if (!empty($item['product_id'])) {
-                    $invoice->items()->create($item);
+                    $amountCalc = (float)($item['qty'] ?? 0) * (float)($item['rate'] ?? 0);
+                    $discPercent = isset($item['disc_percent']) && $item['disc_percent'] !== '' ? (float)$item['disc_percent'] : 0;
+                    $discountVal = isset($item['discount']) && $item['discount'] !== '' ? (float)$item['discount'] : 0;
+                    $amountVal = isset($item['amount']) && $item['amount'] !== '' ? (float)$item['amount'] : $amountCalc;
+                    $totalVal = isset($item['total']) && $item['total'] !== '' ? (float)$item['total'] : ($amountVal - $discountVal);
+                    $invoice->items()->create([
+                        'product_id' => $item['product_id'],
+                        'description' => $item['description'] ?? '',
+                        'qty' => (float)($item['qty'] ?? 0),
+                        'rate' => (float)($item['rate'] ?? 0),
+                        'amount' => $amountVal,
+                        'disc_percent' => $discPercent,
+                        'discount' => $discountVal,
+                        'total' => $totalVal,
+                        'location' => $item['location'] ?? null,
+                        'unit' => $item['unit'] ?? null,
+                    ]);
                 }
             }
         });

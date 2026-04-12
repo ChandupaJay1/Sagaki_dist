@@ -53,10 +53,10 @@
                         </div>
                         <div class="col-md-4">
                              <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
-                             <select name="location" class="form-select form-select-sm">
+                             <select name="location_id" class="form-select form-select-sm" required>
                                  <option value="">-- Select Location --</option>
                                  @foreach($locations as $location)
-                                     <option value="{{ $location->name }}" {{ old('location', $grn->location) == $location->name ? 'selected' : '' }}>{{ $location->name }}</option>
+                                     <option value="{{ $location->id }}" data-name="{{ $location->name }}" {{ old('location_id', $grn->location_id) == $location->id ? 'selected' : '' }}>{{ $location->name }}</option>
                                  @endforeach
                              </select>
                          </div>
@@ -199,8 +199,11 @@
                                 </div>
                                 <div class="col-md-5">
                                     <label class="form-label small fw-bold mb-1">Account <span class="text-danger">*</span></label>
-                                    <select class="form-select form-select-sm border-danger">
-                                        <option value=""></option>
+                                    <select name="account_id" class="form-select form-select-sm border-danger" required>
+                                        <option value="">-- Select Account --</option>
+                                        @foreach($accounts as $account)
+                                            <option value="{{ $account->id }}" {{ old('account_id', $grn->account_id) == $account->id ? 'selected' : '' }}>{{ $account->name }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                             </div>
@@ -224,11 +227,11 @@
                                     </div>
                                     <div class="d-flex justify-content-between mb-2 align-items-center">
                                         <span class="small fw-bold">Sub Total</span>
-                                        <input type="text" class="form-control form-control-sm text-end w-50 bg-white summary-subtotal" value="0.00" readonly>
+                                        <input type="text" name="subtotal" class="form-control form-control-sm text-end w-50 bg-white summary-subtotal" value="0.00" readonly>
                                     </div>
                                     <div class="d-flex justify-content-between align-items-center">
                                         <span class="small fw-bold h6 text-primary mb-0">Total</span>
-                                        <input type="text" class="form-control form-control-sm text-end w-50 bg-white fw-bold text-primary summary-total" value="{{ number_format($grn->total_amount, 2, '.', '') }}" readonly>
+                                        <input type="text" name="total_amount" class="form-control form-control-sm text-end w-50 bg-white fw-bold text-primary summary-total" value="{{ number_format($grn->total_amount, 2, '.', '') }}" readonly>
                                     </div>
                                 </div>
                             </div>
@@ -263,8 +266,12 @@
         }
 
         function getDefaultLocation() {
-            const locNode = document.querySelector('select[name="location"]');
-            return locNode ? locNode.value : '';
+            const locNode = document.querySelector('select[name="location_id"]');
+            if (locNode && locNode.selectedIndex >= 0) {
+                const selectedOption = locNode.options[locNode.selectedIndex];
+                return selectedOption ? selectedOption.dataset.name || '' : '';
+            }
+            return '';
         }
 
         const grnController = {
@@ -436,7 +443,7 @@
                 let headerDiscPercent = parseFloat(headerDiscPercentInput.value) || 0;
                 let headerDiscAmount = parseFloat(headerDiscAmountInput.value) || 0;
                 
-                if (sourceField === 'header_percent') {
+                if (sourceField === 'header_percent' || (sourceField === 'none' && headerDiscPercent > 0)) {
                     headerDiscAmount = (subTotal * headerDiscPercent) / 100;
                     headerDiscAmountInput.value = headerDiscAmount > 0 ? headerDiscAmount.toFixed(2) : '';
                 } else if (sourceField === 'header_amount') {
@@ -560,13 +567,32 @@
 
         document.querySelector('.header-discount-percent').addEventListener('input', () => grnController.calculateGrandTotal('header_percent'));
         document.querySelector('.header-discount-amount').addEventListener('input', () => grnController.calculateGrandTotal('header_amount'));
-        if (vendorSelect) vendorSelect.addEventListener('change', function () { fetchVendorDetails(this.value); });
 
-        grnController.init();
-        grnController.calculateGrandTotal();
+        const mainLocationSelect = document.querySelector('select[name="location_id"]');
+        if (mainLocationSelect) {
+            mainLocationSelect.addEventListener('change', function(e) {
+                const selectedOption = this.options[this.selectedIndex];
+                const locationName = selectedOption ? selectedOption.dataset.name : '';
+                
+                document.querySelectorAll('#itemsTable tbody tr.item-row').forEach(row => {
+                    const rowLocationInput = row.querySelector('.location-input');
+                    const rowIndex = parseInt(row.dataset.rowIndex);
+                    
+                    if (rowLocationInput && rowLocationInput.value !== locationName) {
+                        rowLocationInput.value = locationName;
+                        if (!isNaN(rowIndex)) {
+                            grnController.updateRowData(rowIndex, 'location', locationName);
+                            const productSelect = row.querySelector('.product-select');
+                            const productId = productSelect ? productSelect.value : '';
+                            if (productId) {
+                                fetchItemStock(productId, locationName, rowIndex, row);
+                            }
+                        }
+                    }
+                });
+            });
+        }
 
-        document.querySelector('.header-discount-percent').addEventListener('input', () => grnController.calculateGrandTotal('header_percent'));
-        document.querySelector('.header-discount-amount').addEventListener('input', () => grnController.calculateGrandTotal('header_amount'));
         if (vendorSelect) vendorSelect.addEventListener('change', function () { fetchVendorDetails(this.value); });
     });
 </script>

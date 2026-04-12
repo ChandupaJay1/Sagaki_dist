@@ -9,6 +9,7 @@
             <h4 class="mb-sm-0">Job Order</h4>
             <div class="d-flex align-items-center gap-2">
                 <span class="badge bg-danger-subtle text-danger"><i class="ri-error-warning-line me-1"></i>Date Control is Inactive.</span>
+                <span class="text-muted small fw-bold">Credit Limit: <span id="customer-credit-limit">0.00</span></span>
             </div>
         </div>
     </div>
@@ -54,10 +55,10 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
-                            <select name="location" class="form-select form-select-sm">
+                            <select name="location_id" class="form-select form-select-sm" required>
                                 <option value="">-- Select Location --</option>
                                 @foreach($locations as $loc)
-                                    <option value="{{ $loc->name }}" {{ (old('location') == $loc->name || $loc->name == 'Main Stock') ? 'selected' : '' }}>{{ $loc->name }}</option>
+                                    <option value="{{ $loc->id }}" data-name="{{ $loc->name }}" {{ (old('location_id') == $loc->id || $loc->name == 'Main Stock') ? 'selected' : '' }}>{{ $loc->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -124,11 +125,11 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Terms</label>
-                            <select name="terms" id="termsSelect" class="form-select form-select-sm">
+                            <select name="payment_term_id" id="termsSelect" class="form-select form-select-sm">
                                 <option value="">-- Select Terms --</option>
                                 @foreach($terms as $term)
                                     @php $label = ($term->days == 0) ? 'Cash Only' : ($term->days.' Days Credit'); @endphp
-                                    <option value="{{ $term->days }}" {{ old('terms') == $term->days ? 'selected' : '' }}>{{ $label }}</option>
+                                    <option value="{{ $term->id }}" data-days="{{ $term->days }}" {{ old('payment_term_id') == $term->id ? 'selected' : '' }}>{{ $label }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -230,8 +231,11 @@
                                 </div>
                                 <div class="col-md-5">
                                     <label class="form-label small fw-bold mb-1">Account <span class="text-danger">*</span></label>
-                                    <select class="form-select form-select-sm border-danger">
-                                        <option value=""></option>
+                                    <select name="account_id" class="form-select form-select-sm border-danger" required>
+                                        <option value="">-- Select Account --</option>
+                                        @foreach($accounts as $account)
+                                            <option value="{{ $account->id }}" {{ old('account_id') == $account->id ? 'selected' : '' }}>{{ $account->name }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                             </div>
@@ -245,7 +249,7 @@
                                 <div class="card-body p-2">
                                     <div class="d-flex justify-content-between mb-2">
                                         <span class="small fw-bold">Sub Total</span>
-                                        <input type="text" class="form-control form-control-sm text-end w-50 bg-white summary-subtotal" readonly placeholder="0.00">
+                                        <input type="text" name="subtotal" class="form-control form-control-sm text-end w-50 bg-white summary-subtotal" readonly placeholder="0.00">
                                     </div>
                                     <div class="row g-2 mb-2">
                                         <div class="col-6">
@@ -257,9 +261,9 @@
                                             <input type="number" name="header_discount_amount" class="form-control form-control-sm text-end header-discount-amount" step="any" placeholder="0.00">
                                         </div>
                                     </div>
-                                    <div class="d-flex justify-content-between">
-                                        <span class="small fw-bold h6 text-primary">Total</span>
-                                        <input type="text" class="form-control form-control-sm text-end w-50 bg-white fw-bold text-primary summary-total" readonly placeholder="0.00">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="small fw-bold h6 text-primary mb-0">Total</span>
+                                        <input type="text" name="total_amount" class="form-control form-control-sm text-end w-50 bg-white fw-bold text-primary summary-total" readonly placeholder="0.00">
                                     </div>
                                 </div>
                             </div>
@@ -281,6 +285,7 @@
         const itemsTableBody = document.querySelector('#itemsTable tbody');
         const repSelect = document.getElementById('repSelect');
         const termsSelect = document.getElementById('termsSelect');
+        const creditLimitSpan = document.getElementById('customer-credit-limit');
         function fetchCustomerDetails(customerId) {
             if (customerId) {
                 fetch(`/api/customers/${customerId}`)
@@ -288,6 +293,8 @@
                     .then(data => {
                         if (addressTextarea) addressTextarea.value = data.address || '';
                         if (deliveryDestinationTextarea) deliveryDestinationTextarea.value = data.delivery_address || '';
+                        
+                        if (creditLimitSpan) creditLimitSpan.innerText = parseFloat(data.credit_limit || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
                         
                         if (repSelect && data.rep_id) {
                             repSelect.value = data.rep_id;
@@ -297,32 +304,24 @@
                         }
                         
                         if (termsSelect && data.terms) {
-                            // Try to match exact value first
-                            let matchedOption = Array.from(termsSelect.options).find(opt => opt.value === data.terms);
+                            // Try to match by days first
+                            let daysMatch = data.terms.match(/\d+/);
+                            let matchedOption = null;
                             
-                            // If not found, try to extract the number of days or match by text
-                            if (!matchedOption && data.terms) {
-                                let daysMatch = data.terms.match(/\d+/);
-                                if (daysMatch) {
-                                    let parsedDays = daysMatch[0];
-                                    matchedOption = Array.from(termsSelect.options).find(opt => opt.value === parsedDays);
-                                }
-                                
-                                // Alternatively, check if the option text includes the term
-                                if (!matchedOption) {
-                                    matchedOption = Array.from(termsSelect.options).find(opt => opt.text && opt.text.includes(data.terms));
-                                }
+                            if (daysMatch) {
+                                let days = parseInt(daysMatch[0]);
+                                matchedOption = Array.from(termsSelect.options).find(opt => opt.dataset.days == days);
                             }
                             
+                            if (!matchedOption) {
+                                // Try to match by text
+                                matchedOption = Array.from(termsSelect.options).find(opt => opt.text.toLowerCase().includes(data.terms.toLowerCase()));
+                            }
+
                             if (matchedOption) {
                                 termsSelect.value = matchedOption.value;
                                 if (termsSelect.tomselect) {
                                     termsSelect.tomselect.setValue(matchedOption.value);
-                                }
-                            } else {
-                                termsSelect.value = data.terms;
-                                if (termsSelect.tomselect) {
-                                    termsSelect.tomselect.setValue(data.terms);
                                 }
                             }
                         }
@@ -332,8 +331,12 @@
         }
 
         function getDefaultLocation() {
-            const locNode = document.querySelector('select[name="location"]');
-            return locNode ? locNode.value : '';
+            const locNode = document.querySelector('select[name="location_id"]');
+            if (locNode && locNode.selectedIndex >= 0) {
+                const selectedOption = locNode.options[locNode.selectedIndex];
+                return selectedOption ? selectedOption.dataset.name || '' : '';
+            }
+            return '';
         }
 
         // --- Table Controller (Data Source Level) ---
@@ -486,7 +489,7 @@
                 let headerDiscPercent = parseFloat(headerDiscPercentInput.value) || 0;
                 let headerDiscAmount = parseFloat(headerDiscAmountInput.value) || 0;
                 
-                if (sourceField === 'header_percent') {
+                if (sourceField === 'header_percent' || (sourceField === 'none' && headerDiscPercent > 0)) {
                     headerDiscAmount = (subTotal * headerDiscPercent) / 100;
                     headerDiscAmountInput.value = headerDiscAmount > 0 ? headerDiscAmount.toFixed(2) : '';
                 } else if (sourceField === 'header_amount') {
@@ -658,7 +661,7 @@
         salesOrderController.appendRow();
 
         // Header events
-        const mainLocationSelect = document.querySelector('select[name="location"]');
+        const mainLocationSelect = document.querySelector('select[name="location_id"]');
         
         // --- 1. Header to Table Sync ---
         if (mainLocationSelect) {
@@ -666,23 +669,24 @@
                 // e.detail.isSyncTrigger prevents infinite loops if this change was triggered by the row
                 if (e.detail && e.detail.isSyncTrigger) return; 
 
-                const newLocation = this.value;
+                const selectedOption = this.options[this.selectedIndex];
+                const locationName = selectedOption ? selectedOption.dataset.name : '';
                 
                 // Loop through all existing rows in the items table
                 document.querySelectorAll('#itemsTable tbody tr.item-row').forEach(row => {
                     const rowLocationInput = row.querySelector('.location-input');
                     const rowIndex = parseInt(row.dataset.rowIndex);
                     
-                    if (rowLocationInput && rowLocationInput.value !== newLocation) {
-                        rowLocationInput.value = newLocation;
+                    if (rowLocationInput && rowLocationInput.value !== locationName) {
+                        rowLocationInput.value = locationName;
                         
                         if (!isNaN(rowIndex)) {
-                            salesOrderController.updateRowData(rowIndex, 'location', newLocation);
+                            salesOrderController.updateRowData(rowIndex, 'location', locationName);
                             
                             const productSelect = row.querySelector('.product-select');
                             const productId = productSelect ? productSelect.value : '';
                             if (productId) {
-                                fetchItemStock(productId, newLocation, rowIndex, row);
+                                fetchItemStock(productId, locationName, rowIndex, row);
                             }
                         }
                     }

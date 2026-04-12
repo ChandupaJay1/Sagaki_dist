@@ -53,16 +53,15 @@ class ProductController extends Controller
     {
         $location = $request->input('location');
         
-        // As requested: executing a query like SELECT quantity FROM stock_table WHERE item_id = ? AND location_id = ?
-        // Using Laravel's Query Builder for safe parameter binding
-        $stock = \Illuminate\Support\Facades\DB::table('stock_table')
-            ->where('item_id', $id)
-            ->where('location_id', $location)
-            ->value('quantity');
-            
-        $stock = $stock ? (float) $stock : 0;
+        // Summing up quantities from various transaction tables
+        $grnIn = \Illuminate\Support\Facades\DB::table('grn_items')->where('product_id', $id)->where('location', $location)->sum('qty');
+        $invoiceOut = \Illuminate\Support\Facades\DB::table('invoice_items')->where('product_id', $id)->where('location', $location)->sum('qty');
+        $grnReturnOut = \Illuminate\Support\Facades\DB::table('grn_return_items')->where('product_id', $id)->where('location', $location)->sum('qty');
+        $salesReturnIn = \Illuminate\Support\Facades\DB::table('sales_return_items')->where('product_id', $id)->where('location', $location)->sum('qty');
         
-        return response()->json(['stock' => $stock], 200);
+        $stock = ($grnIn + $salesReturnIn) - ($invoiceOut + $grnReturnOut);
+        
+        return response()->json(['stock' => (float) $stock], 200);
     }
 
     /**

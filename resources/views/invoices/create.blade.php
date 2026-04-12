@@ -9,8 +9,7 @@
             <h4 class="mb-sm-0">Invoice</h4>
             <div class="d-flex align-items-center gap-2">
                 <span class="badge bg-danger-subtle text-danger"><i class="ri-error-warning-line me-1"></i>Date Control is Inactive.</span>
-                <span class="text-muted small fw-bold">Credit Limit: 0.00</span>
-                <span class="text-muted small fw-bold">Rs: 0.00</span>
+                <span class="text-muted small fw-bold">Credit Limit: <span id="customer-credit-limit">0.00</span></span>
             </div>
         </div>
     </div>
@@ -56,10 +55,10 @@
                         </div>
                         <div class="col-md-4">
                              <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
-                             <select name="location" class="form-select form-select-sm" required>
+                             <select name="location_id" class="form-select form-select-sm" required>
                                  <option value="">-- Select Location --</option>
                                  @foreach($locations as $location)
-                                     <option value="{{ $location->name }}" {{ (old('location') == $location->name || $location->name == 'Main Stock') ? 'selected' : '' }}>{{ $location->name }}</option>
+                                     <option value="{{ $location->id }}" data-name="{{ $location->name }}" {{ (old('location_id') == $location->id || $location->name == 'Main Stock') ? 'selected' : '' }}>{{ $location->name }}</option>
                                  @endforeach
                              </select>
                         </div>
@@ -84,7 +83,7 @@
                         <div class="col-md-4">
                             <div class="mb-1">
                                 <label class="form-label small fw-bold mb-0">INV No</label>
-                                <input type="text" class="form-control form-control-sm bg-light" value="INV/ 2020/00109" readonly>
+                                <input type="text" name="invoice_no" class="form-control form-control-sm bg-light" value="INV/ 2020/00109" readonly>
                             </div>
                             <div>
                                 <label class="form-label small fw-bold mb-0">Date</label>
@@ -94,13 +93,40 @@
                     </div>
 
                     <!-- Header Row 3 -->
-                    <div class="row g-2 mb-3">
-                        <div class="col-md-2">
+                    <div class="row g-2 mb-2">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold mb-1">Rep</label>
+                            <select name="rep_id" id="repSelect" class="form-select form-select-sm">
+                                <option value="">-- Select Rep --</option>
+                                @foreach($reps as $rep)
+                                    <option value="{{ $rep->id }}" {{ old('rep_id') == $rep->id ? 'selected' : '' }}>{{ $rep->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold mb-1">Terms</label>
+                            <select name="payment_term_id" id="termsSelect" class="form-select form-select-sm">
+                                <option value="">-- Select Terms --</option>
+                                @foreach($terms as $term)
+                                    @php $label = ($term->days == 0) ? 'Cash Only' : ($term->days.' Days Credit'); @endphp
+                                    <option value="{{ $term->id }}" data-days="{{ $term->days }}" {{ old('payment_term_id') == $term->id ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold mb-1">Due Date</label>
+                            <input type="date" name="due_date" class="form-control form-control-sm" value="{{ old('due_date', date('Y-m-d')) }}">
+                        </div>
+                        <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Villa Type</label>
                             <select name="villa_type" class="form-select form-select-sm">
                                 <option value=""></option>
                             </select>
                         </div>
+                    </div>
+
+                    <!-- Header Row 4 -->
+                    <div class="row g-2 mb-3">
                         <div class="col-md-2">
                             <label class="form-label small fw-bold mb-1">Meal Plan</label>
                             <select name="meal_plan" class="form-select form-select-sm">
@@ -211,8 +237,11 @@
                                 </div>
                                 <div class="col-md-7">
                                     <label class="form-label small fw-bold mb-1">Account <span class="text-danger">*</span></label>
-                                    <select class="form-select form-select-sm border-danger">
-                                        <option value=""></option>
+                                    <select name="account_id" class="form-select form-select-sm border-danger" required>
+                                        <option value="">-- Select Account --</option>
+                                        @foreach($accounts as $account)
+                                            <option value="{{ $account->id }}" {{ old('account_id') == $account->id ? 'selected' : '' }}>{{ $account->name }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                             </div>
@@ -227,20 +256,20 @@
                                     <div class="row g-2 mb-2">
                                         <div class="col-6">
                                             <label class="small fw-bold mb-0">Discount %</label>
-                                            <input type="number" id="final-discount-percent" class="form-control form-control-sm text-center" placeholder="0">
+                                            <input type="number" id="final-discount-percent" name="header_discount_percent" class="form-control form-control-sm text-center" placeholder="0">
                                         </div>
                                         <div class="col-6">
                                             <label class="small fw-bold mb-0">Discount</label>
-                                            <input type="number" id="final-discount-amount" class="form-control form-control-sm text-end" placeholder="0.00">
+                                            <input type="number" id="final-discount-amount" name="header_discount_amount" class="form-control form-control-sm text-end" placeholder="0.00">
                                         </div>
                                     </div>
                                     <div class="d-flex justify-content-between mb-2 align-items-center">
                                         <span class="small fw-bold">Sub Total</span>
-                                        <input type="text" id="final-sub-total" class="form-control form-control-sm text-end w-50 bg-white" readonly>
+                                        <input type="text" id="final-sub-total" name="subtotal" class="form-control form-control-sm text-end w-50 bg-white" readonly>
                                     </div>
                                     <div class="d-flex justify-content-between align-items-center">
                                         <span class="small fw-bold h6 text-primary mb-0">Total</span>
-                                        <input type="text" id="final-grand-total" class="form-control form-control-sm text-end w-50 bg-white fw-bold text-primary" readonly>
+                                        <input type="text" id="final-grand-total" name="total_amount" class="form-control form-control-sm text-end w-50 bg-white fw-bold text-primary" readonly>
                                     </div>
                                 </div>
                             </div>
@@ -259,6 +288,10 @@
         const customerSelect = document.querySelector('select[name="customer_id"]');
         const addressTextarea = document.querySelector('textarea[name="address"]');
         const deliveryDestinationTextarea = document.querySelector('textarea[name="delivery_destination"]');
+        const repSelect = document.getElementById('repSelect');
+        const termsSelect = document.getElementById('termsSelect');
+
+        const creditLimitSpan = document.getElementById('customer-credit-limit');
 
         function fetchCustomerDetails(customerId) {
             if (customerId) {
@@ -267,6 +300,38 @@
                     .then(data => {
                         if (addressTextarea) addressTextarea.value = data.address || '';
                         if (deliveryDestinationTextarea) deliveryDestinationTextarea.value = data.delivery_address || '';
+                        
+                        if (creditLimitSpan) creditLimitSpan.innerText = parseFloat(data.credit_limit || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+                        
+                        if (repSelect && data.rep_id) {
+                            repSelect.value = data.rep_id;
+                            if (repSelect.tomselect) {
+                                repSelect.tomselect.setValue(data.rep_id);
+                            }
+                        }
+                        
+                        if (termsSelect && data.terms) {
+                            // Try to match by days first
+                            let daysMatch = data.terms.match(/\d+/);
+                            let matchedOption = null;
+                            
+                            if (daysMatch) {
+                                let days = parseInt(daysMatch[0]);
+                                matchedOption = Array.from(termsSelect.options).find(opt => opt.dataset.days == days);
+                            }
+                            
+                            if (!matchedOption) {
+                                // Try to match by text
+                                matchedOption = Array.from(termsSelect.options).find(opt => opt.text.toLowerCase().includes(data.terms.toLowerCase()));
+                            }
+
+                            if (matchedOption) {
+                                termsSelect.value = matchedOption.value;
+                                if (termsSelect.tomselect) {
+                                    termsSelect.tomselect.setValue(matchedOption.value);
+                                }
+                            }
+                        }
                     })
                     .catch(error => console.error('Error fetching customer details:', error));
             }
@@ -283,12 +348,49 @@
                     fetchCustomerDetails(value);
                 });
             }
+
+            if (repSelect && window.TomSelect) {
+                new TomSelect(repSelect, { create: false });
+            }
+            if (termsSelect && window.TomSelect) {
+                new TomSelect(termsSelect, { create: false });
+            }
         }, 500);
 
         // --- Table Controller (Data Source Level) --- //
         function getDefaultLocation() {
-            const locNode = document.querySelector('select[name="location"]');
-            return locNode ? locNode.value : '';
+            const locNode = document.querySelector('select[name="location_id"]');
+            if (locNode && locNode.selectedIndex >= 0) {
+                const selectedOption = locNode.options[locNode.selectedIndex];
+                return selectedOption ? selectedOption.dataset.name || '' : '';
+            }
+            return '';
+        }
+
+        function calculateFinalTotal(sourceField = 'none') {
+            const subTotalInput = document.getElementById('final-sub-total');
+            const discPercentInput = document.getElementById('final-discount-percent');
+            const discAmountInput = document.getElementById('final-discount-amount');
+            const grandTotalInput = document.getElementById('final-grand-total');
+            const lkrTotalInput = document.getElementById('lkr-total');
+
+            let subTotal = parseFloat(subTotalInput.value) || 0;
+            let discPercent = parseFloat(discPercentInput.value) || 0;
+            let discAmount = parseFloat(discAmountInput.value) || 0;
+
+            // Logic: If percent is present and we're not explicitly editing the amount,
+            // or if we're forced to use percent (like when subtotal changes).
+            if (sourceField === 'header_percent' || (sourceField === 'none' && discPercent > 0)) {
+                discAmount = (subTotal * discPercent) / 100;
+                discAmountInput.value = discAmount > 0 ? discAmount.toFixed(2) : '';
+            } else if (sourceField === 'header_amount') {
+                discPercent = 0;
+                discPercentInput.value = '';
+            }
+
+            let finalTotal = subTotal - discAmount;
+            grandTotalInput.value = finalTotal.toFixed(2);
+            if (lkrTotalInput) lkrTotalInput.value = finalTotal.toFixed(2);
         }
 
         const invoiceController = {
@@ -392,11 +494,13 @@
                     dataRow.discount = (dataRow.amount * dataRow.disc_percent) / 100;
                     rowElement.querySelector('.discount-input').value = dataRow.discount > 0 ? dataRow.discount.toFixed(2) : '';
                 } else if (sourceField === 'discount') {
+                    // Update disc_percent to 0 if manual discount is entered
                     dataRow.disc_percent = 0;
                     rowElement.querySelector('.disc-percent-input').value = '';
+                    // The dataRow.discount is already updated via the event listener before calling calculateRow
                 }
 
-                dataRow.total = dataRow.amount - dataRow.discount;
+                dataRow.total = dataRow.amount - (dataRow.discount || 0);
 
                 rowElement.querySelector('.amount-input').value = dataRow.amount.toFixed(2);
                 rowElement.querySelector('.total-input').value = dataRow.total.toFixed(2);
@@ -474,7 +578,8 @@
                     if (selectedObj) {
                         const desc = selectedObj.name || '';
                         const unit = selectedObj.unit || '';
-                        const rate = parseFloat(selectedObj.max_sale_price) || parseFloat(selectedObj.cost) || 0; // Invoices use sale price
+                        // Default to max_sale_price for invoices, fallback to cost
+                        const rate = parseFloat(selectedObj.max_sale_price) || parseFloat(selectedObj.cost) || 0;
 
                         invoiceController.updateRowData(rowIndex, 'description', desc);
                         invoiceController.updateRowData(rowIndex, 'unit', unit);
@@ -491,6 +596,13 @@
                         invoiceController.checkAndAppendRow(rowIndex);
                     }
                 } else {
+                    invoiceController.updateRowData(rowIndex, 'description', '');
+                    invoiceController.updateRowData(rowIndex, 'unit', '');
+                    invoiceController.updateRowData(rowIndex, 'rate', 0);
+                    invoiceController.updateRowData(rowIndex, 'onhand', 0);
+                    invoiceController.updateRowData(rowIndex, 'amount', 0);
+                    invoiceController.updateRowData(rowIndex, 'total', 0);
+
                     row.querySelector('.description-input').value = '';
                     row.querySelector('.unit-input').value = '';
                     row.querySelector('.rate-input').value = '';
@@ -577,23 +689,25 @@
 
         invoiceController.init();
 
-        const mainLocationSelect = document.querySelector('select[name="location"]');
+        const mainLocationSelect = document.querySelector('select[name="location_id"]');
         if (mainLocationSelect) {
             mainLocationSelect.addEventListener('change', function(e) {
                 if (e.detail && e.detail.isSyncTrigger) return; 
-                const newLocation = this.value;
+                const selectedOption = this.options[this.selectedIndex];
+                const locationName = selectedOption ? selectedOption.dataset.name : '';
+                
                 document.querySelectorAll('#itemsTable tbody tr.item-row').forEach(row => {
                     const rowLocationInput = row.querySelector('.location-input');
                     const rowIndex = parseInt(row.dataset.rowIndex);
                     
-                    if (rowLocationInput && rowLocationInput.value !== newLocation) {
-                        rowLocationInput.value = newLocation;
+                    if (rowLocationInput && rowLocationInput.value !== locationName) {
+                        rowLocationInput.value = locationName;
                         if (!isNaN(rowIndex)) {
-                            invoiceController.updateRowData(rowIndex, 'location', newLocation);
+                            invoiceController.updateRowData(rowIndex, 'location', locationName);
                             const productSelect = row.querySelector('.product-select');
                             const productId = productSelect ? productSelect.value : '';
                             if (productId) {
-                                fetchItemStock(productId, newLocation, rowIndex, row);
+                                fetchItemStock(productId, locationName, rowIndex, row);
                             }
                         }
                     }

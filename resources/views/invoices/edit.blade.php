@@ -52,9 +52,9 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
-                            <select name="location" class="form-select form-select-sm">
+                            <select name="location_id" class="form-select form-select-sm" required>
                                 @foreach($locations as $loc)
-                                    <option value="{{ $loc->name }}" {{ old('location', $invoice->location) == $loc->name ? 'selected' : '' }}>{{ $loc->name }}</option>
+                                    <option value="{{ $loc->id }}" data-name="{{ $loc->name }}" {{ old('location_id', $invoice->location_id) == $loc->id ? 'selected' : '' }}>{{ $loc->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -164,6 +164,15 @@
 
                     <div class="row g-3">
                         <div class="col-md-8">
+                            <div class="mb-2">
+                                <label class="form-label small fw-bold mb-1">Account <span class="text-danger">*</span></label>
+                                <select name="account_id" class="form-select form-select-sm border-danger" required>
+                                    <option value="">-- Select Account --</option>
+                                    @foreach($accounts as $account)
+                                        <option value="{{ $account->id }}" {{ old('account_id', $invoice->account_id) == $account->id ? 'selected' : '' }}>{{ $account->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                             <textarea name="memo" class="form-control form-control-sm" rows="3" placeholder="Memo">{{ old('memo', $invoice->memo) }}</textarea>
                         </div>
                         <div class="col-md-4">
@@ -178,6 +187,10 @@
                                             <label class="small fw-bold">Discount Amt</label>
                                             <input type="number" name="header_discount_amount" class="form-control form-control-sm header-discount-amount" value="{{ old('header_discount_amount', $invoice->header_discount_amount) }}">
                                         </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="fw-bold">Sub Total</span>
+                                        <input type="text" class="form-control form-control-sm text-end w-50 sub-total bg-white" value="{{ number_format($invoice->items->sum('total'), 2, '.', '') }}" readonly>
                                     </div>
                                     <div class="d-flex justify-content-between">
                                         <span class="fw-bold">Net Total</span>
@@ -252,7 +265,7 @@
                     disc_percent: 0,
                     discount: 0,
                     total: 0,
-                    location: 'Main Stock',
+                    location: getDefaultLocation() || 'Main Stock',
                     unit: ''
                 });
                 this.injectRowUI(idx);
@@ -323,7 +336,7 @@
                 document.querySelector('.footer-qty').value = grandQty.toFixed(2);
                 document.querySelector('.footer-total').value = grandTotal.toFixed(2);
                 
-                document.querySelector('.summary-total').value = grandTotal.toFixed(2);
+                document.querySelector('.sub-total').value = grandTotal.toFixed(2);
                 calculateFinalTotal();
             }
         };
@@ -401,30 +414,56 @@
             });
         }
 
-        function calculateFinalTotal(source = 'header_percent') {
-            const subTotal = parseFloat(document.querySelector('.summary-total').value) || 0;
+        function calculateFinalTotal(source = 'none') {
+            const subTotal = parseFloat(document.querySelector('.sub-total').value) || 0;
             const discPercentInput = document.querySelector('.header-discount-percent');
             const discAmountInput = document.querySelector('.header-discount-amount');
             
             let discPercent = parseFloat(discPercentInput.value) || 0;
             let discAmount = parseFloat(discAmountInput.value) || 0;
 
-            if (source === 'header_percent') {
+            if (source === 'header_percent' || (source === 'none' && discPercent > 0)) {
                 discAmount = (subTotal * discPercent) / 100;
-                discAmountInput.value = discAmount.toFixed(2);
-            } else {
-                discPercent = subTotal > 0 ? (discAmount / subTotal) * 100 : 0;
-                discPercentInput.value = discPercent.toFixed(2);
+                discAmountInput.value = discAmount > 0 ? discAmount.toFixed(2) : '';
+            } else if (source === 'header_amount') {
+                discPercent = 0;
+                discPercentInput.value = '';
             }
 
-            // In this specific UI, the Net Total field ALREADY should show the value after discount
-            // but let's follow the standard pattern if possible.
-            // For now, just update the same field or grand total if it exists.
             document.querySelector('.summary-total').value = (subTotal - discAmount).toFixed(2);
+        }
+
+        function getDefaultLocation() {
+            const locNode = document.querySelector('select[name="location_id"]');
+            if (locNode && locNode.selectedIndex >= 0) {
+                const selectedOption = locNode.options[locNode.selectedIndex];
+                return selectedOption ? selectedOption.dataset.name || '' : '';
+            }
+            return '';
         }
 
         invoiceController.init();
         invoiceController.calculateGrandTotal();
+
+        const mainLocationSelect = document.querySelector('select[name="location_id"]');
+        if (mainLocationSelect) {
+            mainLocationSelect.addEventListener('change', function(e) {
+                const selectedOption = this.options[this.selectedIndex];
+                const locationName = selectedOption ? selectedOption.dataset.name : '';
+                
+                document.querySelectorAll('#itemsTable tbody tr.item-row').forEach(row => {
+                    const rowLocationInput = row.querySelector('.location-input');
+                    const rowIndex = parseInt(row.dataset.rowIndex);
+                    
+                    if (rowLocationInput && rowLocationInput.value !== locationName) {
+                        rowLocationInput.value = locationName;
+                        if (!isNaN(rowIndex)) {
+                            invoiceController.updateRowData(rowIndex, 'location', locationName);
+                        }
+                    }
+                });
+            });
+        }
         
         document.querySelector('.header-discount-percent').addEventListener('input', () => calculateFinalTotal('header_percent'));
         document.querySelector('.header-discount-amount').addEventListener('input', () => calculateFinalTotal('header_amount'));

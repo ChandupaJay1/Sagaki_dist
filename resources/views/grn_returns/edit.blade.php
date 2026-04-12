@@ -53,10 +53,10 @@
                         </div>
                         <div class="col-md-4">
                              <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
-                             <select name="location" class="form-select form-select-sm">
+                             <select name="location_id" class="form-select form-select-sm" required>
                                  <option value="">-- Select Location --</option>
                                  @foreach($locations as $location)
-                                     <option value="{{ $location->name }}" {{ old('location', $return->location) == $location->name ? 'selected' : '' }}>{{ $location->name }}</option>
+                                     <option value="{{ $location->id }}" data-name="{{ $location->name }}" {{ old('location_id', $return->location_id) == $location->id ? 'selected' : '' }}>{{ $location->name }}</option>
                                  @endforeach
                              </select>
                          </div>
@@ -169,8 +169,11 @@
                                 </div>
                                 <div class="col-md-5">
                                     <label class="form-label small fw-bold mb-1">Account <span class="text-danger">*</span></label>
-                                    <select class="form-select form-select-sm border-danger">
-                                        <option value=""></option>
+                                    <select name="account_id" class="form-select form-select-sm border-danger" required>
+                                        <option value="">-- Select Account --</option>
+                                        @foreach($accounts as $account)
+                                            <option value="{{ $account->id }}" {{ old('account_id', $return->account_id) == $account->id ? 'selected' : '' }}>{{ $account->name }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                             </div>
@@ -233,8 +236,11 @@
         }
 
         function getDefaultLocation() {
-            const locNode = document.querySelector('select[name="location"]');
-            return locNode ? locNode.value : '';
+            const locNode = document.querySelector('select[name="location_id"]');
+            if (locNode && locNode.selectedIndex >= 0) {
+                return locNode.options[locNode.selectedIndex].dataset.name || '';
+            }
+            return '';
         }
 
         const grnReturnController = {
@@ -264,6 +270,33 @@
                         this.rowCount++;
                     });
                 }
+
+                // Sync header location to items
+                const mainLocationSelect = document.querySelector('select[name="location_id"]');
+                if (mainLocationSelect) {
+                    mainLocationSelect.addEventListener('change', function(e) {
+                        const selectedOption = this.options[this.selectedIndex];
+                        const locationName = selectedOption ? selectedOption.dataset.name : '';
+                        
+                        document.querySelectorAll('#itemsTable tbody tr.item-row').forEach(row => {
+                            const rowLocationInput = row.querySelector('.location-input');
+                            const rowIndex = parseInt(row.dataset.rowIndex);
+                            
+                            if (rowLocationInput && rowLocationInput.value !== locationName) {
+                                rowLocationInput.value = locationName;
+                                if (!isNaN(rowIndex)) {
+                                    grnReturnController.updateRowData(rowIndex, 'location', locationName);
+                                    const productSelect = row.querySelector('.product-select');
+                                    const productId = productSelect ? productSelect.value : '';
+                                    if (productId) {
+                                        fetchItemStock(productId, locationName, rowIndex, row);
+                                    }
+                                }
+                            }
+                        });
+                    });
+                }
+
                 // Start with ONE empty row at the end
                 this.appendRow();
             },
@@ -524,13 +557,6 @@
                 }
             });
         }
-
-        grnReturnController.init();
-        grnReturnController.calculateGrandTotal();
-
-        document.querySelector('.header-discount-percent').addEventListener('input', () => grnReturnController.calculateGrandTotal('header_percent'));
-        document.querySelector('.header-discount-amount').addEventListener('input', () => grnReturnController.calculateGrandTotal('header_amount'));
-        if (vendorSelect) vendorSelect.addEventListener('change', function () { fetchVendorDetails(this.value); });
 
         grnReturnController.init();
         grnReturnController.calculateGrandTotal();
