@@ -22,6 +22,7 @@ Route::prefix('v1')->name('api.')->group(function () {
     Route::post('/verify-serial', [AuthController::class, 'verifySerial']);
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+    Route::get('/route-customers/{id}', [MobileController::class, 'routeCustomersByRouteId']);
 
     // ==================== PROTECTED ROUTES ====================
     Route::middleware('auth:sanctum')->group(function () {
