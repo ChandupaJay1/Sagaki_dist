@@ -10,7 +10,9 @@ class PayBill extends Model
     use HasFactory;
 
     protected $fillable = [
+        'type',
         'vendor_id',
+        'customer_id',
         'location_id',
         'voucher_no',
         'date',
@@ -25,6 +27,11 @@ class PayBill extends Model
     public function vendor()
     {
         return $this->belongsTo(Vendor::class);
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
     }
 
     public function items()

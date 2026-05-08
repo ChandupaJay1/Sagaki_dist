@@ -104,6 +104,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/approvals/{id}/reject', [App\Http\Controllers\UserApprovalController::class , 'reject'])->name('approvals.reject');
     Route::get('/approvals/count', [App\Http\Controllers\UserApprovalController::class , 'count'])->name('approvals.count');
 
+    // Pay Bills - Separate Routes for Supplier and Customer
+    Route::get('pay-bills/supplier/create', [\App\Http\Controllers\PayBillController::class, 'createSupplier'])->name('pay-bills.supplier.create');
+    Route::get('pay-bills/customer/create', [\App\Http\Controllers\PayBillController::class, 'createCustomer'])->name('pay-bills.customer.create');
+    Route::get('pay-bills/{id}/print', [\App\Http\Controllers\PayBillController::class, 'print'])->name('pay-bills.print');
     Route::resource('pay-bills', \App\Http\Controllers\PayBillController::class);
 
     // Profile Routes
