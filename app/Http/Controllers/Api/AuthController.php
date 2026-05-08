@@ -56,6 +56,14 @@ class AuthController extends Controller
                 ], 403);
             }
 
+            // Check if user is admin (Admins cannot login through mobile app)
+            if ($user->role === 'admin') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Admin users cannot login through the mobile app. Please use the web portal.'
+                ], 403);
+            }
+
             // Create new token
             $token = $user->createToken('auth_token')->plainTextToken;
 
