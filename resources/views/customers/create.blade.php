@@ -239,6 +239,27 @@
                                     </div>
                                 </div>
 
+                                <!-- Location -->
+                                <div class="row mb-3 align-items-center">
+                                    <div class="col-sm-4">
+                                        <label for="location_id" class="form-label-custom">Location</label>
+                                    </div>
+                                    <div class="col-sm-8">
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="ri-map-pin-line"></i></span>
+                                            <select class="form-select" id="location_id" name="location_id">
+                                                <option value="">No location</option>
+                                                @foreach($locations ?? [] as $loc)
+                                                    <option value="{{ $loc->id }}" {{ old('location_id') == $loc->id ? 'selected' : '' }}>
+                                                        {{ $loc->name }}{{ $loc->code ? ' (' . $loc->code . ')' : '' }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <small class="text-muted">Select the master location for this customer.</small>
+                                    </div>
+                                </div>
+
                                 <!-- Main Office No -->
                                 <div class="row mb-3 align-items-center">
                                     <div class="col-sm-4">

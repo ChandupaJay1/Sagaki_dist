@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use App\Models\Route;
+use App\Models\Location;
 use App\Models\CustomerCategory;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -13,22 +14,24 @@ class CustomerController extends Controller
 {
     public function index()
     {
-        $customers = Customer::with(['route', 'customerCategory'])->get();
+        $customers = Customer::with(['route', 'location', 'customerCategory'])->get();
         $routes = Route::where('is_active', true)->orderBy('name')->get();
+        $locations = Location::where('is_active', true)->orderBy('name')->get();
         $customerCategories = CustomerCategory::orderBy('name')->get();
         $categories = Category::where('is_active', true)->orderBy('name')->get();
-        return view('customers.index', compact('customers', 'routes', 'customerCategories', 'categories'));
+        return view('customers.index', compact('customers', 'routes', 'locations', 'customerCategories', 'categories'));
     }
 
     public function create()
     {
         $routes = Route::where('is_active', true)->orderBy('name')->get();
+        $locations = Location::where('is_active', true)->orderBy('name')->get();
         $customerCategories = CustomerCategory::orderBy('name')->get();
         $terms = \App\Models\PaymentTerm::where('is_active', true)->orderBy('days')->get();
         $accounts = \App\Models\Account::where('is_active', true)->orderBy('name')->get();
         $categories = Category::where('is_active', true)->orderBy('name')->get();
         $reps = \App\Models\User::where('is_active', 1)->orderBy('name')->get();
-        return view('customers.create', compact('routes', 'customerCategories', 'terms', 'accounts', 'categories', 'reps'));
+        return view('customers.create', compact('routes', 'locations', 'customerCategories', 'terms', 'accounts', 'categories', 'reps'));
     }
 
     public function store(Request $request)
@@ -63,6 +66,7 @@ class CustomerController extends Controller
             // Name is handled via company_name or contact person usually, but keeping it if needed or defaulting
             'name' => 'nullable|string|max:255',
             'route_id' => 'nullable|exists:routes,id',
+            'location_id' => 'nullable|exists:locations,id',
             'rep_id' => 'nullable|exists:users,id',
         ]);
 
@@ -71,6 +75,7 @@ class CustomerController extends Controller
 
         Customer::create([
             'route_id' => $request->route_id,
+            'location_id' => $request->location_id,
             'customer_category_id' => $request->customer_category_id,
             'name' => $name,
             'email' => $request->email,
@@ -110,12 +115,13 @@ class CustomerController extends Controller
     {
         $customer = Customer::findOrFail($id);
         $routes = Route::where('is_active', true)->orderBy('name')->get();
+        $locations = Location::where('is_active', true)->orderBy('name')->get();
         $customerCategories = CustomerCategory::orderBy('name')->get();
         $terms = \App\Models\PaymentTerm::where('is_active', true)->orderBy('days')->get();
         $accounts = \App\Models\Account::where('is_active', true)->orderBy('name')->get();
         $categories = Category::where('is_active', true)->orderBy('name')->get();
         $reps = \App\Models\User::where('is_active', 1)->orderBy('name')->get();
-        return view('customers.edit', compact('customer', 'routes', 'customerCategories', 'terms', 'accounts', 'categories', 'reps'));
+        return view('customers.edit', compact('customer', 'routes', 'locations', 'customerCategories', 'terms', 'accounts', 'categories', 'reps'));
     }
 
     public function update(Request $request, $id)
@@ -151,6 +157,7 @@ class CustomerController extends Controller
             'bank_account_number' => 'nullable|string|max:50',
             'name' => 'nullable|string|max:255',
             'route_id' => 'nullable|exists:routes,id',
+            'location_id' => 'nullable|exists:locations,id',
             'rep_id' => 'nullable|exists:users,id',
         ]);
 

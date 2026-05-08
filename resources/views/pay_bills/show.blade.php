@@ -1,14 +1,15 @@
 @extends('layouts.admin')
 
-@section('title', 'Pay Bills - View Detail')
+@section('title', 'View ' . $payment->type . ' Bill Payment')
 
 @section('content')
 <div class="row">
     <div class="col-12">
         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-            <h4 class="mb-sm-0">Payment Details</h4>
+            <h4 class="mb-sm-0">View {{ $payment->type }} Bill Payment</h4>
             <div class="page-title-right">
-                <a href="{{ route('pay-bills.index') }}" class="btn btn-secondary btn-sm"><i class="ri-arrow-left-line me-1"></i>Back to List</a>
+                <a href="{{ route('pay-bills.print', $payment->id) }}" class="btn btn-info btn-sm me-1"><i class="ri-printer-line me-1"></i>Print Voucher</a>
+                <a href="{{ route('pay-bills.index', ['type' => $payment->type]) }}" class="btn btn-secondary btn-sm"><i class="ri-arrow-left-line me-1"></i>Back to List</a>
             </div>
         </div>
     </div>
@@ -17,17 +18,17 @@
 <div class="row">
     <div class="col-lg-12">
         <div class="card">
-            <div class="card-header bg-soft-info py-2 d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Voucher No: {{ $payment->voucher_no }}</h5>
-                <span class="badge bg-success text-uppercase">{{ $payment->status }}</span>
-            </div>
             <div class="card-body">
                 <div class="row mb-4">
-                    <div class="col-sm-4">
-                        <h6 class="text-muted text-uppercase fw-semibold mb-2">Vendor Details</h6>
-                        <p class="fw-bold mb-1 fs-15">{{ $payment->vendor->company_name ?? $payment->vendor->name }}</p>
-                        <p class="text-muted mb-1">{{ $payment->vendor->address }}</p>
-                        <p class="text-muted mb-0">Phone: {{ $payment->vendor->phone }}</p>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-muted small text-uppercase mb-1">{{ $payment->type === 'Supplier' ? 'Vendor' : 'Customer' }}</label>
+                        <div class="fs-15 fw-bold text-primary">
+                            @if($payment->type === 'Supplier')
+                                {{ $payment->vendor->company_name ?? $payment->vendor->name }}
+                            @else
+                                {{ $payment->customer->company_name ?? $payment->customer->name }}
+                            @endif
+                        </div>
                     </div>
                     <div class="col-sm-4">
                         <h6 class="text-muted text-uppercase fw-semibold mb-2">Payment Info</h6>

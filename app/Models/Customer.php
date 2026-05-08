@@ -12,6 +12,7 @@ class Customer extends Model
 
     protected $fillable = [
         'route_id',
+        'location_id',
         'customer_category_id',
         'rep_id',
         'name',
@@ -51,6 +52,11 @@ class Customer extends Model
     public function route()
     {
         return $this->belongsTo(Route::class);
+    }
+
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
     }
 
     public function customerCategory()
