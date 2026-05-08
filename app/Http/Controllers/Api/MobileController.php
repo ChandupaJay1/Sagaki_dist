@@ -94,13 +94,12 @@ class MobileController extends Controller
             }
 
             $customers = Customer::where('route_id', $user->route_id)
-                ->where('is_active', 1)
                 ->orderBy('name')
                 ->get([
                     'id',
                     'name',
                     'company_name',
-                    'mobile_number',
+                    'mobile_no as mobile_number',
                     'address',
                     'route_id',
                 ]);
@@ -271,6 +270,44 @@ class MobileController extends Controller
     }
 
     /**
+     * Get customers for a specific route (Requested by Android App)
+     * 
+     * @param string $id Route ID
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function routeCustomersByRouteId($id)
+    {
+        try {
+            $customers = Customer::where('route_id', $id)
+                ->orderBy('name')
+                ->get([
+                    'id',
+                    'name',
+                    'address',
+                    'mobile_no as mobile_number',
+                    'route_id',
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Customers retrieved successfully',
+                'data' => [
+                    'route_id' => (int)$id,
+                    'customers' => $customers,
+                ]
+            ], 200);
+
+        } catch (\Throwable $e) {
+            Log::error('routeCustomersByRouteId error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get customers for a specific route
      * 
      * @param string $id Route ID
@@ -280,13 +317,12 @@ class MobileController extends Controller
     {
         try {
             $customers = Customer::where('route_id', $id)
-                ->where('is_active', 1)
                 ->orderBy('name')
                 ->get([
                     'id',
                     'name',
                     'company_name',
-                    'mobile_number',
+                    'mobile_no as mobile_number',
                     'address',
                     'route_id',
                 ]);

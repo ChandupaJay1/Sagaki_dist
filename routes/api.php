@@ -40,6 +40,7 @@ Route::prefix('v1')->name('api.')->group(function () {
         Route::apiResource('vendors', VendorController::class);
 
         // ==================== MOBILE ROUTES (For Ref App) ====================
+        Route::get('/route-customers/{id}', [MobileController::class, 'routeCustomersByRouteId']);
         Route::get('/my-route', [MobileController::class, 'myRoute']);
         Route::put('/my-route', [MobileController::class, 'updateMyRoute']);
         Route::get('/my-route/customers', [MobileController::class, 'myRouteCustomers']);
