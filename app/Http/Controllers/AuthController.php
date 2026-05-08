@@ -15,6 +15,7 @@ class AuthController extends Controller
         if (Auth::check()) {
             return redirect()->route('dashboard');
         }
+
         return view('auth-signin');
     }
 
@@ -28,10 +29,19 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $request->remember)) {
             $user = Auth::user();
 
-            if (!$user->is_active) {
+            if (! $user->is_active) {
                 Auth::logout();
+
                 return back()->withErrors([
                     'email' => 'Your account has been disconnected. Please contact the administrator.',
+                ])->onlyInput('email');
+            }
+
+            if ($user->role === 'ref') {
+                Auth::logout();
+
+                return back()->withErrors([
+                    'email' => 'Ref users cannot login through this portal. Please use the mobile app.',
                 ])->onlyInput('email');
             }
 
@@ -41,6 +51,7 @@ class AuthController extends Controller
             if ($intended && str_contains($intended, '/approvals/count')) {
                 return redirect()->route('dashboard');
             }
+
             return $intended ? redirect()->to($intended) : redirect()->route('dashboard');
         }
 
@@ -54,6 +65,7 @@ class AuthController extends Controller
         if (Auth::check()) {
             return redirect()->route('dashboard');
         }
+
         return view('auth-signup');
     }
 
@@ -92,7 +104,7 @@ class AuthController extends Controller
 
         $message = 'Registration successful! Your account is pending approval.';
         if ($user->role === 'ref') {
-            $message .= ' Your Serial Number (Password) is: ' . $user->serial_number . '. Save this for later use.';
+            $message .= ' Your Serial Number (Password) is: '.$user->serial_number.'. Save this for later use.';
         }
 
         return redirect()->route('login')->with('success', $message);

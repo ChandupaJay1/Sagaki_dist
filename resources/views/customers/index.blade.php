@@ -85,6 +85,7 @@
                                     <th>Company</th>
                                     <th>Contact Person Name</th>
                                     <th>Route</th>
+                                    <th>Location</th>
                                     <th>Email</th>
                                     <th>Phone</th>
                                     <th class="text-end pe-4">Actions</th>
@@ -121,6 +122,12 @@
                                                 </select>
                                             </form>
                                             <small class="text-muted d-block mt-1">Change route here</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-soft-info text-info fs-12">
+                                                <i class="ri-map-pin-line me-1"></i>
+                                                {{ $customer->location->name ?? 'N/A' }}
+                                            </span>
                                         </td>
                                         <td>{{ $customer->email }}</td>
                                         <td>{{ $customer->mobile_no ?? $customer->phone }}</td>

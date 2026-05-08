@@ -1008,12 +1008,32 @@
 
                     <li class="menu-title">Payment</li>
                     <li class="menu-item">
-                        <a class="menu-link" href="{{ route('pay-bills.index') }}">
+                        <a class="menu-link" data-bs-toggle="collapse" href="#menuPayment" role="button" aria-expanded="false" aria-controls="menuPayment">
                             <span class="nav-icon">
                                 <i class="ri-secure-payment-line"></i>
                             </span>
-                            <span class="nav-text"> Pay Bills </span>
+                            <span class="nav-text"> Payments </span>
+                            <i class="ri-arrow-right-s-line menu-arrow"></i>
                         </a>
+                        <div class="collapse" id="menuPayment">
+                            <ul class="sub-menu">
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('pay-bills.supplier.create') }}">
+                                        <span class="nav-text">Supplier Bills</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('pay-bills.customer.create') }}">
+                                        <span class="nav-text">Customer Bills</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('pay-bills.index') }}">
+                                        <span class="nav-text">History</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </li>
 
                     <li class="menu-title">System</li>

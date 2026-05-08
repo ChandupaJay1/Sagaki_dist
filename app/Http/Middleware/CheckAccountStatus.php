@@ -18,8 +18,18 @@ class CheckAccountStatus
     {
         if (Auth::check() && !Auth::user()->is_active) {
             Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+            
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Your account has been disconnected. Please contact the administrator.'
+                ], 403);
+            }
+
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
 
             return redirect()->route('login')->withErrors([
                 'email' => 'Your account has been disconnected. Please contact the administrator.',

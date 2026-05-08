@@ -13,7 +13,9 @@ return new class extends Migration
     {
         Schema::create('pay_bills', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('vendor_id')->constrained('vendors')->cascadeOnDelete();
+            $table->string('type')->default('Supplier'); // Supplier or Customer
+            $table->foreignId('vendor_id')->nullable()->constrained('vendors')->nullOnDelete();
+            $table->foreignId('customer_id')->nullable()->constrained('customers')->nullOnDelete();
             $table->foreignId('location_id')->nullable()->constrained('locations')->nullOnDelete();
             $table->string('voucher_no')->unique();
             $table->date('date');
@@ -30,6 +32,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('pay_bill_id')->constrained('pay_bills')->cascadeOnDelete();
             $table->foreignId('grn_id')->nullable()->constrained('grns')->nullOnDelete();
+            $table->foreignId('invoice_id')->nullable()->constrained('invoices')->nullOnDelete();
             $table->string('bill_no')->nullable();
             $table->date('bill_date')->nullable();
             $table->date('due_date')->nullable();
