@@ -21,16 +21,51 @@ class CustomerController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:customers,email',
-            'phone' => 'required|string|max:20',
+            'route_id' => 'required|exists:routes,id',
             'address' => 'nullable|string',
+            'location' => 'nullable|string',
+            'mobile_no' => 'required|string|max:20|unique:customers,mobile_no',
+            'main_office_no' => 'nullable|string|max:20',
+            'status' => 'nullable|string|in:active,inactive,pending',
+        ], [
+            'mobile_no.unique' => 'The mobile number is already registered.',
         ]);
 
-        $customer = Customer::create($validated);
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+                'error' => 'Validation Error'
+            ], 422);
+        }
 
-        return response()->json($customer, 201);
+        $validated = $validator->validated();
+
+        // Add default status if not provided
+        if (!isset($validated['status'])) {
+            $validated['status'] = 'pending';
+        }
+
+        // Check for email, if not provided, generate a dummy one or handle based on migration
+        $validated['email'] = $request->email ?? 'cust_' . \Illuminate\Support\Str::random(8) . '@example.com';
+
+        // Handle rep_id from authenticated user if they are a ref
+        if ($request->user() && $request->user()->role === 'ref') {
+            $validated['rep_id'] = $request->user()->id;
+        }
+
+        // Generate a code if not provided
+        $validated['code'] = 'CUST-' . strtoupper(\Illuminate\Support\Str::random(6));
+
+        Customer::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Customer registered successfully!',
+            'data' => null
+        ], 200);
     }
 
     /**
