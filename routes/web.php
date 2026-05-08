@@ -104,6 +104,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/approvals/{id}/reject', [App\Http\Controllers\UserApprovalController::class , 'reject'])->name('approvals.reject');
     Route::get('/approvals/count', [App\Http\Controllers\UserApprovalController::class , 'count'])->name('approvals.count');
 
+    Route::resource('pay-bills', \App\Http\Controllers\PayBillController::class);
+
     // Profile Routes
     Route::get('/profile', [App\Http\Controllers\ProfileController::class , 'show'])->name('profile.show');
     Route::put('/profile', [App\Http\Controllers\ProfileController::class , 'update'])->name('profile.update');

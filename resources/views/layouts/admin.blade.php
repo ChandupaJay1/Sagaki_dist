@@ -199,6 +199,24 @@
             display: inline-block !important;
         }
 
+        /* TomSelect Dropdown Fix for Tables */
+        .ts-dropdown {
+            z-index: 9999 !important;
+        }
+        .ts-wrapper.form-select-sm .ts-control {
+            min-height: 28px !important;
+            padding: 2px 8px !important;
+        }
+        .table-responsive {
+            overflow: visible !important;
+        }
+        @media (max-width: 991.98px) {
+            .table-responsive {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
         /* Short brand name - hidden on desktop, shown on mobile to avoid "Sagaki Distributi" truncation */
         .brand-name-short { display: none !important; }
 
@@ -990,11 +1008,11 @@
 
                     <li class="menu-title">Payment</li>
                     <li class="menu-item">
-                        <a class="menu-link" href="{{ route('not-found') }}">
+                        <a class="menu-link" href="{{ route('pay-bills.index') }}">
                             <span class="nav-icon">
                                 <i class="ri-secure-payment-line"></i>
                             </span>
-                            <span class="nav-text"> Payment </span>
+                            <span class="nav-text"> Pay Bills </span>
                         </a>
                     </li>
 
@@ -1174,6 +1192,7 @@
                     searchField: ['text','code','keywords'],
                     selectOnTab: true,
                     closeAfterSelect: true,
+                    dropdownParent: 'body',
                     render: {
                         no_results: function(data, escape) { return '<div class="no-results">No results</div>'; }
                     },

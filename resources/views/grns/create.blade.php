@@ -176,6 +176,11 @@
                         .ts-dropdown .ts-dropdown-content {
                             max-height: 450px !important;
                         }
+                        /* Ensure dropdown is above everything */
+                        .ts-dropdown {
+                            z-index: 9999 !important;
+                            position: absolute !important;
+                        }
                     </style>
                     <div class="table-responsive mb-3 border rounded">
                         <table class="table table-sm table-bordered mb-0 align-middle text-center" id="itemsTable">
