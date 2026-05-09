@@ -111,6 +111,11 @@ Route::middleware('auth')->group(function () {
     Route::get('pay-bills/{id}/print', [\App\Http\Controllers\PayBillController::class, 'print'])->name('pay-bills.print');
     Route::resource('pay-bills', \App\Http\Controllers\PayBillController::class);
 
+    // AJAX Routes for Pay Bills (Web)
+    Route::get('api/vendors/{id}/outstanding-bills', [\App\Http\Controllers\Api\VendorController::class, 'getOutstandingBills']);
+    Route::get('api/customers/{id}/outstanding-invoices', [\App\Http\Controllers\Api\CustomerController::class, 'getOutstandingInvoices']);
+    Route::get('api/products/{id}/stock', [\App\Http\Controllers\Api\ProductController::class, 'stock']);
+
     // Profile Routes
     Route::get('/profile', [App\Http\Controllers\ProfileController::class , 'show'])->name('profile.show');
     Route::put('/profile', [App\Http\Controllers\ProfileController::class , 'update'])->name('profile.update');
