@@ -731,6 +731,15 @@
 
             document.querySelectorAll('.pay-input').forEach(input => {
                 input.addEventListener('input', function() {
+                    const row = this.closest('tr');
+                    const cb = row.querySelector('.bill-checkbox');
+                    const val = parseFloat(this.value) || 0;
+                    
+                    // Auto-check if value entered
+                    if (val > 0) {
+                        cb.checked = true;
+                    }
+                    
                     updateTotals(true);
                 });
 
@@ -824,23 +833,8 @@
             }
 
             // 2. Determine Cash Funds
-            let totalCashFunds = 0;
-            if (isUserAction) {
-                // If user is editing a specific row, sum all rows to get total
-                document.querySelectorAll('.bill-row').forEach(row => {
-                    const cb = row.querySelector('.bill-checkbox');
-                    if (cb.checked) {
-                        const payInput = row.querySelector('.pay-input');
-                        totalCashFunds += parseFloat(payInput.value) || 0;
-                    }
-                });
-                displayAmountInput.value = totalCashFunds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            } else {
-                // If user edited the main amount, use it for distribution
-                const rawAmount = displayAmountInput.value.replace(/,/g, '');
-                totalCashFunds = parseFloat(rawAmount) || 0;
-            }
-            
+            const rawAmount = displayAmountInput.value.replace(/,/g, '');
+            let totalCashFunds = parseFloat(rawAmount) || 0;
             let remainingCashToAllocate = totalCashFunds;
 
             // 3. Allocation to checked bills
@@ -869,14 +863,12 @@
                     let cashAllocated = 0;
 
                     if (isUserAction) {
-                        // Keep what the user typed in the row, but cap it at the remaining balance
+                        // If user edited a row, respect that value but don't let it exceed the bill balance
                         cashAllocated = parseFloat(payInput.value) || 0;
                         if (cashAllocated > remainingBalanceAfterCredit) {
                             cashAllocated = remainingBalanceAfterCredit;
                         }
                         
-                        // IMPORTANT: Only update the value if it's NOT the active element 
-                        // to prevent cursor jumping and formatting issues while typing
                         if (document.activeElement !== payInput) {
                             payInput.value = cashAllocated.toFixed(2);
                         }
@@ -908,11 +900,16 @@
                 }
             });
 
-            // 4. Update totalCashFunds if it was changed by manual editing
-            if (isUserAction) {
-                totalCashFunds = totalCashApplied;
-                displayAmountInput.value = totalCashFunds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            }
+            // 4. Summary Box Updates
+            document.getElementById('summaryAmountDue').value = totalOrigDue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('summaryCredit').value = totalCreditApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('summaryPayment').value = totalCashApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            
+            const summaryTotalPayment = totalCashFunds + totalSelectedCreditBalance;
+            document.getElementById('summaryTotalPayment').value = summaryTotalPayment.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('headerTotalAmount').textContent = totalCashFunds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('totalToPayInput').value = totalCashFunds.toFixed(2);
+            lkrTotalAmountInput.value = totalCashFunds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
             // 5. Update Credit Record usages
             let totalCreditConsumedAcrossAllBills = totalCreditApplied;
@@ -932,19 +929,9 @@
             });
 
             // 6. Handle Overpayment
-            const overPaymentAmount = isUserAction ? 0 : (remainingCashToAllocate + remainingCreditToAllocate);
+            // Logic: Header Amount - Total Cash actually applied to bills = Credit
+            const overPaymentAmount = Math.max(0, totalCashFunds - totalCashApplied);
             updateOverpaymentRow(overPaymentAmount);
-
-            // 7. Summary Box Updates
-            document.getElementById('summaryAmountDue').value = totalOrigDue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('summaryCredit').value = totalCreditApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('summaryPayment').value = totalCashApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            
-            const summaryTotalPayment = totalCashFunds + totalSelectedCreditBalance;
-            document.getElementById('summaryTotalPayment').value = summaryTotalPayment.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('headerTotalAmount').textContent = totalCashFunds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('totalToPayInput').value = totalCashFunds.toFixed(2);
-            lkrTotalAmountInput.value = totalCashFunds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
         }
 
         function updateOverpaymentRow(amount) {
