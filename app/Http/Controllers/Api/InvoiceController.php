@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\Cheque;
 use App\Models\Customer;
 use App\Models\Product;
+use App\Models\InventoryLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -73,7 +74,7 @@ class InvoiceController extends Controller
                     'location_id' => DB::table('locations')->where('is_active', 1)->value('id'),
                 ]);
 
-                // 2. Save Items
+                // 2. Save Items and Update Stock
                 foreach ($validated['items'] as $item) {
                     $qty = (float)$item['qty'];
                     $rate = (float)$item['rate'];
@@ -92,17 +93,55 @@ class InvoiceController extends Controller
                         // Using default location from invoice
                         'location' => DB::table('locations')->where('id', $invoice->location_id)->value('name'),
                     ]);
+
+                    // Update Stock (Decrement)
+                    $product = Product::lockForUpdate()->find($item['product_id']);
+                    $oldQty = (float)($product->qty_in_bulk ?? 0);
+                    $newQty = $oldQty - $qty;
+                    $product->update(['qty_in_bulk' => $newQty]);
+
+                    // Inventory Log
+                    InventoryLog::create([
+                        'product_id' => $product->id,
+                        'location_id' => $invoice->location_id,
+                        'reference_type' => 'Invoice',
+                        'reference_id' => $invoice->id,
+                        'change_qty' => -$qty,
+                        'after_qty' => $newQty,
+                        'type' => 'Sale',
+                        'description' => "Invoice #{$invoice->invoice_no} Sale"
+                    ]);
                 }
 
-                // 3. Save Returns
+                // 3. Save Returns and Update Stock
                 if (!empty($validated['return_items'])) {
                     foreach ($validated['return_items'] as $return) {
+                        $returnQty = (float)$return['qty'];
+                        
                         InvoiceReturn::create([
                             'invoice_id' => $invoice->id,
                             'product_id' => $return['product_id'],
-                            'qty' => $return['qty'],
+                            'qty' => $returnQty,
                             'rate' => $return['rate'],
                             'discount' => $return['discount'] ?? 0,
+                        ]);
+
+                        // Update Stock (Increment)
+                        $product = Product::lockForUpdate()->find($return['product_id']);
+                        $oldQty = (float)($product->qty_in_bulk ?? 0);
+                        $newQty = $oldQty + $returnQty;
+                        $product->update(['qty_in_bulk' => $newQty]);
+
+                        // Inventory Log
+                        InventoryLog::create([
+                            'product_id' => $product->id,
+                            'location_id' => $invoice->location_id,
+                            'reference_type' => 'Invoice',
+                            'reference_id' => $invoice->id,
+                            'change_qty' => $returnQty,
+                            'after_qty' => $newQty,
+                            'type' => 'Return',
+                            'description' => "Invoice #{$invoice->invoice_no} Return"
                         ]);
                     }
                 }
