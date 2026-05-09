@@ -86,6 +86,13 @@ class InvoiceController extends Controller
             }
             $invoice = Invoice::create($data);
 
+            // Update Customer Balance
+            $customer = Customer::find($invoice->customer_id);
+            if ($customer) {
+                $customer->balance += (float)($invoice->total_amount ?? 0);
+                $customer->save();
+            }
+
             foreach ($request->items as $item) {
                 if (!empty($item['product_id'])) {
                     $amountCalc = (float)($item['qty'] ?? 0) * (float)($item['rate'] ?? 0);
@@ -187,6 +194,9 @@ class InvoiceController extends Controller
         ]);
 
         \DB::transaction(function () use ($request, $validated, $invoice) {
+            $oldCustomerId = $invoice->customer_id;
+            $oldTotalAmount = (float)($invoice->total_amount ?? 0);
+
             $data = Arr::except($validated, ['items']);
             foreach (['subtotal', 'header_discount_percent', 'header_discount_amount', 'tax_amount', 'sscl_percent', 'sscl_amount', 'vat_percent', 'vat_amount', 'total_amount'] as $field) {
                 if (array_key_exists($field, $data)) {
@@ -194,6 +204,29 @@ class InvoiceController extends Controller
                 }
             }
             $invoice->update($data);
+            $newTotalAmount = (float)($invoice->total_amount ?? 0);
+            $newCustomerId = $invoice->customer_id;
+
+            // Update Customer Balance
+            if ($oldCustomerId == $newCustomerId) {
+                $customer = Customer::find($newCustomerId);
+                if ($customer) {
+                    $customer->balance += ($newTotalAmount - $oldTotalAmount);
+                    $customer->save();
+                }
+            } else {
+                // Customer changed
+                $oldCustomer = Customer::find($oldCustomerId);
+                if ($oldCustomer) {
+                    $oldCustomer->balance -= $oldTotalAmount;
+                    $oldCustomer->save();
+                }
+                $newCustomer = Customer::find($newCustomerId);
+                if ($newCustomer) {
+                    $newCustomer->balance += $newTotalAmount;
+                    $newCustomer->save();
+                }
+            }
 
             $invoice->items()->delete();
             foreach ($request->items as $item) {
@@ -225,8 +258,19 @@ class InvoiceController extends Controller
     public function destroy($id)
     {
         $invoice = Invoice::findOrFail($id);
-        $invoice->items()->delete();
-        $invoice->delete();
+        
+        \DB::transaction(function () use ($invoice) {
+            // Update Customer Balance
+            $customer = Customer::find($invoice->customer_id);
+            if ($customer) {
+                $customer->balance -= (float)($invoice->total_amount ?? 0);
+                $customer->save();
+            }
+
+            $invoice->items()->delete();
+            $invoice->delete();
+        });
+
         return redirect()->route('invoices.index')->with('success', 'Invoice deleted successfully.');
     }
 }

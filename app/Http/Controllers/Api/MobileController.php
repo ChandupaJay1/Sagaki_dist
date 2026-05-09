@@ -585,6 +585,13 @@ class MobileController extends Controller
                     'location_id' => \App\Models\Location::first()->id ?? null,
                 ]);
 
+                // Update Customer Balance
+                $customer = Customer::find($validated['customer_id']);
+                if ($customer) {
+                    $customer->balance -= (float)$paymentData['amount'];
+                    $customer->save();
+                }
+
                 // --- Automatic Invoice Settlement Logic ---
                 // Find outstanding invoices for this customer
                 $invoices = \App\Models\Invoice::where('customer_id', $validated['customer_id'])
