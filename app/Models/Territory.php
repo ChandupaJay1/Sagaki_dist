@@ -16,6 +16,10 @@ class Territory extends Model
         'is_active',
     ];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
     public function areas()
     {
         return $this->belongsToMany(Area::class);
