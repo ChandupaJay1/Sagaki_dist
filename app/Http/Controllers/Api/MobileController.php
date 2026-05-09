@@ -9,6 +9,7 @@ use App\Models\Route;
 use App\Models\Area;
 use App\Models\Territory;
 use App\Models\Customer;
+use App\Models\InventoryTransfer;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
