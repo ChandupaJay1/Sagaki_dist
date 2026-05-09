@@ -115,6 +115,8 @@ Route::middleware('auth')->group(function () {
     Route::get('api/vendors/{id}/outstanding-bills', [\App\Http\Controllers\Api\VendorController::class, 'getOutstandingBills']);
     Route::get('api/customers/{id}/outstanding-invoices', [\App\Http\Controllers\Api\CustomerController::class, 'getOutstandingInvoices']);
     Route::get('api/products/{id}/stock', [\App\Http\Controllers\Api\ProductController::class, 'stock']);
+    Route::get('api/customers/{id}', [\App\Http\Controllers\Api\CustomerController::class, 'show']);
+    Route::get('api/vendors/{id}', [\App\Http\Controllers\Api\VendorController::class, 'show']);
 
     // Profile Routes
     Route::get('/profile', [App\Http\Controllers\ProfileController::class , 'show'])->name('profile.show');

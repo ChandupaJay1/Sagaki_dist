@@ -51,6 +51,8 @@ Route::prefix('v1')->name('api.')->group(function () {
         // Payment APIs
         Route::post('/payments', [MobileController::class, 'storePayments']);
         
+        Route::get('/rep/approved-items', [MobileController::class, 'approvedItems']);
+        
         Route::get('/areas', [MobileController::class, 'areas']);
         Route::get('/territories', [MobileController::class, 'territories']);
         Route::get('/routes', [MobileController::class, 'routes']);

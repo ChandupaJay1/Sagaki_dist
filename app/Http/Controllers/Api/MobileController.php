@@ -124,6 +124,45 @@ class MobileController extends Controller
     }
 
     /**
+     * Get list of approved products for sales (Requested by Android App)
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function approvedItems()
+    {
+        try {
+            $products = \App\Models\Product::where('is_sale', 1)
+                ->orderBy('name')
+                ->get();
+
+            $data = $products->map(function ($p) {
+                return [
+                    'id' => (int)$p->id,
+                    'code' => (string)$p->code,
+                    'name' => (string)$p->name,
+                    'unit' => (string)($p->unit ?? 'PCS'),
+                    'sale_price' => (double)$p->max_sale_price,
+                    'cost_price' => (double)$p->cost,
+                    'description' => (string)($p->description ?? ''),
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $data
+            ], 200);
+
+        } catch (\Throwable $e) {
+            Log::error('approvedItems error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get all areas
      * 
      * @return \Illuminate\Http\JsonResponse

@@ -293,9 +293,11 @@
         const creditLimitSpan = document.getElementById('customer-credit-limit');
         function fetchCustomerDetails(customerId) {
             if (customerId) {
-                fetch(`/api/customers/${customerId}`)
+                const url = "{{ url('api/customers') }}/" + customerId;
+                fetch(url)
                     .then(response => response.json())
                     .then(data => {
+                        console.log('Customer data:', data); // Added for debugging
                         if (addressTextarea) addressTextarea.value = data.address || '';
                         if (deliveryDestinationTextarea) deliveryDestinationTextarea.value = data.delivery_address || '';
                         
@@ -717,17 +719,37 @@
             });
         }
 
-        customerSelect.addEventListener('change', function () {
-            fetchCustomerDetails(this.value);
-        });
-
-        setTimeout(() => {
+        // Attachment of listener to TomSelect or standard select
+        function attachCustomerListener() {
             if (customerSelect.tomselect) {
-                customerSelect.tomselect.on('change', function (value) {
+                customerSelect.tomselect.on('change', function(value) {
                     fetchCustomerDetails(value);
                 });
+                // Trigger once if already has value
+                if (customerSelect.tomselect.getValue()) {
+                    fetchCustomerDetails(customerSelect.tomselect.getValue());
+                }
+            } else {
+                customerSelect.addEventListener('change', function () {
+                    fetchCustomerDetails(this.value);
+                });
+                if (this.value) {
+                    fetchCustomerDetails(this.value);
+                }
             }
-        }, 500);
+        }
+
+        // Wait a bit to ensure global TomSelect initialization is complete
+        setTimeout(attachCustomerListener, 500);
+
+        setTimeout(() => {
+            if (repSelect && window.TomSelect && !repSelect.tomselect) {
+                new TomSelect(repSelect, { create: false });
+            }
+            if (termsSelect && window.TomSelect && !termsSelect.tomselect) {
+                new TomSelect(termsSelect, { create: false });
+            }
+        }, 600);
     });
 </script>
 @endpush
