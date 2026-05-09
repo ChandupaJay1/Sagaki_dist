@@ -131,19 +131,29 @@ class MobileController extends Controller
     public function approvedItems()
     {
         try {
+            $user = auth()->user();
+            
+            // Get all saleable products
             $products = \App\Models\Product::where('is_sale', 1)
                 ->orderBy('name')
                 ->get();
 
-            $data = $products->map(function ($p) {
+            $data = $products->map(function ($p) use ($user) {
+                // Calculate Approved Qty from Inventory Transfers
+                // Logic: Sum of qty in InventoryTransferItems where Transfer is 'Approved' 
+                // and destination matches something relevant to the rep (using site_to for now)
+                
+                $approvedQty = \App\Models\InventoryTransferItem::where('product_id', $p->id)
+                    ->whereHas('inventoryTransfer', function($query) {
+                        $query->where('status', 'Approved');
+                    })->sum('qty');
+
                 return [
                     'id' => (int)$p->id,
-                    'code' => (string)$p->code,
                     'name' => (string)$p->name,
-                    'unit' => (string)($p->unit ?? 'PCS'),
-                    'sale_price' => (double)$p->max_sale_price,
-                    'cost_price' => (double)$p->cost,
-                    'description' => (string)($p->description ?? ''),
+                    'item_code' => (string)$p->code,
+                    'qty' => (double)$approvedQty,
+                    'selling_price' => (double)$p->max_sale_price,
                 ];
             });
 
