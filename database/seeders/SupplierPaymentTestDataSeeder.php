@@ -56,7 +56,11 @@ class SupplierPaymentTestDataSeeder extends Seeder
 
         $location = Location::first() ?? Location::create(['name' => 'Main Warehouse', 'is_active' => 1]);
 
-        // 3. Create 3 GRNs (Supplier Bills)
+        // 3. Get Location and Account
+        $location = Location::first() ?? Location::create(['name' => 'Main Warehouse', 'is_active' => 1]);
+        $account = \App\Models\Account::where('code', '2000')->first() ?? \App\Models\Account::create(['name' => 'Accounts Payable', 'code' => '2000', 'type' => 'Liability', 'is_active' => 1]);
+
+        // 4. Create 3 GRNs (Supplier Bills)
         // GRN 1: 100,000 (Already Partially Paid)
         $grn1 = Grn::create([
             'vendor_id' => $vendor->id,
@@ -64,9 +68,11 @@ class SupplierPaymentTestDataSeeder extends Seeder
             'reference_no' => 'REF-001',
             'date' => Carbon::now()->subDays(20),
             'due_date' => Carbon::now()->subDays(5),
+            'subtotal' => 100000,
             'total_amount' => 100000,
             'status' => 'Partial',
-            'location_id' => $location->id
+            'location_id' => $location->id,
+            'account_id' => $account->id
         ]);
         
         // Create a partial payment of 40,000 for GRN 1
@@ -78,7 +84,8 @@ class SupplierPaymentTestDataSeeder extends Seeder
             'total_amount' => 40000,
             'payment_method' => 'Bank Transfer',
             'status' => 'Paid',
-            'location_id' => $location->id
+            'location_id' => $location->id,
+            'account_id' => $account->id
         ]);
         PayBillItem::create([
             'pay_bill_id' => $payment1->id,
@@ -96,9 +103,11 @@ class SupplierPaymentTestDataSeeder extends Seeder
             'reference_no' => 'REF-002',
             'date' => Carbon::now()->subDays(15),
             'due_date' => Carbon::now()->addDays(5),
+            'subtotal' => 50000,
             'total_amount' => 50000,
             'status' => 'Pending',
-            'location_id' => $location->id
+            'location_id' => $location->id,
+            'account_id' => $account->id
         ]);
 
         // GRN 3: 25,000 (Pending)
@@ -108,19 +117,23 @@ class SupplierPaymentTestDataSeeder extends Seeder
             'reference_no' => 'REF-003',
             'date' => Carbon::now()->subDays(5),
             'due_date' => Carbon::now()->addDays(15),
+            'subtotal' => 25000,
             'total_amount' => 25000,
             'status' => 'Pending',
-            'location_id' => $location->id
+            'location_id' => $location->id,
+            'account_id' => $account->id
         ]);
 
-        // 4. Create a Supplier Return (Credit)
+        // 5. Create a Supplier Return (Credit)
         GrnReturn::create([
             'vendor_id' => $vendor->id,
             'return_no' => 'GRET-001',
             'date' => Carbon::now()->subDays(2),
+            'subtotal' => 10000,
             'total_amount' => 10000,
             'status' => 'Completed',
-            'location_id' => $location->id
+            'location_id' => $location->id,
+            'account_id' => $account->id
         ]);
 
         echo "Supplier Test Data created successfully!\n";
