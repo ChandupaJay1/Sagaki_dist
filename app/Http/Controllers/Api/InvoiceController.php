@@ -25,6 +25,11 @@ class InvoiceController extends Controller
     public function store(Request $request)
     {
         try {
+            // Merge current date if date is missing
+            if (!$request->has('date')) {
+                $request->merge(['date' => date('Y-m-d')]);
+            }
+
             $validated = $request->validate([
                 'customer_id' => 'required|exists:customers,id',
                 'sub_total' => 'required|numeric',

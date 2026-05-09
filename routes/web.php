@@ -47,6 +47,7 @@ use App\Http\Controllers\GrnController;
 use App\Http\Controllers\GrnReturnController;
 use App\Http\Controllers\InventoryTransferController;
 use App\Http\Controllers\StockAdjustmentController;
+use App\Http\Controllers\ReportController;
 
 Route::get('/test-customer', function() {
     return App\Models\Customer::first();
@@ -121,6 +122,11 @@ Route::middleware('auth')->group(function () {
     // Profile Routes
     Route::get('/profile', [App\Http\Controllers\ProfileController::class , 'show'])->name('profile.show');
     Route::put('/profile', [App\Http\Controllers\ProfileController::class , 'update'])->name('profile.update');
+
+    // Reports
+    Route::get('/reports/stock-by-site', [ReportController::class, 'stockBySiteSummary'])->name('reports.stock-by-site');
+    Route::get('/reports/stock-valuation-summary', [ReportController::class, 'stockValuationSummary'])->name('reports.stock-valuation-summary');
+    Route::get('/reports/stock-valuation-details', [ReportController::class, 'stockValuationDetails'])->name('reports.stock-valuation-details');
 });
 
 Route::get('/404', function () {
