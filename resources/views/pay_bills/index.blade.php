@@ -42,6 +42,7 @@
                                 <th class="py-3">{{ $type === 'Supplier' ? 'Vendor' : 'Customer' }}</th>
                                 <th class="py-3">Method</th>
                                 <th class="py-3 text-end">Total Amount</th>
+                                <th class="py-3 text-end">Current Outstanding</th>
                                 <th class="py-3 text-center">Status</th>
                                 <th class="py-3 text-end pe-4">Action</th>
                             </tr>
@@ -66,6 +67,27 @@
                                     <span class="text-muted small"><i class="ri-bank-card-line me-1 text-info"></i>{{ $p->payment_method }}</span>
                                 </td>
                                 <td class="text-end fw-bold text-success">{{ number_format($p->total_amount, 2) }}</td>
+                                <td class="text-end fw-bold text-danger">
+                                    @php
+                                        $outstanding = 0;
+                                        if ($p->type === 'Customer' && $p->customer) {
+                                            $totalInvoices = \App\Models\Invoice::where('customer_id', $p->customer_id)->sum('total_amount');
+                                            $totalPaid = \App\Models\PayBillItem::whereHas('payBill', function($q) use ($p) {
+                                                $q->where('customer_id', $p->customer_id);
+                                            })->sum('amount_to_pay');
+                                            $totalReturns = \App\Models\SalesReturn::where('customer_id', $p->customer_id)->sum('total_amount');
+                                            $outstanding = ($totalInvoices - $totalPaid) - $totalReturns;
+                                        } elseif ($p->type === 'Supplier' && $p->vendor) {
+                                            $totalBills = \App\Models\Grn::where('vendor_id', $p->vendor_id)->sum('total_amount');
+                                            $totalPaid = \App\Models\PayBillItem::whereHas('payBill', function($q) use ($p) {
+                                                $q->where('vendor_id', $p->vendor_id);
+                                            })->sum('amount_to_pay');
+                                            $totalReturns = \App\Models\GrnReturn::where('vendor_id', $p->vendor_id)->sum('total_amount');
+                                            $outstanding = ($totalBills - $totalPaid) - $totalReturns;
+                                        }
+                                    @endphp
+                                    {{ number_format($outstanding, 2) }}
+                                </td>
                                 <td class="text-center">
                                     <span class="badge bg-success-subtle text-success border border-success-subtle px-2">Paid</span>
                                 </td>
@@ -89,7 +111,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="text-center py-5">
+                                <td colspan="8" class="text-center py-5">
                                     <div class="text-muted">
                                         <i class="ri-file-list-3-line fs-48 mb-2 d-block text-secondary"></i>
                                         <p class="fs-15">No {{ strtolower($type) }} transactions found.</p>

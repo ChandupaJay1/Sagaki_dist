@@ -115,7 +115,17 @@ class InvoiceController extends Controller
     public function show($id)
     {
         $invoice = Invoice::with(['customer', 'items.product'])->findOrFail($id);
-        return view('invoices.show', compact('invoice'));
+        
+        // Calculate Customer Outstanding
+        $totalInvoices = Invoice::where('customer_id', $invoice->customer_id)->sum('total_amount');
+        $totalPaid = \App\Models\PayBillItem::whereHas('payBill', function($q) use ($invoice) {
+            $q->where('customer_id', $invoice->customer_id);
+        })->sum('amount_to_pay');
+        $totalReturns = \App\Models\SalesReturn::where('customer_id', $invoice->customer_id)->sum('total_amount');
+        
+        $outstanding = ($totalInvoices - $totalPaid) - $totalReturns;
+
+        return view('invoices.show', compact('invoice', 'outstanding'));
     }
 
     public function edit($id)

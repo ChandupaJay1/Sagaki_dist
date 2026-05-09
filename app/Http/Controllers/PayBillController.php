@@ -250,7 +250,29 @@ class PayBillController extends Controller
     public function print($id)
     {
         $payment = PayBill::with(['vendor', 'customer', 'items.grn', 'items.invoice'])->findOrFail($id);
-        return view('pay_bills.print', compact('payment'));
+        
+        $outstanding = 0;
+        if ($payment->type === 'Customer' && $payment->customer) {
+            $totalInvoices = \App\Models\Invoice::where('customer_id', $payment->customer_id)->sum('total_amount');
+            $totalPaid = \App\Models\PayBillItem::whereHas('payBill', function($q) use ($payment) {
+                $q->where('customer_id', $payment->customer_id);
+            })->sum('amount_to_pay');
+            
+            $totalReturns = \App\Models\SalesReturn::where('customer_id', $payment->customer_id)->sum('total_amount');
+            
+            $outstanding = ($totalInvoices - $totalPaid) - $totalReturns;
+        } elseif ($payment->type === 'Supplier' && $payment->vendor) {
+            $totalBills = \App\Models\Grn::where('vendor_id', $payment->vendor_id)->sum('total_amount');
+            $totalPaid = \App\Models\PayBillItem::whereHas('payBill', function($q) use ($payment) {
+                $q->where('vendor_id', $payment->vendor_id);
+            })->sum('amount_to_pay');
+            
+            $totalReturns = \App\Models\GrnReturn::where('vendor_id', $payment->vendor_id)->sum('total_amount');
+            
+            $outstanding = ($totalBills - $totalPaid) - $totalReturns;
+        }
+
+        return view('pay_bills.print', compact('payment', 'outstanding'));
     }
 
     public function show($id)
