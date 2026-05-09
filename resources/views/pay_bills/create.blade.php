@@ -415,8 +415,8 @@
         border-bottom: 1px solid #f1f5f9 !important;
     }
 
-    .bill-row:hover td {
-        background-color: #f8fafc !important;
+    .bill-row:hover td, .credit-row:hover td {
+        background-color: rgba(53, 119, 241, 0.05) !important;
     }
 
     /* Summary Panel */
