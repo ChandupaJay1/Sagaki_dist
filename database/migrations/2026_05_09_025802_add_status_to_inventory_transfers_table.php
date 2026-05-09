@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('inventory_transfers', function (Blueprint $table) {
-            $table->string('status')->default('Pending')->after('date');
-        });
+        if (!Schema::hasColumn('inventory_transfers', 'status')) {
+            Schema::table('inventory_transfers', function (Blueprint $table) {
+                $table->string('status')->default('Pending')->after('date');
+            });
+        }
     }
 
     /**
@@ -21,8 +23,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('inventory_transfers', function (Blueprint $table) {
-            $table->dropColumn('status');
-        });
+        if (Schema::hasColumn('inventory_transfers', 'status')) {
+            Schema::table('inventory_transfers', function (Blueprint $table) {
+                $table->dropColumn('status');
+            });
+        }
     }
 };

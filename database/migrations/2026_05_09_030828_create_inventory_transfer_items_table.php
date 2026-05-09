@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('inventory_transfer_items', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('inventory_transfer_id')->constrained()->onDelete('cascade');
-            $table->foreignId('product_id')->constrained();
-            $table->string('description')->nullable();
-            $table->decimal('onhand', 15, 4)->default(0);
-            $table->decimal('qty', 15, 4)->default(0);
-            $table->string('unit')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('inventory_transfer_items')) {
+            Schema::create('inventory_transfer_items', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('inventory_transfer_id')->constrained()->onDelete('cascade');
+                $table->foreignId('product_id')->constrained();
+                $table->string('description')->nullable();
+                $table->decimal('onhand', 15, 4)->default(0);
+                $table->decimal('qty', 15, 4)->default(0);
+                $table->string('unit')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**
