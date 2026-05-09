@@ -49,6 +49,14 @@ class Customer extends Model
         'password',
     ];
 
+    protected $casts = [
+        'route_id' => 'integer',
+        'location_id' => 'integer',
+        'customer_category_id' => 'integer',
+        'rep_id' => 'integer',
+        'credit_limit' => 'double',
+    ];
+
     public function route()
     {
         return $this->belongsTo(Route::class);
