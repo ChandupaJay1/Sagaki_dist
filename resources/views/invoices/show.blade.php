@@ -100,6 +100,12 @@
                                 <td colspan="4" class="text-end">Grand Total</td>
                                 <td class="text-end">{{ number_format($invoice->total_amount, 2) }}</td>
                             </tr>
+                            @if(isset($outstanding))
+                            <tr class="table-danger">
+                                <td colspan="8" class="text-end">Customer Remaining Outstanding</td>
+                                <td class="text-end text-danger">LKR {{ number_format($outstanding, 2) }}</td>
+                            </tr>
+                            @endif
                         </tfoot>
                     </table>
                 </div>
