@@ -79,7 +79,7 @@
                                 <label class="col-sm-4 col-form-label fw-bold">Main Product</label>
                                 <div class="col-sm-8">
                                     <select class="form-select" name="main_product_id">
-                                        <option value="">-- Select --</option>
+                                        <option value="">Select Main Product</option>
                                         @foreach($mainProducts as $mp)
                                             <option value="{{ $mp->id }}" {{ old('main_product_id') == $mp->id ? 'selected' : '' }}>
                                                 {{ $mp->name }}{{ $mp->code ? ' (' . $mp->code . ')' : '' }}
@@ -94,7 +94,7 @@
                                 <label for="category" class="col-sm-4 col-form-label fw-bold">Product Category</label>
                                 <div class="col-sm-8">
                                     <select class="form-select" id="category" name="category">
-                                        <option value="">-- Select --</option>
+                                        <option value="">Select Category</option>
                                         @foreach($categories ?? [] as $cat)
                                             <option value="{{ $cat->name }}" data-code="{{ $cat->code }}" {{ old('category') == $cat->name ? 'selected' : '' }}>
                                                 {{ $cat->name }}{{ $cat->code ? ' (' . $cat->code . ')' : '' }}
@@ -109,7 +109,7 @@
                                 <label for="sub_category" class="col-sm-4 col-form-label fw-bold">Product Sub Category</label>
                                 <div class="col-sm-8">
                                     <select class="form-select" id="sub_category" name="sub_category">
-                                        <option value="">-- Select --</option>
+                                        <option value="">Select Sub Category</option>
                                         @foreach($subCategories ?? [] as $sc)
                                             <option value="{{ $sc->name }}" data-code="{{ $sc->code }}" {{ old('sub_category') == $sc->name ? 'selected' : '' }}>
                                                 {{ $sc->name }}{{ $sc->code ? ' (' . $sc->code . ')' : '' }}
@@ -124,7 +124,7 @@
                                 <label for="brand" class="col-sm-4 col-form-label fw-bold">Brand Name</label>
                                 <div class="col-sm-8">
                                     <select class="form-select" id="brand" name="brand">
-                                        <option value="">-- Select --</option>
+                                        <option value="">Select Brand</option>
                                         @foreach($brands ?? [] as $b)
                                             <option value="{{ $b->name }}" data-code="{{ $b->code }}" {{ old('brand') == $b->name ? 'selected' : '' }}>
                                                 {{ $b->name }}{{ $b->code ? ' (' . $b->code . ')' : '' }}
@@ -139,7 +139,7 @@
                                 <label for="model" class="col-sm-4 col-form-label fw-bold">Product Model</label>
                                 <div class="col-sm-8">
                                     <select class="form-select" id="model" name="model">
-                                        <option value="">-- Select --</option>
+                                        <option value="">Select Model</option>
                                         @foreach($models ?? [] as $m)
                                             <option value="{{ $m->name }}" data-code="{{ $m->code }}" {{ old('model') == $m->name ? 'selected' : '' }}>
                                                 {{ $m->name }}{{ $m->code ? ' (' . $m->code . ')' : '' }}
@@ -401,7 +401,7 @@
                         <div class="col-md-4">
                             <label class="form-label fw-bold text-danger">* Inventory Account</label>
                             <select class="form-select" name="inventory_account">
-                                <option value="">-- Select --</option>
+                                <option value="">Select Account</option>
                                 @foreach($accounts ?? [] as $acc)
                                     <option value="{{ $acc->code ? ($acc->code.' - '.$acc->name) : $acc->name }}" {{ old('inventory_account') == ($acc->code ? ($acc->code.' - '.$acc->name) : $acc->name) ? 'selected' : '' }}>
                                         {{ $acc->name }}{{ $acc->code ? ' (' . $acc->code . ')' : '' }}
@@ -412,7 +412,7 @@
                         <div class="col-md-4">
                             <label class="form-label fw-bold text-danger">* Cost Account</label>
                             <select class="form-select" name="cost_account">
-                                <option value="">-- Select --</option>
+                                <option value="">Select Account</option>
                                 @foreach($accounts ?? [] as $acc)
                                     <option value="{{ $acc->code ? ($acc->code.' - '.$acc->name) : $acc->name }}" {{ old('cost_account') == ($acc->code ? ($acc->code.' - '.$acc->name) : $acc->name) ? 'selected' : '' }}>
                                         {{ $acc->name }}{{ $acc->code ? ' (' . $acc->code . ')' : '' }}
@@ -423,7 +423,7 @@
                         <div class="col-md-4">
                             <label class="form-label fw-bold text-danger">* Sales Account</label>
                             <select class="form-select" name="sales_account">
-                                <option value="">-- Select --</option>
+                                <option value="">Select Account</option>
                                 @foreach($accounts ?? [] as $acc)
                                     <option value="{{ $acc->code ? ($acc->code.' - '.$acc->name) : $acc->name }}" {{ old('sales_account') == ($acc->code ? ($acc->code.' - '.$acc->name) : $acc->name) ? 'selected' : '' }}>
                                         {{ $acc->name }}{{ $acc->code ? ' (' . $acc->code . ')' : '' }}

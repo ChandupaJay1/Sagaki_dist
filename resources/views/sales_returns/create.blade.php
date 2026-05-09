@@ -47,7 +47,7 @@
                         <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Customer Name <span class="text-danger">*</span></label>
                             <select name="customer_id" class="form-select form-select-sm" required>
-                                <option value="">-- Select Customer --</option>
+                                <option value="">Select Customer</option>
                                 @foreach($customers as $c)
                                     <option value="{{ $c->id }}" {{ old('customer_id') == $c->id ? 'selected' : '' }}>{{ $c->company_name ?? $c->name }}</option>
                                 @endforeach
@@ -56,7 +56,7 @@
                         <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
                             <select name="location_id" class="form-select form-select-sm" required>
-                                <option value="">-- Select Location --</option>
+                                <option value="">Select Location</option>
                                 @foreach($locations as $location)
                                     <option value="{{ $location->id }}" data-name="{{ $location->name }}" {{ (old('location_id') == $location->id || $location->name == 'Main Stock') ? 'selected' : '' }}>{{ $location->name }}</option>
                                 @endforeach
@@ -65,7 +65,7 @@
                         <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Load</label>
                             <select name="load" class="form-select form-select-sm">
-                                <option value=""></option>
+                                <option value="">Select Order</option>
                             </select>
                         </div>
                     </div>
@@ -97,19 +97,19 @@
                         <div class="col-md-2">
                             <label class="form-label small fw-bold mb-1">Order By</label>
                             <select name="order_by" class="form-select form-select-sm">
-                                <option value=""></option>
+                                <option value="">Select Order By</option>
                             </select>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label small fw-bold mb-1">Checked By</label>
                             <select name="checked_by" class="form-select form-select-sm">
-                                <option value=""></option>
+                                <option value="">Select Checked By</option>
                             </select>
                         </div>
                         <div class="col-md-2">
                             <label class="form-label small fw-bold mb-1">Rep</label>
                             <select name="rep" id="repSelect" class="form-select form-select-sm">
-                                <option value="">-- Select Rep --</option>
+                                <option value="">Select Rep</option>
                                 @foreach($reps as $rep)
                                     <option value="{{ $rep->id }}" {{ old('rep') == $rep->id ? 'selected' : '' }}>{{ $rep->name }}</option>
                                 @endforeach
@@ -118,7 +118,7 @@
                         <div class="col-md-2">
                             <label class="form-label small fw-bold mb-1">Ship Via</label>
                             <select name="ship_via" class="form-select form-select-sm">
-                                <option value=""></option>
+                                <option value="">Select Ship Via</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -140,7 +140,7 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Terms</label>
                             <select name="payment_term_id" id="termsSelect" class="form-select form-select-sm">
-                                <option value="">-- Select Terms --</option>
+                                <option value="">Select Terms</option>
                                 @foreach($terms as $term)
                                     @php $label = ($term->days == 0) ? 'Cash Only' : ($term->days.' Days Credit'); @endphp
                                     <option value="{{ $term->id }}" data-days="{{ $term->days }}" {{ old('payment_term_id') == $term->id ? 'selected' : '' }}>{{ $label }}</option>
@@ -265,7 +265,7 @@
                                 <div class="col-md-5">
                                     <label class="form-label small fw-bold mb-1">Account <span class="text-danger">*</span></label>
                                     <select name="account_id" class="form-select form-select-sm border-danger" required>
-                                        <option value="">-- Select Account --</option>
+                                        <option value="">Select Account</option>
                                         @foreach($accounts as $account)
                                             <option value="{{ $account->id }}" {{ old('account_id') == $account->id ? 'selected' : '' }}>{{ $account->name }}</option>
                                         @endforeach
@@ -337,11 +337,13 @@
         const deliveryDestinationTextarea = document.querySelector('textarea[name="delivery_destination"]');
         const repSelect = document.getElementById('repSelect');
         const termsSelect = document.getElementById('termsSelect');
+        const loadSelect = document.querySelector('select[name="load"]');
         const creditLimitSpan = document.getElementById('customer-credit-limit');
 
         function fetchCustomerDetails(customerId) {
             if (customerId) {
-                fetch(`/api/customers/${customerId}`)
+                const url = "{{ url('api/customers') }}/" + customerId;
+                fetch(url)
                     .then(response => response.json())
                     .then(data => {
                         if (addressTextarea) addressTextarea.value = data.address || '';
@@ -378,23 +380,86 @@
                                 }
                             }
                         }
+
+                        // Fetch Outstanding Invoices for the Load dropdown
+                        fetchOutstandingInvoices(customerId);
                     })
                     .catch(error => console.error('Error fetching customer details:', error));
             }
         }
 
-        // Standard change event
-        customerSelect.addEventListener('change', function () {
-            fetchCustomerDetails(this.value);
-        });
+        function fetchOutstandingInvoices(customerId) {
+            if (!loadSelect) return;
+            
+            const url = "{{ url('api/customers') }}/" + customerId + "/outstanding-invoices";
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    // Clear existing options
+                    loadSelect.innerHTML = '<option value="">-- Select Order --</option>';
+                    
+                    if (data.invoices && data.invoices.length > 0) {
+                        data.invoices.forEach(inv => {
+                            const option = document.createElement('option');
+                            option.value = inv.invoice_no;
+                            option.textContent = inv.invoice_no + ' (' + parseFloat(inv.total_amount).toLocaleString(undefined, {minimumFractionDigits: 2}) + ')';
+                            loadSelect.appendChild(option);
+                        });
+                    }
 
-        setTimeout(() => {
+                    // Re-initialize TomSelect if it exists
+                    if (loadSelect.tomselect) {
+                        loadSelect.tomselect.clearOptions();
+                        const options = [];
+                        data.invoices.forEach(inv => {
+                            options.push({
+                                value: inv.invoice_no,
+                                text: inv.invoice_no + ' (' + parseFloat(inv.total_amount).toLocaleString(undefined, {minimumFractionDigits: 2}) + ')'
+                            });
+                        });
+                        loadSelect.tomselect.addOptions(options);
+                        loadSelect.tomselect.refreshOptions(false);
+                    }
+                })
+                .catch(error => console.error('Error fetching outstanding invoices:', error));
+        }
+
+        // Standard change event
+        function attachCustomerListener() {
             if (customerSelect.tomselect) {
-                customerSelect.tomselect.on('change', function (value) {
+                customerSelect.tomselect.on('change', function(value) {
                     fetchCustomerDetails(value);
                 });
+                if (customerSelect.tomselect.getValue()) {
+                    fetchCustomerDetails(customerSelect.tomselect.getValue());
+                }
+            } else {
+                customerSelect.addEventListener('change', function () {
+                    fetchCustomerDetails(this.value);
+                });
+                if (this.value) {
+                    fetchCustomerDetails(this.value);
+                }
             }
-        }, 500);
+        }
+
+        setTimeout(attachCustomerListener, 500);
+
+        setTimeout(() => {
+            if (repSelect && window.TomSelect && !repSelect.tomselect) {
+                new TomSelect(repSelect, { create: false });
+            }
+            if (termsSelect && window.TomSelect && !termsSelect.tomselect) {
+                new TomSelect(termsSelect, { create: false });
+            }
+            if (loadSelect && window.TomSelect && !loadSelect.tomselect) {
+                new TomSelect(loadSelect, { 
+                    create: false,
+                    placeholder: "-- Select Order --",
+                    allowEmptyOption: true
+                });
+            }
+        }, 600);
 
         // --- Table Controller (Data Source Level) --- //
         function getDefaultLocation() {
@@ -655,7 +720,7 @@
             }
 
             if (productSelect) {
-                let optionsHTML = '<option value="">-- Select --</option>';
+                let optionsHTML = '<option value="">Select Item</option>';
                 if (window.serverProductList && Array.isArray(window.serverProductList)) {
                     window.serverProductList.forEach(p => {
                         let safeName = (p.name || '').replace(/"/g, '&quot;');
@@ -744,6 +809,60 @@
                 salesReturnController.calculateGrandTotal('header_amount');
             });
         }
+
+        // --- Form Submission Fix --- //
+        const form = document.getElementById('createSalesReturnForm');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                const rows = document.querySelectorAll('#itemsTable tbody tr.item-row');
+                let validRowIndex = 0;
+                let hasValidRow = false;
+
+                rows.forEach((row) => {
+                    const productSelect = row.querySelector('.product-select');
+                    const productId = productSelect ? productSelect.value : '';
+
+                    if (productId) {
+                        hasValidRow = true;
+                        // Re-index the names to be sequential
+                        row.querySelectorAll('input, select').forEach(el => {
+                            if (el.classList.contains('product-select')) el.name = `items[${validRowIndex}][product_id]`;
+                            if (el.classList.contains('description-input')) el.name = `items[${validRowIndex}][description]`;
+                            if (el.classList.contains('onhand-input')) {
+                                el.name = `items[${validRowIndex}][onhand]`;
+                                if (el.value === '...' || isNaN(parseFloat(el.value))) el.value = '0';
+                            }
+                            if (el.classList.contains('qty-input')) {
+                                el.name = `items[${validRowIndex}][qty]`;
+                                if (isNaN(parseFloat(el.value))) el.value = '1';
+                            }
+                            if (el.classList.contains('rate-input')) {
+                                el.name = `items[${validRowIndex}][rate]`;
+                                if (isNaN(parseFloat(el.value))) el.value = '0';
+                            }
+                            if (el.classList.contains('amount-input')) el.name = `items[${validRowIndex}][amount]`;
+                            if (el.classList.contains('disc-percent-input')) el.name = `items[${validRowIndex}][disc_percent]`;
+                            if (el.classList.contains('discount-input')) el.name = `items[${validRowIndex}][discount]`;
+                            if (el.classList.contains('total-input')) el.name = `items[${validRowIndex}][total]`;
+                            if (el.classList.contains('location-input')) el.name = `items[${validRowIndex}][location]`;
+                            if (el.classList.contains('unit-input')) el.name = `items[${validRowIndex}][unit]`;
+                        });
+                        validRowIndex++;
+                    } else {
+                        // Remove names from empty rows so they are not submitted
+                        row.querySelectorAll('input, select').forEach(el => {
+                            if (el.name) el.removeAttribute('name');
+                        });
+                    }
+                });
+
+                if (!hasValidRow) {
+                    e.preventDefault();
+                    alert('Please add at least one valid item to the sales return.');
+                }
+            });
+        }
+
     });
 </script>
 @endpush

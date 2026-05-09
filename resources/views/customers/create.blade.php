@@ -168,7 +168,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-price-tag-3-line"></i></span>
                                             <select class="form-select" id="category" name="category">
-                                                <option value="">-- Select --</option>
+                                                <option value="">Select Category</option>
                                                 @foreach(($categories ?? []) as $cat)
                                                     <option value="{{ $cat->name }}" data-code="{{ $cat->code }}" {{ old('category') == $cat->name ? 'selected' : '' }}>
                                                         {{ $cat->name }}{{ $cat->code ? ' (' . $cat->code . ')' : '' }}
@@ -188,7 +188,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-group-line"></i></span>
                                             <select class="form-select" id="customer_category_id" name="customer_category_id">
-                                                <option value="">No category</option>
+                                                <option value="">Select Category</option>
                                                 @foreach($customerCategories ?? [] as $cat)
                                                     <option value="{{ $cat->id }}" data-code="{{ $cat->code }}" {{ old('customer_category_id') == $cat->id ? 'selected' : '' }}>
                                                         {{ $cat->name }}{{ $cat->code ? ' (' . $cat->code . ')' : '' }}
@@ -209,7 +209,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-user-star-line"></i></span>
                                             <select class="form-select" id="rep_id" name="rep_id">
-                                                <option value="">-- Select Rep --</option>
+                                                <option value="">Select Rep</option>
                                                 @foreach($reps ?? [] as $rep)
                                                     <option value="{{ $rep->id }}" {{ old('rep_id') == $rep->id ? 'selected' : '' }}>
                                                         {{ $rep->name }}
@@ -229,7 +229,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-route-line"></i></span>
                                             <select class="form-select" id="route_id" name="route_id">
-                                                <option value="">No route</option>
+                                                <option value="">Select Route</option>
                                                 @foreach($routes ?? [] as $r)
                                                     <option value="{{ $r->id }}" data-code="{{ $r->code }}" {{ old('route_id') == $r->id ? 'selected' : '' }}>{{ $r->name }}{{ $r->code ? ' (' . $r->code . ')' : '' }}</option>
                                                 @endforeach
@@ -248,7 +248,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-map-pin-line"></i></span>
                                             <select class="form-select" id="location_id" name="location_id">
-                                                <option value="">No location</option>
+                                                <option value="">Select Location</option>
                                                 @foreach($locations ?? [] as $loc)
                                                     <option value="{{ $loc->id }}" {{ old('location_id') == $loc->id ? 'selected' : '' }}>
                                                         {{ $loc->name }}{{ $loc->code ? ' (' . $loc->code . ')' : '' }}
@@ -417,7 +417,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-secure-payment-line"></i></span>
                                             <select class="form-select" id="account_payables" name="account_payables">
-                                                <option value="">-- Select --</option>
+                                                <option value="">Select Account</option>
                                                 @foreach(($accounts ?? []) as $acc)
                                                     <option value="{{ $acc->code ? ($acc->code.' - '.$acc->name) : $acc->name }}" {{ old('account_payables') == ($acc->code ? ($acc->code.' - '.$acc->name) : $acc->name) ? 'selected' : '' }}>
                                                         {{ $acc->name }}{{ $acc->code ? ' (' . $acc->code . ')' : '' }}
@@ -437,7 +437,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-file-list-2-line"></i></span>
                                             <select class="form-select" id="terms" name="terms">
-                                                <option value="">-- Select --</option>
+                                                <option value="">Select Terms</option>
                                                 @foreach(($terms ?? []) as $t)
                                                     @php $label = ($t->days == 0) ? 'Cash Only' : ($t->days.' Days Credit'); @endphp
                                                     <option value="{{ $label }}" data-code="{{ $t->code }}" {{ old('terms') == $label ? 'selected' : '' }}>
