@@ -15,6 +15,13 @@ class InventoryTransferItem extends Model
         'unit',
     ];
 
+    protected $casts = [
+        'inventory_transfer_id' => 'integer',
+        'product_id' => 'integer',
+        'onhand' => 'double',
+        'qty' => 'double',
+    ];
+
     public function inventoryTransfer()
     {
         return $this->belongsTo(InventoryTransfer::class);
