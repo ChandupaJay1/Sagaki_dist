@@ -733,14 +733,23 @@
                 input.addEventListener('input', function() {
                     updateTotals(true);
                 });
+
+                // Format on blur
+                input.addEventListener('blur', function() {
+                    const val = parseFloat(this.value) || 0;
+                    this.value = val.toFixed(2);
+                });
                 
                 // Allow double click to set full amount
                 input.addEventListener('dblclick', function() {
-                    this.value = this.dataset.due;
                     const row = this.closest('tr');
                     const cb = row.querySelector('.bill-checkbox');
+                    const crInUse = parseFloat(row.querySelector('.cr-in-use-input').value) || 0;
+                    const due = parseFloat(this.dataset.due) || 0;
+                    
+                    this.value = (due - crInUse).toFixed(2);
                     cb.checked = true;
-                    updateTotals();
+                    updateTotals(true);
                 });
             });
         }
@@ -814,12 +823,27 @@
                 appliedCreditsSummary.classList.add('d-none');
             }
 
-            // 2. Determine Cash Funds available from main input
-            const rawAmount = displayAmountInput.value.replace(/,/g, '');
-            let totalCashFunds = parseFloat(rawAmount) || 0;
+            // 2. Determine Cash Funds
+            let totalCashFunds = 0;
+            if (isUserAction) {
+                // If user is editing a specific row, sum all rows to get total
+                document.querySelectorAll('.bill-row').forEach(row => {
+                    const cb = row.querySelector('.bill-checkbox');
+                    if (cb.checked) {
+                        const payInput = row.querySelector('.pay-input');
+                        totalCashFunds += parseFloat(payInput.value) || 0;
+                    }
+                });
+                displayAmountInput.value = totalCashFunds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            } else {
+                // If user edited the main amount, use it for distribution
+                const rawAmount = displayAmountInput.value.replace(/,/g, '');
+                totalCashFunds = parseFloat(rawAmount) || 0;
+            }
+            
             let remainingCashToAllocate = totalCashFunds;
 
-            // 3. Sequential allocation to checked bills
+            // 3. Allocation to checked bills
             document.querySelectorAll('.bill-row').forEach(row => {
                 const cb = row.querySelector('.bill-checkbox');
                 const payInput = row.querySelector('.pay-input'); // This is the CASH payment field
@@ -840,20 +864,29 @@
                     remainingCreditToAllocate -= creditAllocated;
                     totalCreditApplied += creditAllocated;
 
-                    // B. Allocate Cash for the remaining balance
+                    // B. Allocate Cash
                     let remainingBalanceAfterCredit = origAmt - creditAllocated;
-                    
                     let cashAllocated = 0;
-                    if (totalCashFunds > 0) {
+
+                    if (isUserAction) {
+                        // Keep what the user typed in the row, but cap it at the remaining balance
+                        cashAllocated = parseFloat(payInput.value) || 0;
+                        if (cashAllocated > remainingBalanceAfterCredit) {
+                            cashAllocated = remainingBalanceAfterCredit;
+                        }
+                        
+                        // IMPORTANT: Only update the value if it's NOT the active element 
+                        // to prevent cursor jumping and formatting issues while typing
+                        if (document.activeElement !== payInput) {
+                            payInput.value = cashAllocated.toFixed(2);
+                        }
+                    } else {
+                        // Auto-allocate based on totalCashFunds (FIFO)
                         cashAllocated = Math.min(remainingBalanceAfterCredit, remainingCashToAllocate);
                         remainingCashToAllocate -= cashAllocated;
-                    } else if (isUserAction) {
-                        // If user typed directly into the cash payInput, use that value but cap it
-                        cashAllocated = parseFloat(payInput.value) || 0;
-                        if (cashAllocated > remainingBalanceAfterCredit) cashAllocated = remainingBalanceAfterCredit;
+                        payInput.value = cashAllocated.toFixed(2);
                     }
 
-                    payInput.value = cashAllocated.toFixed(2);
                     totalCashApplied += cashAllocated;
 
                     // C. Update Amt. Due cell (Orig. Amt - Credit - Cash)
@@ -875,14 +908,13 @@
                 }
             });
 
-            // 4. Update the main Cash Amount input if it was empty but we allocated cash
-            if (totalCashFunds === 0 && totalCashApplied > 0) {
-                displayAmountInput.value = totalCashApplied.toLocaleString(undefined, {minimumFractionDigits: 2});
+            // 4. Update totalCashFunds if it was changed by manual editing
+            if (isUserAction) {
                 totalCashFunds = totalCashApplied;
-                remainingCashToAllocate = 0;
+                displayAmountInput.value = totalCashFunds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             }
 
-            // 5. Update Credit Record usages (Finalizing how much of each selected credit record was actually consumed)
+            // 5. Update Credit Record usages
             let totalCreditConsumedAcrossAllBills = totalCreditApplied;
             document.querySelectorAll('.credit-row').forEach(row => {
                 const cb = row.querySelector('.credit-checkbox');
@@ -899,8 +931,8 @@
                 }
             });
 
-            // 6. Handle Overpayment (Leftover Cash + Leftover Credit)
-            const overPaymentAmount = remainingCashToAllocate + remainingCreditToAllocate;
+            // 6. Handle Overpayment
+            const overPaymentAmount = isUserAction ? 0 : (remainingCashToAllocate + remainingCreditToAllocate);
             updateOverpaymentRow(overPaymentAmount);
 
             // 7. Summary Box Updates
