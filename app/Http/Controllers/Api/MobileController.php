@@ -518,12 +518,14 @@ class MobileController extends Controller
                 // Generate a unique voucher number for each payment
                 $voucherNo = 'CP-' . strtoupper(\Illuminate\Support\Str::random(8));
 
+                $amountToSettle = $paymentData['amount'];
+
                 $payment = \App\Models\PayBill::create([
                     'type' => 'Customer',
                     'customer_id' => $validated['customer_id'],
                     'voucher_no' => $voucherNo,
                     'date' => $paymentData['date'] ?? now()->format('Y-m-d'),
-                    'total_amount' => $paymentData['amount'],
+                    'total_amount' => $amountToSettle,
                     'payment_method' => $paymentData['method'] === 'BANK' ? 'Bank Transfer' : ucfirst(strtolower($paymentData['method'])),
                     'cheque_no' => $paymentData['cheque_no'] ?? $paymentData['bank_reference'] ?? null,
                     'pd_cheque_date' => $paymentData['method'] === 'CHEQUE' ? ($paymentData['date'] ?? null) : null,
@@ -532,6 +534,46 @@ class MobileController extends Controller
                     // Assuming a default location/site for mobile payments
                     'location_id' => \App\Models\Location::first()->id ?? null,
                 ]);
+
+                // --- Automatic Invoice Settlement Logic ---
+                // Find outstanding invoices for this customer
+                $invoices = \App\Models\Invoice::where('customer_id', $validated['customer_id'])
+                    ->where('status', '!=', 'Paid')
+                    ->orderBy('date', 'asc')
+                    ->orderBy('id', 'asc')
+                    ->get();
+
+                foreach ($invoices as $invoice) {
+                    if ($amountToSettle <= 0) break;
+
+                    // Calculate remaining balance for this invoice
+                    $totalPaid = \App\Models\PayBillItem::where('invoice_id', $invoice->id)->sum('amount_to_pay');
+                    $balance = $invoice->total_amount - $totalPaid;
+
+                    if ($balance > 0) {
+                        $settleNow = min($amountToSettle, $balance);
+
+                        \App\Models\PayBillItem::create([
+                            'pay_bill_id' => $payment->id,
+                            'invoice_id' => $invoice->id,
+                            'bill_no' => $invoice->invoice_no,
+                            'bill_date' => $invoice->date,
+                            'bill_amount' => $invoice->total_amount,
+                            'amount_to_pay' => $settleNow,
+                        ]);
+
+                        $amountToSettle -= $settleNow;
+
+                        // Update invoice status if fully paid
+                        if (round($balance - $settleNow, 2) <= 0) {
+                            $invoice->status = 'Paid';
+                            $invoice->save();
+                        } else {
+                            $invoice->status = 'Partial';
+                            $invoice->save();
+                        }
+                    }
+                }
 
                 $createdPayments[] = $payment;
             }
