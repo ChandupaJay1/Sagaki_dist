@@ -334,13 +334,13 @@ class MobileController extends Controller
 
             $data = $transfers->map(function ($t) {
                 return [
-                    'id' => $t->id,
-                    'tn_number' => $t->transfer_no,
-                    'date' => $t->date,
-                    'from_location' => $t->site_from,
-                    'to_location' => $t->site_to,
-                    'memo' => $t->memo,
-                    'status' => $t->status,
+                    'id' => (int)$t->id,
+                    'tn_number' => (string)($t->transfer_no ?? ''),
+                    'date' => (string)$t->date,
+                    'from_location' => (string)$t->site_from,
+                    'to_location' => (string)$t->site_to,
+                    'memo' => (string)($t->memo ?? ''),
+                    'status' => (string)$t->status,
                 ];
             });
 
@@ -378,18 +378,19 @@ class MobileController extends Controller
             }
 
             $data = [
-                'id' => $t->id,
-                'tn_number' => $t->transfer_no,
-                'date' => $t->date,
-                'from_location' => $t->site_from,
-                'to_location' => $t->site_to,
-                'memo' => $t->memo,
-                'status' => $t->status,
+                'id' => (int)$t->id,
+                'tn_number' => (string)($t->transfer_no ?? ''),
+                'date' => (string)$t->date,
+                'from_location' => (string)$t->site_from,
+                'to_location' => (string)$t->site_to,
+                'memo' => (string)($t->memo ?? ''),
+                'status' => (string)$t->status,
                 'items' => $t->items->map(function ($item) {
                     return [
-                        'item_code' => $item->product ? $item->product->code : '',
-                        'item_name' => $item->product ? $item->product->name : $item->description,
-                        'qty' => (string)$item->qty,
+                        'item_code' => $item->product ? (string)$item->product->code : '',
+                        'item_name' => $item->product ? (string)$item->product->name : ($item->description ?? ''),
+                        'qty' => (double)$item->qty,
+                        'unit' => (string)($item->unit ?? ''),
                     ];
                 })
             ];
