@@ -84,8 +84,8 @@ class SupplierPaymentTestDataSeeder extends Seeder
             'total_amount' => 40000,
             'payment_method' => 'Bank Transfer',
             'status' => 'Paid',
-            'location_id' => $location->id,
-            'account_id' => $account->id
+            'location_id' => $location->id
+            // account_id removed as it doesn't exist in pay_bills table
         ]);
         PayBillItem::create([
             'pay_bill_id' => $payment1->id,
