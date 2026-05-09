@@ -50,6 +50,9 @@ Route::prefix('v1')->name('api.')->group(function () {
         Route::get('/transfer-notes/{id}', [MobileController::class, 'transferNoteDetails']);
         Route::post('/transfer-notes/{id}/status', [MobileController::class, 'updateTransferNoteStatus']);
         
+        // Payment APIs
+        Route::post('/payments', [MobileController::class, 'storePayments']);
+        
         Route::get('/areas', [MobileController::class, 'areas']);
         Route::get('/territories', [MobileController::class, 'territories']);
         Route::get('/routes', [MobileController::class, 'routes']);

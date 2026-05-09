@@ -475,4 +475,75 @@ class MobileController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Store multiple payments from mobile app
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function storePayments(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'customer_id' => 'required|exists:customers,id',
+                'payments' => 'required|array|min:1',
+                'payments.*.method' => 'required|string|in:CASH,BANK,CHEQUE',
+                'payments.*.amount' => 'required|numeric|min:0',
+                'payments.*.bank_reference' => 'nullable|string',
+                'payments.*.cheque_no' => 'nullable|string',
+                'payments.*.bank_name' => 'nullable|string',
+                'payments.*.date' => 'nullable|date',
+            ]);
+
+            \DB::beginTransaction();
+
+            $createdPayments = [];
+
+            foreach ($validated['payments'] as $paymentData) {
+                // Generate a unique voucher number for each payment
+                $voucherNo = 'CP-' . strtoupper(\Illuminate\Support\Str::random(8));
+
+                $payment = \App\Models\PayBill::create([
+                    'type' => 'Customer',
+                    'customer_id' => $validated['customer_id'],
+                    'voucher_no' => $voucherNo,
+                    'date' => $paymentData['date'] ?? now()->format('Y-m-d'),
+                    'total_amount' => $paymentData['amount'],
+                    'payment_method' => $paymentData['method'] === 'BANK' ? 'Bank Transfer' : ucfirst(strtolower($paymentData['method'])),
+                    'cheque_no' => $paymentData['cheque_no'] ?? $paymentData['bank_reference'] ?? null,
+                    'pd_cheque_date' => $paymentData['method'] === 'CHEQUE' ? ($paymentData['date'] ?? null) : null,
+                    'memo' => 'Mobile App Payment - ' . ($paymentData['bank_name'] ?? ''),
+                    'status' => 'Paid',
+                    // Assuming a default location/site for mobile payments
+                    'location_id' => \App\Models\Location::first()->id ?? null,
+                ]);
+
+                $createdPayments[] = $payment;
+            }
+
+            \DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'All payments recorded successfully',
+                'data' => $createdPayments
+            ], 201);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Throwable $e) {
+            \DB::rollBack();
+            Log::error('storePayments error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while recording payments',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
