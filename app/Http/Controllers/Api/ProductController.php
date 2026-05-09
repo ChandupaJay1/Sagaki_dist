@@ -58,8 +58,9 @@ class ProductController extends Controller
         $invoiceOut = \Illuminate\Support\Facades\DB::table('invoice_items')->where('product_id', $id)->where('location', $location)->sum('qty');
         $grnReturnOut = \Illuminate\Support\Facades\DB::table('grn_return_items')->where('product_id', $id)->where('location', $location)->sum('qty');
         $salesReturnIn = \Illuminate\Support\Facades\DB::table('sales_return_items')->where('product_id', $id)->where('location', $location)->sum('qty');
+        $invoiceReturnIn = \Illuminate\Support\Facades\DB::table('invoice_returns')->where('product_id', $id)->sum('qty'); // Assuming all returns are at the same location for now
         
-        $stock = ($grnIn + $salesReturnIn) - ($invoiceOut + $grnReturnOut);
+        $stock = ($grnIn + $salesReturnIn + $invoiceReturnIn) - ($invoiceOut + $grnReturnOut);
         
         return response()->json(['stock' => (float) $stock], 200);
     }

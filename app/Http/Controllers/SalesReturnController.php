@@ -89,6 +89,13 @@ class SalesReturnController extends Controller
             
             $salesReturn = SalesReturn::create($data);
 
+            // Update Customer Balance (Sales Return decreases balance)
+            $customer = Customer::find($salesReturn->customer_id);
+            if ($customer) {
+                $customer->balance -= (float)($salesReturn->total_amount ?? 0);
+                $customer->save();
+            }
+
             foreach ($request->items as $item) {
                 if (!empty($item['product_id'])) {
                     $amountCalc = (float)($item['qty'] ?? 0) * (float)($item['rate'] ?? 0);
@@ -182,6 +189,9 @@ class SalesReturnController extends Controller
         ]);
 
         \DB::transaction(function () use ($request, $validated, $salesReturn) {
+            $oldCustomerId = $salesReturn->customer_id;
+            $oldTotalAmount = (float)($salesReturn->total_amount ?? 0);
+
             $data = Arr::except($validated, ['items']);
             foreach (['subtotal', 'header_discount_percent', 'header_discount_amount', 'tax_amount', 'sscl_percent', 'sscl_amount', 'vat_percent', 'vat_amount', 'total_amount'] as $field) {
                 if (array_key_exists($field, $data)) {
@@ -191,6 +201,29 @@ class SalesReturnController extends Controller
             $data['return_no'] = $validated['reference_no'] ?? null;
             
             $salesReturn->update($data);
+            $newTotalAmount = (float)($salesReturn->total_amount ?? 0);
+            $newCustomerId = $salesReturn->customer_id;
+
+            // Update Customer Balance
+            if ($oldCustomerId == $newCustomerId) {
+                $customer = Customer::find($newCustomerId);
+                if ($customer) {
+                    $customer->balance -= ($newTotalAmount - $oldTotalAmount);
+                    $customer->save();
+                }
+            } else {
+                // Customer changed
+                $oldCustomer = Customer::find($oldCustomerId);
+                if ($oldCustomer) {
+                    $oldCustomer->balance += $oldTotalAmount; // Reverse old return
+                    $oldCustomer->save();
+                }
+                $newCustomer = Customer::find($newCustomerId);
+                if ($newCustomer) {
+                    $newCustomer->balance -= $newTotalAmount; // Apply new return
+                    $newCustomer->save();
+                }
+            }
 
             $salesReturn->items()->delete();
             foreach ($request->items as $item) {
@@ -222,8 +255,19 @@ class SalesReturnController extends Controller
     public function destroy($id)
     {
         $salesReturn = SalesReturn::findOrFail($id);
-        $salesReturn->items()->delete();
-        $salesReturn->delete();
+        
+        \DB::transaction(function () use ($salesReturn) {
+            // Update Customer Balance (Reverse Sales Return)
+            $customer = Customer::find($salesReturn->customer_id);
+            if ($customer) {
+                $customer->balance += (float)($salesReturn->total_amount ?? 0);
+                $customer->save();
+            }
+
+            $salesReturn->items()->delete();
+            $salesReturn->delete();
+        });
+
         return redirect()->route('sales-returns.index')->with('success', 'Sales Return deleted successfully.');
     }
 }
