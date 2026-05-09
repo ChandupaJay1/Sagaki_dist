@@ -65,7 +65,7 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Inventory Transfer No</label>
-                            <input type="text" class="form-control form-control-sm bg-light" value="00014" readonly>
+                            <input type="text" class="form-control form-control-sm bg-light" value="(Auto Generated)" readonly>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Date <span class="text-danger">*</span></label>

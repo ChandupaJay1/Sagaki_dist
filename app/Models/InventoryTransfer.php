@@ -10,6 +10,10 @@ class InventoryTransfer extends Model
         'site_from', 'site_to', 'transfer_no', 'memo', 'date', 'status'
     ];
 
+    protected $casts = [
+        'id' => 'integer',
+    ];
+
     public function items()
     {
         return $this->hasMany(InventoryTransferItem::class);
