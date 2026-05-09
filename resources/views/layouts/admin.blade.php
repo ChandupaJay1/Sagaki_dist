@@ -1036,6 +1036,36 @@
                         </div>
                     </li>
 
+                    <li class="menu-title">Reports</li>
+                    <li class="menu-item">
+                        <a class="menu-link" data-bs-toggle="collapse" href="#menuReports" role="button" aria-expanded="false" aria-controls="menuReports">
+                            <span class="nav-icon">
+                                <i class="ri-file-chart-line"></i>
+                            </span>
+                            <span class="nav-text"> Inventory Reports </span>
+                            <i class="ri-arrow-right-s-line menu-arrow"></i>
+                        </a>
+                        <div class="collapse" id="menuReports">
+                            <ul class="sub-menu">
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('reports.stock-by-site') }}">
+                                        <span class="nav-text">Location Summary</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('reports.stock-valuation-summary') }}">
+                                        <span class="nav-text">Inventory Summary</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('reports.stock-valuation-details') }}">
+                                        <span class="nav-text">Inventory Details</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
                     <li class="menu-title">System</li>
 
                     <li class="menu-item">
