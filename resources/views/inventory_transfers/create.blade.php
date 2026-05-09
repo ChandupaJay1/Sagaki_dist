@@ -18,7 +18,10 @@
     <div class="col-lg-12">
         <div class="card">
             <div class="card-header bg-soft-secondary d-flex justify-content-between align-items-center py-2">
-                <h5 class="card-title mb-0"><i class="ri-exchange-line me-1"></i>Inventory Transfer - Create</h5>
+                <div class="d-flex align-items-center">
+                    <h5 class="card-title mb-0"><i class="ri-exchange-line me-1"></i>Inventory Transfer - Create</h5>
+                    <span class="badge bg-warning-subtle text-warning ms-2 rounded-pill">Status: Pending</span>
+                </div>
                 <div class="float-end">
                     <button type="submit" form="createTransferForm" class="btn btn-success btn-sm me-1"><i class="ri-check-line me-1"></i>Transfer</button>
                     <button type="button" class="btn btn-outline-secondary btn-sm me-1"><i class="ri-printer-line me-1"></i>Save & Print</button>
