@@ -24,6 +24,13 @@ class PayBill extends Model
         'status',
     ];
 
+    protected $casts = [
+        'vendor_id' => 'integer',
+        'customer_id' => 'integer',
+        'location_id' => 'integer',
+        'total_amount' => 'double',
+    ];
+
     public function vendor()
     {
         return $this->belongsTo(Vendor::class);

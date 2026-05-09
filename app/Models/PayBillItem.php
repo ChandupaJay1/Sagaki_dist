@@ -20,6 +20,14 @@ class PayBillItem extends Model
         'amount_to_pay',
     ];
 
+    protected $casts = [
+        'pay_bill_id' => 'integer',
+        'grn_id' => 'integer',
+        'invoice_id' => 'integer',
+        'bill_amount' => 'double',
+        'amount_to_pay' => 'double',
+    ];
+
     public function payBill()
     {
         return $this->belongsTo(PayBill::class);
