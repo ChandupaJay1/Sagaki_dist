@@ -22,6 +22,28 @@ class Product extends Model
         'image_path'
     ];
 
+    protected $casts = [
+        'is_main_product' => 'boolean',
+        'main_product_id' => 'integer',
+        'reorder_point' => 'double',
+        'alert_quantity' => 'double',
+        'qty_in_bulk' => 'double',
+        'is_purchase' => 'boolean',
+        'is_sale' => 'boolean',
+        'is_production' => 'boolean',
+        'is_serialized' => 'boolean',
+        'is_stock_report' => 'boolean',
+        'is_price_level' => 'boolean',
+        'is_multi_price' => 'boolean',
+        'vendor_id' => 'integer',
+        'cost' => 'double',
+        'max_sale_price' => 'double',
+        'min_sale_price' => 'double',
+        'max_wholesale_price' => 'double',
+        'min_wholesale_price' => 'double',
+        'discount_percentage' => 'double',
+    ];
+
     public function mainProduct()
     {
         return $this->belongsTo(Product::class, 'main_product_id');

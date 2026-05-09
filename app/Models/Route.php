@@ -22,6 +22,8 @@ class Route extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'territory_id' => 'integer',
+        'area_id' => 'integer',
     ];
 
     public function customers()
