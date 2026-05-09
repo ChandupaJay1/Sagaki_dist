@@ -48,7 +48,7 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Site From</label>
                             <select name="site_from" class="form-select form-select-sm">
-                                <option value="">-- Select --</option>
+                                <option value="">Select Site From</option>
                                 @foreach($locations as $loc)
                                     <option value="{{ $loc->name }}" {{ (old('site_from') == $loc->name || $loc->name == 'Main Stock') ? 'selected' : '' }}>{{ $loc->name }}</option>
                                 @endforeach
@@ -57,7 +57,7 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Site To</label>
                             <select name="site_to" class="form-select form-select-sm">
-                                <option value="">-- Select --</option>
+                                <option value="">Select Site To</option>
                                 @foreach($locations as $loc)
                                     <option value="{{ $loc->name }}" {{ (old('site_to') == $loc->name || $loc->name == 'Main Stock') ? 'selected' : '' }}>{{ $loc->name }}</option>
                                 @endforeach
@@ -123,6 +123,7 @@
 
                     <!-- Javascript Hydration Source -->
                     <script>
+                        window.oldItems = @json(old('items', []));
                         window.serverProductList = @json($products ?? []);
                     </script>
                 </form>
@@ -151,8 +152,16 @@
                 this.rowTemplateHTML = firstRow.innerHTML;
                 firstRow.remove();
 
-                this.appendRow();
-                this.appendRow();
+                if (window.oldItems && window.oldItems.length > 0) {
+                    window.oldItems.forEach(item => {
+                        this.appendRow(item);
+                    });
+                    // Always ensure there's at least one empty row or one more row to add items
+                    this.appendRow();
+                } else {
+                    this.appendRow();
+                    this.appendRow();
+                }
             },
 
             checkAndAppendRow(rowIndex) {
@@ -164,28 +173,28 @@
                 }
             },
 
-            appendRow() {
-                this.data.push({
+            appendRow(itemData = null) {
+                const rowData = {
                     rowId: this.rowCount,
-                    product_id: '',
-                    description: '',
-                    onhand: '',
-                    qty: 1,
-                    unit: ''
-                });
+                    product_id: itemData ? itemData.product_id : '',
+                    description: itemData ? itemData.description : '',
+                    onhand: itemData ? itemData.onhand : '',
+                    qty: itemData ? itemData.qty : 1,
+                    unit: itemData ? itemData.unit : ''
+                };
+                this.data.push(rowData);
                 
-                this.injectRowUI();
+                this.injectRowUI(rowData);
                 this.rowCount++;
             },
 
-            injectRowUI() {
+            injectRowUI(data) {
                 const newRow = document.createElement('tr');
                 newRow.className = 'item-row';
                 newRow.innerHTML = this.rowTemplateHTML;
                 
                 newRow.querySelectorAll('input').forEach(input => {
                     input.value = '';
-                    if (input.classList.contains('qty-input')) input.value = '1';
                 });
                 
                 newRow.querySelectorAll('.ts-wrapper').forEach(wrapper => wrapper.remove());
@@ -197,13 +206,35 @@
                 });
 
                 const newIndex = this.rowCount;
-                newRow.querySelectorAll('input, select').forEach(el => {
-                    if (el.classList.contains('product-select')) el.name = `items[${newIndex}][product_id]`;
-                    if (el.classList.contains('description-input')) el.name = `items[${newIndex}][description]`;
-                    if (el.classList.contains('onhand-input')) el.name = `items[${newIndex}][onhand]`;
-                    if (el.classList.contains('qty-input')) el.name = `items[${newIndex}][qty]`;
-                    if (el.classList.contains('unit-input')) el.name = `items[${newIndex}][unit]`;
-                });
+                const productSelect = newRow.querySelector('.product-select');
+                if (productSelect) {
+                    productSelect.name = `items[${newIndex}][product_id]`;
+                    productSelect.value = data.product_id;
+                }
+
+                const descInput = newRow.querySelector('.description-input');
+                if (descInput) {
+                    descInput.name = `items[${newIndex}][description]`;
+                    descInput.value = data.description;
+                }
+
+                const onhandInput = newRow.querySelector('.onhand-input');
+                if (onhandInput) {
+                    onhandInput.name = `items[${newIndex}][onhand]`;
+                    onhandInput.value = data.onhand;
+                }
+
+                const qtyInput = newRow.querySelector('.qty-input');
+                if (qtyInput) {
+                    qtyInput.name = `items[${newIndex}][qty]`;
+                    qtyInput.value = data.qty;
+                }
+
+                const unitInput = newRow.querySelector('.unit-input');
+                if (unitInput) {
+                    unitInput.name = `items[${newIndex}][unit]`;
+                    unitInput.value = data.unit;
+                }
 
                 newRow.dataset.rowIndex = this.data.length - 1;
                 document.querySelector('#itemsTable tbody').appendChild(newRow);
@@ -298,7 +329,7 @@
             }
 
             if (productSelect) {
-                let optionsHTML = '<option value="">-- Select --</option>';
+                let optionsHTML = '<option value="">Select Item</option>';
                 if (window.serverProductList && Array.isArray(window.serverProductList)) {
                     window.serverProductList.forEach(p => {
                         let safeName = (p.name || '').replace(/"/g, '&quot;');
@@ -358,6 +389,50 @@
                         }
                     }
                 });
+            });
+        }
+
+        // --- Form Submission Fix --- //
+        const form = document.getElementById('createTransferForm');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                const rows = document.querySelectorAll('#itemsTable tbody tr.item-row');
+                let validRowIndex = 0;
+                let hasValidRow = false;
+
+                rows.forEach((row) => {
+                    const productSelect = row.querySelector('.product-select');
+                    const productId = productSelect ? productSelect.value : '';
+
+                    if (productId) {
+                        hasValidRow = true;
+                        // Re-index the names to be sequential
+                        row.querySelectorAll('input, select').forEach(el => {
+                            if (el.classList.contains('product-select')) el.name = `items[${validRowIndex}][product_id]`;
+                            if (el.classList.contains('description-input')) el.name = `items[${validRowIndex}][description]`;
+                            if (el.classList.contains('onhand-input')) {
+                                el.name = `items[${validRowIndex}][onhand]`;
+                                if (el.value === '...' || isNaN(parseFloat(el.value))) el.value = '0';
+                            }
+                            if (el.classList.contains('qty-input')) {
+                                el.name = `items[${validRowIndex}][qty]`;
+                                if (isNaN(parseFloat(el.value))) el.value = '1';
+                            }
+                            if (el.classList.contains('unit-input')) el.name = `items[${validRowIndex}][unit]`;
+                        });
+                        validRowIndex++;
+                    } else {
+                        // Remove names from empty rows so they are not submitted
+                        row.querySelectorAll('input, select').forEach(el => {
+                            if (el.name) el.removeAttribute('name');
+                        });
+                    }
+                });
+
+                if (!hasValidRow) {
+                    e.preventDefault();
+                    alert('Please add at least one valid item to the transfer.');
+                }
             });
         }
 

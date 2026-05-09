@@ -47,7 +47,7 @@
                         <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Vendor Name <span class="text-danger">*</span></label>
                             <select name="vendor_id" class="form-select form-select-sm" required>
-                                <option value="">-- Select Vendor --</option>
+                                <option value="">Select Vendor</option>
                                 @foreach($vendors as $v)
                                     <option value="{{ $v->id }}" {{ old('vendor_id') == $v->id ? 'selected' : '' }}>{{ $v->company_name ?? $v->name }}</option>
                                 @endforeach
@@ -56,7 +56,7 @@
                         <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
                             <select name="location_id" class="form-select form-select-sm" required>
-                                <option value="">-- Select Site --</option>
+                                <option value="">Select Site</option>
                                 @foreach($locations as $loc)
                                     <option value="{{ $loc->id }}" data-name="{{ $loc->name }}" {{ (old('location_id') == $loc->id || $loc->name == 'Main Stock') ? 'selected' : '' }}>{{ $loc->name }}</option>
                                 @endforeach
@@ -65,7 +65,7 @@
                         <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Load</label>
                             <select name="load" class="form-select form-select-sm">
-                                <option value=""></option>
+                                <option value="">Select Order</option>
                             </select>
                         </div>
                     </div>
@@ -97,7 +97,7 @@
                         <div class="col-md-2">
                             <label class="form-label small fw-bold mb-1">Order By</label>
                             <select name="order_by" class="form-select form-select-sm">
-                                <option value=""></option>
+                                <option value="">Select Order By</option>
                                 @foreach($reps as $rep)
                                     <option value="{{ $rep->name }}" {{ old('order_by') == $rep->name ? 'selected' : '' }}>{{ $rep->name }}</option>
                                 @endforeach
@@ -106,7 +106,7 @@
                         <div class="col-md-2">
                             <label class="form-label small fw-bold mb-1">Checked By</label>
                             <select name="checked_by" class="form-select form-select-sm">
-                                <option value=""></option>
+                                <option value="">Select Checked By</option>
                                 @foreach($reps as $rep)
                                     <option value="{{ $rep->name }}" {{ old('checked_by') == $rep->name ? 'selected' : '' }}>{{ $rep->name }}</option>
                                 @endforeach
@@ -115,7 +115,7 @@
                         <div class="col-md-2">
                             <label class="form-label small fw-bold mb-1">Rep</label>
                             <select name="rep" class="form-select form-select-sm">
-                                <option value=""></option>
+                                <option value="">Select Rep</option>
                                 @foreach($reps as $rep)
                                     <option value="{{ $rep->name }}" {{ old('rep') == $rep->name ? 'selected' : '' }}>{{ $rep->name }}</option>
                                 @endforeach
@@ -140,7 +140,7 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Terms</label>
                             <select name="payment_term_id" id="termsSelect" class="form-select form-select-sm">
-                                <option value="">-- Select Terms --</option>
+                                <option value="">Select Terms</option>
                                 @foreach($terms as $term)
                                     @php $label = ($term->days == 0) ? 'Cash Only' : ($term->days.' Days Credit'); @endphp
                                     <option value="{{ $term->id }}" data-days="{{ $term->days }}" {{ old('payment_term_id') == $term->id ? 'selected' : '' }}>{{ $label }}</option>
@@ -327,12 +327,14 @@
         const addressTextarea = document.querySelector('textarea[name="address"]');
         const deliveryDestinationTextarea = document.querySelector('textarea[name="delivery_destination"]');
         const termsSelect = document.getElementById('termsSelect');
+        const loadSelect = document.querySelector('select[name="load"]');
         const creditLimitSpan = document.getElementById('vendor-credit-limit');
         const itemsTableBody = document.querySelector('#itemsTable tbody');
 
         function fetchVendorDetails(vendorId) {
             if (vendorId) {
-                fetch(`/api/vendors/${vendorId}`)
+                const url = "{{ url('api/vendors') }}/" + vendorId;
+                fetch(url)
                     .then(response => response.json())
                     .then(data => {
                         if (addressTextarea) addressTextarea.value = data.address || '';
@@ -362,10 +364,78 @@
                                 }
                             }
                         }
+
+                        // Fetch Outstanding Bills for the Load dropdown
+                        fetchOutstandingBills(vendorId);
                     })
                     .catch(error => console.error('Error fetching vendor details:', error));
             }
         }
+
+        function fetchOutstandingBills(vendorId) {
+            if (!loadSelect) return;
+            
+            const url = "{{ url('api/vendors') }}/" + vendorId + "/outstanding-bills";
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    // Clear existing options
+                    loadSelect.innerHTML = '<option value=""></option>';
+                    
+                    if (data.bills && data.bills.length > 0) {
+                        data.bills.forEach(bill => {
+                            const option = document.createElement('option');
+                            option.value = bill.grn_no;
+                            option.textContent = bill.grn_no + ' (' + parseFloat(bill.total_amount).toLocaleString(undefined, {minimumFractionDigits: 2}) + ')';
+                            loadSelect.appendChild(option);
+                        });
+                    }
+
+                    // Re-initialize TomSelect if it exists
+                    if (loadSelect.tomselect) {
+                        loadSelect.tomselect.clearOptions();
+                        const options = [];
+                        data.bills.forEach(bill => {
+                            options.push({
+                                value: bill.grn_no,
+                                text: bill.grn_no + ' (' + parseFloat(bill.total_amount).toLocaleString(undefined, {minimumFractionDigits: 2}) + ')'
+                            });
+                        });
+                        loadSelect.tomselect.addOptions(options);
+                        loadSelect.tomselect.refreshOptions(false);
+                    }
+                })
+                .catch(error => console.error('Error fetching outstanding bills:', error));
+        }
+
+        function attachVendorListener() {
+            if (vendorSelect.tomselect) {
+                vendorSelect.tomselect.on('change', function(value) {
+                    fetchVendorDetails(value);
+                });
+                if (vendorSelect.tomselect.getValue()) {
+                    fetchVendorDetails(vendorSelect.tomselect.getValue());
+                }
+            } else {
+                vendorSelect.addEventListener('change', function () {
+                    fetchVendorDetails(this.value);
+                });
+                if (this.value) {
+                    fetchVendorDetails(this.value);
+                }
+            }
+        }
+
+        setTimeout(attachVendorListener, 500);
+
+        setTimeout(() => {
+            if (termsSelect && window.TomSelect && !termsSelect.tomselect) {
+                new TomSelect(termsSelect, { create: false });
+            }
+            if (loadSelect && window.TomSelect && !loadSelect.tomselect) {
+                new TomSelect(loadSelect, { create: false });
+            }
+        }, 600);
 
         function getDefaultLocation() {
             const locNode = document.querySelector('select[name="location_id"]');
@@ -632,7 +702,7 @@
             }
 
             if (productSelect) {
-                let optionsHTML = '<option value="">-- Select --</option>';
+                let optionsHTML = '<option value="">Select Item</option>';
                 if (window.serverProductList && Array.isArray(window.serverProductList)) {
                     window.serverProductList.forEach(p => {
                         let safeName = (p.name || '').replace(/"/g, '&quot;');
@@ -746,6 +816,58 @@
                 new TomSelect(termsSelect, { create: false });
             }
         }, 500);
+
+        // --- Form Submission Fix --- //
+        const form = document.getElementById('createGrnReturnForm');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                const rows = document.querySelectorAll('#itemsTable tbody tr.item-row');
+                let validRowIndex = 0;
+                let hasValidRow = false;
+
+                rows.forEach((row) => {
+                    const productSelect = row.querySelector('.product-select');
+                    const productId = productSelect ? productSelect.value : '';
+
+                    if (productId) {
+                        hasValidRow = true;
+                        // Re-index the names to be sequential
+                        row.querySelectorAll('input, select').forEach(el => {
+                            if (el.classList.contains('product-select')) el.name = `items[${validRowIndex}][product_id]`;
+                            if (el.classList.contains('description-input')) el.name = `items[${validRowIndex}][description]`;
+                            if (el.classList.contains('onhand-input')) {
+                                el.name = `items[${validRowIndex}][onhand]`;
+                                if (el.value === '...' || isNaN(parseFloat(el.value))) el.value = '0';
+                            }
+                            if (el.classList.contains('qty-input')) {
+                                el.name = `items[${validRowIndex}][qty]`;
+                                if (isNaN(parseFloat(el.value))) el.value = '1';
+                            }
+                            if (el.classList.contains('rate-input')) {
+                                el.name = `items[${validRowIndex}][rate]`;
+                                if (isNaN(parseFloat(el.value))) el.value = '0';
+                            }
+                            if (el.classList.contains('amount-input')) el.name = `items[${validRowIndex}][amount]`;
+                            if (el.classList.contains('disc-percent-input')) el.name = `items[${validRowIndex}][disc_percent]`;
+                            if (el.classList.contains('discount-input')) el.name = `items[${validRowIndex}][discount]`;
+                            if (el.classList.contains('total-input')) el.name = `items[${validRowIndex}][total]`;
+                            if (el.classList.contains('location-input')) el.name = `items[${validRowIndex}][location]`;
+                            if (el.classList.contains('unit-input')) el.name = `items[${validRowIndex}][unit]`;
+                        });
+                        validRowIndex++;
+                    } else {
+                        // Remove names from empty rows so they are not submitted
+                        row.querySelectorAll('input, select').forEach(el => {
+                            if (el.name) el.removeAttribute('name');
+                        });
+                    }
+                });
+
+                if (!hasValidRow) {
+                    e.preventDefault();
+                    alert('Please add at least one valid item to the GRN return.');
+                }
+            });
+        }
     });
-</script>
 @endpush

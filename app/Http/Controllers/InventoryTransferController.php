@@ -26,6 +26,14 @@ class InventoryTransferController extends Controller
 
     public function store(Request $request)
     {
+        // Filter out empty items before validation
+        if ($request->has('items')) {
+            $filteredItems = array_values(array_filter($request->items, function ($item) {
+                return !empty($item['product_id']);
+            }));
+            $request->merge(['items' => $filteredItems]);
+        }
+
         $validated = $request->validate([
             'site_from' => 'required|string',
             'site_to' => 'required|string',
@@ -52,10 +60,16 @@ class InventoryTransferController extends Controller
 
         foreach ($request->items as $item) {
             if (!empty($item['product_id'])) {
+                // Ensure onhand is numeric to avoid SQL errors
+                $onhand = $item['onhand'] ?? 0;
+                if (!is_numeric($onhand)) {
+                    $onhand = 0;
+                }
+
                 $transfer->items()->create([
                     'product_id' => $item['product_id'],
                     'description' => $item['description'] ?? '',
-                    'onhand' => $item['onhand'] ?? 0,
+                    'onhand' => $onhand,
                     'qty' => $item['qty'],
                     'unit' => $item['unit'] ?? '',
                 ]);

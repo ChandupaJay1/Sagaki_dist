@@ -147,12 +147,16 @@ class FullSystemTestSeeder extends Seeder
             'credit_limit' => 50000
         ]);
 
-        // Invoices for FIFO Testing
-        Invoice::create(['customer_id' => $customer1->id, 'invoice_no' => 'INV-00001', 'date' => Carbon::now()->subDays(15), 'total_amount' => 10000, 'status' => 'Pending']);
-        Invoice::create(['customer_id' => $customer1->id, 'invoice_no' => 'INV-00002', 'date' => Carbon::now()->subDays(10), 'total_amount' => 25000, 'status' => 'Pending']);
-        Invoice::create(['customer_id' => $customer1->id, 'invoice_no' => 'INV-00003', 'date' => Carbon::now()->subDays(5), 'total_amount' => 15000, 'status' => 'Pending']);
+        // Invoices for FIFO Testing & Load Dropdown
+        Invoice::create(['customer_id' => $customer1->id, 'invoice_no' => 'INV-2026-001', 'date' => Carbon::now()->subDays(15), 'total_amount' => 10000, 'status' => 'Pending']);
+        Invoice::create(['customer_id' => $customer1->id, 'invoice_no' => 'INV-2026-002', 'date' => Carbon::now()->subDays(10), 'total_amount' => 25000, 'status' => 'Pending']);
+        Invoice::create(['customer_id' => $customer1->id, 'invoice_no' => 'INV-2026-003', 'date' => Carbon::now()->subDays(5), 'total_amount' => 15000, 'status' => 'Pending']);
+        Invoice::create(['customer_id' => $customer1->id, 'invoice_no' => 'INV-2026-004', 'date' => Carbon::now()->subDays(2), 'total_amount' => 5000, 'status' => 'Pending']);
 
-        // 5. VENDORS (For Web Purchasing)
+        Invoice::create(['customer_id' => $customer2->id, 'invoice_no' => 'INV-KANDY-001', 'date' => Carbon::now()->subDays(12), 'total_amount' => 30000, 'status' => 'Pending']);
+        Invoice::create(['customer_id' => $customer2->id, 'invoice_no' => 'INV-KANDY-002', 'date' => Carbon::now()->subDays(8), 'total_amount' => 12500, 'status' => 'Pending']);
+
+        // 5. VENDORS (For Web Purchasing & GRN Returns)
         $vendor1 = Vendor::create([
             'name' => 'Main Supplier PVT LTD',
             'company_name' => 'Main Supplier Group',
@@ -170,7 +174,7 @@ class FullSystemTestSeeder extends Seeder
             'address' => 'No 88, Port View, Colombo 13',
         ]);
 
-        // GRNs
+        // GRNs for Load Dropdown & Testing
         $grn1 = Grn::create([
             'vendor_id' => $vendor1->id,
             'grn_no' => 'GRN-2026-001',
@@ -180,6 +184,32 @@ class FullSystemTestSeeder extends Seeder
             'subtotal' => 100000,
             'total_amount' => 100000,
             'status' => 'Partial',
+            'location_id' => $location->id,
+            'account_id' => $account->id
+        ]);
+
+        Grn::create([
+            'vendor_id' => $vendor1->id,
+            'grn_no' => 'GRN-2026-002',
+            'reference_no' => 'REF-002',
+            'date' => Carbon::now()->subDays(10),
+            'due_date' => Carbon::now()->addDays(20),
+            'subtotal' => 75000,
+            'total_amount' => 75000,
+            'status' => 'Pending',
+            'location_id' => $location->id,
+            'account_id' => $account->id
+        ]);
+
+        Grn::create([
+            'vendor_id' => $vendor2->id,
+            'grn_no' => 'GRN-GLOBAL-001',
+            'reference_no' => 'IMP-99',
+            'date' => Carbon::now()->subDays(5),
+            'due_date' => Carbon::now()->addDays(25),
+            'subtotal' => 250000,
+            'total_amount' => 250000,
+            'status' => 'Pending',
             'location_id' => $location->id,
             'account_id' => $account->id
         ]);

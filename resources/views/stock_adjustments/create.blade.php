@@ -45,7 +45,7 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Account</label>
                             <select name="account_id" class="form-select form-select-sm">
-                                <option value="">-- Select Account --</option>
+                                <option value="">Select Account</option>
                                 @foreach($accounts as $account)
                                     <option value="{{ $account->id }}">{{ $account->name }}</option>
                                 @endforeach
@@ -54,7 +54,7 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Location</label>
                             <select name="location" class="form-select form-select-sm">
-                                <option value="">-- Select Location --</option>
+                                <option value="">Select Location</option>
                                 @foreach($locations as $loc)
                                     <option value="{{ $loc->name }}" {{ (old('location') == $loc->name || $loc->name == 'Main Stock') ? 'selected' : '' }}>{{ $loc->name }}</option>
                                 @endforeach
@@ -347,7 +347,7 @@
             }
 
             if (productSelect) {
-                let optionsHTML = '<option value="">-- Select --</option>';
+                let optionsHTML = '<option value="">Select Item</option>';
                 if (window.serverProductList && Array.isArray(window.serverProductList)) {
                     window.serverProductList.forEach(p => {
                         let safeName = (p.name || '').replace(/"/g, '&quot;');

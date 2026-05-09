@@ -51,7 +51,7 @@
                             @if($type === 'Supplier')
                                 <label class="form-label small fw-bold mb-1">Paid To <span class="text-danger">*</span></label>
                                 <select name="vendor_id" id="vendorSelect" class="form-select form-select-sm" required>
-                                    <option value="">-- Select Vendor --</option>
+                                    <option value="">Select Vendor</option>
                                     @foreach($vendors as $v)
                                         <option value="{{ $v->id }}">{{ $v->company_name ?? $v->name }}</option>
                                     @endforeach
@@ -59,7 +59,7 @@
                             @else
                                 <label class="form-label small fw-bold mb-1">Received From <span class="text-danger">*</span></label>
                                 <select name="customer_id" id="customerSelect" class="form-select form-select-sm" required>
-                                    <option value="">-- Select Customer --</option>
+                                    <option value="">Select Customer</option>
                                     @foreach($customers as $c)
                                         <option value="{{ $c->id }}">{{ $c->company_name ?? $c->name }}</option>
                                     @endforeach
@@ -69,13 +69,13 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Class</label>
                             <select class="form-select form-select-sm bg-light" disabled>
-                                <option value="">-- Select Class --</option>
+                                <option value="">Select Class</option>
                             </select>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Site <span class="text-danger">*</span></label>
                             <select name="location_id" class="form-select form-select-sm" required>
-                                <option value="">-- Select Site --</option>
+                                <option value="">Select Site</option>
                                 @foreach($locations as $loc)
                                     <option value="{{ $loc->id }}" {{ $loc->name == 'Main' ? 'selected' : '' }}>{{ $loc->name }}</option>
                                 @endforeach
@@ -84,7 +84,7 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Account <span class="text-danger">*</span></label>
                             <select name="account_id" class="form-select form-select-sm" required>
-                                <option value="">-- Select Account --</option>
+                                <option value="">Select Account</option>
                                 @foreach($accounts as $acc)
                                     <option value="{{ $acc->id }}">{{ $acc->name }}</option>
                                 @endforeach
@@ -146,7 +146,7 @@
                         <div class="col-md-2">
                             <label class="form-label small fw-bold mb-1">Rep <span class="text-danger">*</span></label>
                             <select name="rep_id" class="form-select form-select-sm">
-                                <option value="">-- Select Rep --</option>
+                                <option value="">Select Rep</option>
                                 @foreach($reps ?? [] as $rep)
                                     <option value="{{ $rep->id }}">{{ $rep->name }}</option>
                                 @endforeach
@@ -155,7 +155,7 @@
                         <div class="col-md-1">
                             <label class="form-label small fw-bold mb-1">Pmt.Type</label>
                             <select class="form-select form-select-sm bg-light" disabled>
-                                <option value=""></option>
+                                <option value="">Select Pmt.Type</option>
                             </select>
                         </div>
                         <div class="col-md-1">
@@ -172,7 +172,7 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Job No</label>
                             <select class="form-select form-select-sm bg-light" disabled>
-                                <option value="">-- Select Job No --</option>
+                                <option value="">Select Job No</option>
                             </select>
                         </div>
                     </div>
