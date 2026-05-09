@@ -27,15 +27,42 @@ class InventoryTransferController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'transfer_no' => 'nullable|string',
-            'date' => 'nullable|date',
+            'site_from' => 'required|string',
+            'site_to' => 'required|string',
+            'date' => 'required|date',
+            'memo' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.qty' => 'required|numeric|min:0.01',
         ]);
 
-        $data = $request->all();
-        $data['status'] = 'Pending';
+        // Generate Transfer No
+        $lastTransfer = InventoryTransfer::orderBy('id', 'desc')->first();
+        $nextId = $lastTransfer ? $lastTransfer->id + 1 : 1;
+        $transferNo = 'TN-' . str_pad($nextId, 5, '0', STR_PAD_LEFT);
 
-        InventoryTransfer::create($data);
-        return redirect()->route('inventory-transfers.index')->with('success', 'Inventory Transfer created successfully.');
+        $transfer = InventoryTransfer::create([
+            'site_from' => $validated['site_from'],
+            'site_to' => $validated['site_to'],
+            'transfer_no' => $transferNo,
+            'date' => $validated['date'],
+            'memo' => $validated['memo'],
+            'status' => 'Pending',
+        ]);
+
+        foreach ($request->items as $item) {
+            if (!empty($item['product_id'])) {
+                $transfer->items()->create([
+                    'product_id' => $item['product_id'],
+                    'description' => $item['description'] ?? '',
+                    'onhand' => $item['onhand'] ?? 0,
+                    'qty' => $item['qty'],
+                    'unit' => $item['unit'] ?? '',
+                ]);
+            }
+        }
+
+        return redirect()->route('inventory-transfers.index')->with('success', 'Inventory Transfer created successfully. Number: ' . $transferNo);
     }
 
     public function updateStatus(Request $request, $id)
