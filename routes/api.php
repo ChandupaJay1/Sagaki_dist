@@ -22,6 +22,7 @@ Route::prefix('v1')->name('api.')->group(function () {
     Route::post('/verify-serial', [AuthController::class, 'verifySerial']);
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+    Route::get('/route-customers/{id}', [MobileController::class, 'routeCustomersByRouteId']);
 
     // ==================== PROTECTED ROUTES ====================
     Route::middleware('auth:sanctum')->group(function () {
@@ -43,6 +44,12 @@ Route::prefix('v1')->name('api.')->group(function () {
         Route::get('/my-route', [MobileController::class, 'myRoute']);
         Route::put('/my-route', [MobileController::class, 'updateMyRoute']);
         Route::get('/my-route/customers', [MobileController::class, 'myRouteCustomers']);
+        
+        // Transfer Note APIs
+        Route::get('/transfer-notes', [MobileController::class, 'transferNotes']);
+        Route::get('/transfer-notes/{id}', [MobileController::class, 'transferNoteDetails']);
+        Route::post('/transfer-notes/{id}/status', [MobileController::class, 'updateTransferNoteStatus']);
+        
         Route::get('/areas', [MobileController::class, 'areas']);
         Route::get('/territories', [MobileController::class, 'territories']);
         Route::get('/routes', [MobileController::class, 'routes']);

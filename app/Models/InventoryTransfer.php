@@ -7,6 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class InventoryTransfer extends Model
 {
     protected $fillable = [
-        'site_from', 'site_to', 'transfer_no', 'memo', 'date'
+        'site_from', 'site_to', 'transfer_no', 'memo', 'date', 'status'
     ];
+
+    public function items()
+    {
+        return $this->hasMany(InventoryTransferItem::class);
+    }
 }

@@ -94,13 +94,12 @@ class MobileController extends Controller
             }
 
             $customers = Customer::where('route_id', $user->route_id)
-                ->where('is_active', 1)
                 ->orderBy('name')
                 ->get([
                     'id',
                     'name',
                     'company_name',
-                    'mobile_number',
+                    'mobile_no as mobile_number',
                     'address',
                     'route_id',
                 ]);
@@ -271,6 +270,174 @@ class MobileController extends Controller
     }
 
     /**
+     * Get customers for a specific route (Requested by Android App)
+     * 
+     * @param string $id Route ID
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function routeCustomersByRouteId($id)
+    {
+        try {
+            $customers = Customer::where('route_id', $id)
+                ->orderBy('name')
+                ->get([
+                    'id',
+                    'name',
+                    'address',
+                    'mobile_no as mobile_number',
+                    'route_id',
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Customers retrieved successfully',
+                'data' => [
+                    'route_id' => (int)$id,
+                    'customers' => $customers,
+                ]
+            ], 200);
+
+        } catch (\Throwable $e) {
+            Log::error('routeCustomersByRouteId error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get list of transfer notes
+     * 
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function transferNotes()
+    {
+        try {
+            $transfers = InventoryTransfer::latest()->get();
+
+            $data = $transfers->map(function ($t) {
+                return [
+                    'id' => $t->id,
+                    'tn_number' => $t->transfer_no,
+                    'date' => $t->date,
+                    'from_location' => $t->site_from,
+                    'to_location' => $t->site_to,
+                    'memo' => $t->memo,
+                    'status' => $t->status,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $data
+            ], 200);
+
+        } catch (\Throwable $e) {
+            Log::error('transferNotes error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get transfer note details
+     * 
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function transferNoteDetails($id)
+    {
+        try {
+            $t = InventoryTransfer::with(['items.product'])->find($id);
+
+            if (!$t) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transfer note not found'
+                ], 404);
+            }
+
+            $data = [
+                'id' => $t->id,
+                'tn_number' => $t->transfer_no,
+                'date' => $t->date,
+                'from_location' => $t->site_from,
+                'to_location' => $t->site_to,
+                'memo' => $t->memo,
+                'status' => $t->status,
+                'items' => $t->items->map(function ($item) {
+                    return [
+                        'item_code' => $item->product ? $item->product->code : '',
+                        'item_name' => $item->product ? $item->product->name : $item->description,
+                        'qty' => (string)$item->qty,
+                    ];
+                })
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $data
+            ], 200);
+
+        } catch (\Throwable $e) {
+            Log::error('transferNoteDetails error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update transfer note status
+     * 
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateTransferNoteStatus(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'status' => 'required|in:Approved,Rejected,Pending'
+            ]);
+
+            $transfer = InventoryTransfer::findOrFail($id);
+            $transfer->status = $validated['status'];
+            $transfer->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status updated successfully',
+                'data' => [
+                    'id' => $transfer->id,
+                    'status' => $transfer->status
+                ]
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Throwable $e) {
+            Log::error('updateTransferNoteStatus error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get customers for a specific route
      * 
      * @param string $id Route ID
@@ -280,13 +447,12 @@ class MobileController extends Controller
     {
         try {
             $customers = Customer::where('route_id', $id)
-                ->where('is_active', 1)
                 ->orderBy('name')
                 ->get([
                     'id',
                     'name',
                     'company_name',
-                    'mobile_number',
+                    'mobile_no as mobile_number',
                     'address',
                     'route_id',
                 ]);
