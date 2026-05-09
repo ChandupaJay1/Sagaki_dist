@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('customers', function (Blueprint $table) {
-            $table->foreignId('location_id')->nullable()->after('route_id')->constrained('locations')->nullOnDelete();
-        });
+        if (!Schema::hasColumn('customers', 'location_id')) {
+            Schema::table('customers', function (Blueprint $table) {
+                $table->foreignId('location_id')->nullable()->after('route_id')->constrained('locations')->nullOnDelete();
+            });
+        }
     }
 
     /**
@@ -21,9 +23,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('customers', function (Blueprint $table) {
-            $table->dropForeign(['location_id']);
-            $table->dropColumn('location_id');
-        });
+        if (Schema::hasColumn('customers', 'location_id')) {
+            Schema::table('customers', function (Blueprint $table) {
+                $table->dropForeign(['location_id']);
+                $table->dropColumn('location_id');
+            });
+        }
     }
 };
