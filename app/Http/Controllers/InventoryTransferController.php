@@ -31,7 +31,23 @@ class InventoryTransferController extends Controller
             'date' => 'nullable|date',
         ]);
 
-        InventoryTransfer::create($request->all());
+        $data = $request->all();
+        $data['status'] = 'Pending';
+
+        InventoryTransfer::create($data);
         return redirect()->route('inventory-transfers.index')->with('success', 'Inventory Transfer created successfully.');
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:Approved,Rejected,Pending'
+        ]);
+
+        $transfer = InventoryTransfer::findOrFail($id);
+        $transfer->status = $request->status;
+        $transfer->save();
+
+        return redirect()->back()->with('success', 'Inventory Transfer status updated to ' . $request->status);
     }
 }

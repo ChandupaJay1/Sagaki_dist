@@ -82,6 +82,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('grns', GrnController::class);
     Route::resource('grn-returns', GrnReturnController::class);
     Route::resource('inventory-transfers', InventoryTransferController::class)->only(['index','create','store']);
+    Route::patch('inventory-transfers/{id}/status', [InventoryTransferController::class, 'updateStatus'])->name('inventory-transfers.update-status');
     Route::resource('stock-adjustments', StockAdjustmentController::class)->only(['index','create','store']);
 
     Route::resource('admins', AdminController::class);
