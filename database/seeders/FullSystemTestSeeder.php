@@ -19,6 +19,7 @@ use App\Models\InventoryTransfer;
 use App\Models\InventoryTransferItem;
 use App\Models\Account;
 use App\Models\User;
+use App\Models\PaymentTerm;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -41,9 +42,12 @@ class FullSystemTestSeeder extends Seeder
         GrnReturn::truncate();
         Customer::truncate();
         Vendor::truncate();
+        PaymentTerm::truncate();
+        Product::truncate();
+        User::where('email', '!=', 'admin@admin.com')->delete(); // Clear test reps
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        // 2. Ensure Basic Infrastructure exists
+        // 2. Infrastructure & Master Data
         $location = Location::first() ?? Location::create(['name' => 'Main Stock', 'is_active' => 1]);
         $showroom = Location::where('name', 'Showroom')->first() ?? Location::create(['name' => 'Showroom', 'is_active' => 1]);
         
@@ -54,84 +58,121 @@ class FullSystemTestSeeder extends Seeder
             'is_active' => 1
         ]);
 
-        $product1 = Product::first() ?? Product::create([
+        $cashAccount = Account::where('code', '1000')->first() ?? Account::create([
+            'name' => 'Cash in Hand', 
+            'code' => '1000', 
+            'type' => 'Asset', 
+            'is_active' => 1
+        ]);
+
+        // Terms
+        $term1 = PaymentTerm::create(['days' => 0, 'is_active' => 1]);
+        $term2 = PaymentTerm::create(['days' => 30, 'is_active' => 1]);
+
+        // Products
+        $product1 = Product::create([
             'name' => 'Live Demo Product',
             'code' => 'LIVE-001',
             'cost' => 500,
             'max_sale_price' => 1000,
             'is_sale' => true,
-            'is_purchase' => true
+            'is_purchase' => true,
+            'unit' => 'PCS'
         ]);
 
-        $product2 = Product::find(2) ?? Product::create([
+        $product2 = Product::create([
             'name' => 'Cement Bag 50kg',
             'code' => 'PROD-001',
             'cost' => 1200,
             'max_sale_price' => 1500,
             'is_sale' => true,
-            'is_purchase' => true
+            'is_purchase' => true,
+            'unit' => 'BAGS'
         ]);
 
-        // 3. Setup Test User for Mobile
-        $testUser = User::where('email', 'admin@admin.com')->first();
-        if (!$testUser) {
-            $testUser = User::create([
+        $product3 = Product::create([
+            'name' => 'Steel Rod 12mm',
+            'code' => 'PROD-002',
+            'cost' => 2500,
+            'max_sale_price' => 3000,
+            'is_sale' => true,
+            'is_purchase' => true,
+            'unit' => 'PCS'
+        ]);
+
+        // 3. Users & Reps
+        $admin = User::where('email', 'admin@admin.com')->first();
+        if (!$admin) {
+            $admin = User::create([
                 'name' => 'Admin User',
                 'email' => 'admin@admin.com',
                 'password' => Hash::make('password'),
                 'role' => 'Admin'
             ]);
         }
+
+        $rep = User::create([
+            'name' => 'Sales Rep 01',
+            'email' => 'rep1@example.com',
+            'password' => Hash::make('password'),
+            'role' => 'ref',
+            'mobile_number' => '0711111111'
+        ]);
         
-        // 4. MOBILE APP TEST DATA (Customer & Invoices)
-        $customer = Customer::create([
+        // 4. CUSTOMERS (For Mobile & Web Sales)
+        $customer1 = Customer::create([
             'name' => 'Mobile Test Customer',
             'company_name' => 'Mobile Test Store',
-            'email' => 'customer@example.com',
+            'email' => 'customer1@example.com',
             'code' => 'CUST-001',
             'phone' => '0771234567',
             'mobile_no' => '0771234567',
             'address' => 'No 123, Galle Road, Colombo',
-            'currency' => 'LKR'
+            'delivery_address' => 'No 123, Galle Road, Colombo (Warehouse)',
+            'currency' => 'LKR',
+            'rep_id' => $rep->id,
+            'credit_limit' => 100000
+        ]);
+
+        $customer2 = Customer::create([
+            'name' => 'Kandy Retailers',
+            'company_name' => 'Kandy Super Mart',
+            'email' => 'customer2@example.com',
+            'code' => 'CUST-002',
+            'phone' => '0812233445',
+            'mobile_no' => '0812233445',
+            'address' => 'No 45, Peradeniya Road, Kandy',
+            'currency' => 'LKR',
+            'rep_id' => $rep->id,
+            'credit_limit' => 50000
         ]);
 
         // Invoices for FIFO Testing
-        $inv1 = Invoice::create([
-            'customer_id' => $customer->id,
-            'invoice_no' => 'INV-00001',
-            'date' => Carbon::now()->subDays(15),
-            'total_amount' => 10000,
-            'status' => 'Pending'
-        ]);
+        Invoice::create(['customer_id' => $customer1->id, 'invoice_no' => 'INV-00001', 'date' => Carbon::now()->subDays(15), 'total_amount' => 10000, 'status' => 'Pending']);
+        Invoice::create(['customer_id' => $customer1->id, 'invoice_no' => 'INV-00002', 'date' => Carbon::now()->subDays(10), 'total_amount' => 25000, 'status' => 'Pending']);
+        Invoice::create(['customer_id' => $customer1->id, 'invoice_no' => 'INV-00003', 'date' => Carbon::now()->subDays(5), 'total_amount' => 15000, 'status' => 'Pending']);
 
-        $inv2 = Invoice::create([
-            'customer_id' => $customer->id,
-            'invoice_no' => 'INV-00002',
-            'date' => Carbon::now()->subDays(10),
-            'total_amount' => 25000,
-            'status' => 'Pending'
-        ]);
-
-        $inv3 = Invoice::create([
-            'customer_id' => $customer->id,
-            'invoice_no' => 'INV-00003',
-            'date' => Carbon::now()->subDays(5),
-            'total_amount' => 15000,
-            'status' => 'Pending'
-        ]);
-
-        // 5. WEB UI TEST DATA (Vendor & GRNs)
-        $vendor = Vendor::create([
+        // 5. VENDORS (For Web Purchasing)
+        $vendor1 = Vendor::create([
             'name' => 'Main Supplier PVT LTD',
-            'email' => 'supplier@example.com',
+            'company_name' => 'Main Supplier Group',
+            'email' => 'supplier1@example.com',
             'phone' => '0112233445',
             'address' => 'No 45, Industrial Zone, Colombo',
-            'company_name' => 'Main Supplier Group',
+            'delivery_address' => 'Gate 02, Industrial Zone, Colombo'
         ]);
 
-        // GRN 1: Partially Paid
+        $vendor2 = Vendor::create([
+            'name' => 'Global Imports',
+            'company_name' => 'Global Imports (Pvt) Ltd',
+            'email' => 'supplier2@example.com',
+            'phone' => '0119988776',
+            'address' => 'No 88, Port View, Colombo 13',
+        ]);
+
+        // GRNs
         $grn1 = Grn::create([
-            'vendor_id' => $vendor->id,
+            'vendor_id' => $vendor1->id,
             'grn_no' => 'GRN-2026-001',
             'reference_no' => 'REF-001',
             'date' => Carbon::now()->subDays(20),
@@ -143,10 +184,9 @@ class FullSystemTestSeeder extends Seeder
             'account_id' => $account->id
         ]);
         
-        // Payment for GRN 1
         $payment1 = PayBill::create([
             'type' => 'Supplier',
-            'vendor_id' => $vendor->id,
+            'vendor_id' => $vendor1->id,
             'voucher_no' => 'PV-00001',
             'date' => Carbon::now()->subDays(10),
             'total_amount' => 40000,
@@ -163,20 +203,6 @@ class FullSystemTestSeeder extends Seeder
             'amount_to_pay' => 40000
         ]);
 
-        // GRN 2: Pending
-        $grn2 = Grn::create([
-            'vendor_id' => $vendor->id,
-            'grn_no' => 'GRN-2026-002',
-            'reference_no' => 'REF-002',
-            'date' => Carbon::now()->subDays(10),
-            'due_date' => Carbon::now()->addDays(10),
-            'subtotal' => 50000,
-            'total_amount' => 50000,
-            'status' => 'Pending',
-            'location_id' => $location->id,
-            'account_id' => $account->id
-        ]);
-
         // 6. INVENTORY TRANSFERS
         $transfer = InventoryTransfer::create([
             'site_from' => 'Main Stock',
@@ -187,28 +213,14 @@ class FullSystemTestSeeder extends Seeder
             'status' => 'Pending',
         ]);
 
-        InventoryTransferItem::create([
-            'inventory_transfer_id' => $transfer->id,
-            'product_id' => $product1->id,
-            'description' => $product1->name,
-            'onhand' => 500,
-            'qty' => 50,
-            'unit' => 'PCS',
-        ]);
-
-        InventoryTransferItem::create([
-            'inventory_transfer_id' => $transfer->id,
-            'product_id' => $product2->id,
-            'description' => $product2->name,
-            'onhand' => 200,
-            'qty' => 20,
-            'unit' => 'BAGS',
-        ]);
+        InventoryTransferItem::create(['inventory_transfer_id' => $transfer->id, 'product_id' => $product1->id, 'description' => $product1->name, 'onhand' => 500, 'qty' => 50, 'unit' => 'PCS']);
+        InventoryTransferItem::create(['inventory_transfer_id' => $transfer->id, 'product_id' => $product2->id, 'description' => $product2->name, 'onhand' => 200, 'qty' => 20, 'unit' => 'BAGS']);
 
         echo "Full System Test Data Seeded Successfully!\n";
         echo "------------------------------------------\n";
-        echo "Mobile Test Customer: CUST-001 (Outstanding: 50,000)\n";
-        echo "Web Test Vendor: Main Supplier PVT LTD (Outstanding: 110,000)\n";
-        echo "Transfer Note: TN-00001 (2 Items)\n";
+        echo "Customers: Mobile Test Customer, Kandy Retailers\n";
+        echo "Vendors: Main Supplier PVT LTD, Global Imports\n";
+        echo "Reps: Sales Rep 01\n";
+        echo "Terms: Cash, 30 Days\n";
     }
 }

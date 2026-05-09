@@ -295,7 +295,8 @@
 
         function fetchCustomerDetails(customerId) {
             if (customerId) {
-                fetch(`/api/customers/${customerId}`)
+                const url = "{{ url('api/customers') }}/" + customerId;
+                fetch(url)
                     .then(response => response.json())
                     .then(data => {
                         if (addressTextarea) addressTextarea.value = data.address || '';
@@ -338,24 +339,34 @@
         }
 
         // Standard change event
-        customerSelect.addEventListener('change', function () {
-            fetchCustomerDetails(this.value);
-        });
-
-        setTimeout(() => {
+        function attachCustomerListener() {
             if (customerSelect.tomselect) {
-                customerSelect.tomselect.on('change', function (value) {
+                customerSelect.tomselect.on('change', function(value) {
                     fetchCustomerDetails(value);
                 });
+                if (customerSelect.tomselect.getValue()) {
+                    fetchCustomerDetails(customerSelect.tomselect.getValue());
+                }
+            } else {
+                customerSelect.addEventListener('change', function () {
+                    fetchCustomerDetails(this.value);
+                });
+                if (this.value) {
+                    fetchCustomerDetails(this.value);
+                }
             }
+        }
 
-            if (repSelect && window.TomSelect) {
+        setTimeout(attachCustomerListener, 500);
+
+        setTimeout(() => {
+            if (repSelect && window.TomSelect && !repSelect.tomselect) {
                 new TomSelect(repSelect, { create: false });
             }
-            if (termsSelect && window.TomSelect) {
+            if (termsSelect && window.TomSelect && !termsSelect.tomselect) {
                 new TomSelect(termsSelect, { create: false });
             }
-        }, 500);
+        }, 600);
 
         // --- Table Controller (Data Source Level) --- //
         function getDefaultLocation() {

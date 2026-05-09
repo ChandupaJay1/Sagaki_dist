@@ -342,7 +342,8 @@
 
         function fetchVendorDetails(vendorId) {
             if (vendorId) {
-                fetch(`/api/vendors/${vendorId}`)
+                const url = "{{ url('api/vendors') }}/" + vendorId;
+                fetch(url)
                     .then(response => response.json())
                     .then(data => {
                         if (addressTextarea) addressTextarea.value = data.address || '';
@@ -742,20 +743,31 @@
             });
         }
 
-        vendorSelect.addEventListener('change', function () {
-            fetchVendorDetails(this.value);
-        });
-
-        setTimeout(() => {
+        function attachVendorListener() {
             if (vendorSelect.tomselect) {
-                vendorSelect.tomselect.on('change', function (value) {
+                vendorSelect.tomselect.on('change', function(value) {
                     fetchVendorDetails(value);
                 });
+                if (vendorSelect.tomselect.getValue()) {
+                    fetchVendorDetails(vendorSelect.tomselect.getValue());
+                }
+            } else {
+                vendorSelect.addEventListener('change', function () {
+                    fetchVendorDetails(this.value);
+                });
+                if (this.value) {
+                    fetchVendorDetails(this.value);
+                }
             }
-            if (termsSelect && window.TomSelect) {
+        }
+
+        setTimeout(attachVendorListener, 500);
+
+        setTimeout(() => {
+            if (termsSelect && window.TomSelect && !termsSelect.tomselect) {
                 new TomSelect(termsSelect, { create: false });
             }
-        }, 500);
+        }, 600);
     });
 </script>
 @endpush
