@@ -281,20 +281,34 @@ class MobileController extends Controller
         try {
             $customers = Customer::where('route_id', $id)
                 ->orderBy('name')
-                ->get([
-                    'id',
-                    'name',
-                    'address',
-                    'mobile_no as mobile_number',
-                    'route_id',
-                ]);
+                ->get();
+
+            $formattedCustomers = $customers->map(function ($customer) {
+                // Calculate Outstanding
+                $totalInvoices = \App\Models\Invoice::where('customer_id', $customer->id)->sum('total_amount');
+                $totalPaid = \App\Models\PayBillItem::whereHas('payBill', function($q) use ($customer) {
+                    $q->where('customer_id', $customer->id);
+                })->sum('amount_to_pay');
+                $totalReturns = \App\Models\SalesReturn::where('customer_id', $customer->id)->sum('total_amount');
+                
+                $outstanding = ($totalInvoices - $totalPaid) - $totalReturns;
+
+                return [
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'address' => $customer->address,
+                    'mobile_number' => $customer->mobile_no,
+                    'route_id' => $customer->route_id,
+                    'outstanding_balance' => (double)$outstanding,
+                ];
+            });
 
             return response()->json([
                 'success' => true,
                 'message' => 'Customers retrieved successfully',
                 'data' => [
                     'route_id' => (int)$id,
-                    'customers' => $customers,
+                    'customers' => $formattedCustomers,
                 ]
             ], 200);
 

@@ -234,6 +234,12 @@
                 <span>TOTAL PAID (LKR)</span>
                 <span>{{ number_format($payment->total_amount, 2) }}</span>
             </div>
+            @if(isset($outstanding))
+            <div class="total-row" style="border-bottom: none; color: #dc3545; font-weight: bold; margin-top: 5px;">
+                <span>REMAINING OUTSTANDING</span>
+                <span>LKR {{ number_format($outstanding, 2) }}</span>
+            </div>
+            @endif
         </div>
 
         <div class="footer">
