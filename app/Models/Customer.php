@@ -43,6 +43,7 @@ class Customer extends Model
         'bank_name',
         'bank_branch',
         'bank_account_number',
+        'balance',
     ];
 
     protected $hidden = [
@@ -55,6 +56,7 @@ class Customer extends Model
         'customer_category_id' => 'integer',
         'rep_id' => 'integer',
         'credit_limit' => 'double',
+        'balance' => 'double',
     ];
 
     public function route()

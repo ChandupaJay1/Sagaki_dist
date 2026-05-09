@@ -48,6 +48,9 @@ Route::prefix('v1')->name('api.')->group(function () {
         Route::get('/transfer-notes/{id}', [MobileController::class, 'transferNoteDetails']);
         Route::post('/transfer-notes/{id}/status', [MobileController::class, 'updateTransferNoteStatus']);
         
+        // Invoice API
+        Route::post('/invoices', [\App\Http\Controllers\Api\InvoiceController::class, 'store']);
+        
         // Payment APIs
         Route::post('/payments', [MobileController::class, 'storePayments']);
         

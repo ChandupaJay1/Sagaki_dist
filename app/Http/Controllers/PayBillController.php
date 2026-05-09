@@ -110,6 +110,15 @@ class PayBillController extends Controller
                 'status' => 'Paid',
             ]);
 
+            // Update Customer Balance
+            if ($validated['type'] === 'Customer' && $validated['customer_id']) {
+                $customer = Customer::find($validated['customer_id']);
+                if ($customer) {
+                    $customer->balance -= (float)($validated['total_amount'] ?? 0);
+                    $customer->save();
+                }
+            }
+
             foreach ($request->items as $item) {
                 $amountToPay = (float) ($item['amount_to_pay'] ?? 0);
                 $creditUsed = (float) ($item['credit_used'] ?? 0);
@@ -284,7 +293,20 @@ class PayBillController extends Controller
     public function destroy($id)
     {
         $payment = PayBill::findOrFail($id);
-        $payment->delete(); // Cascade delete will handle items
+        
+        \DB::transaction(function () use ($payment) {
+            // Update Customer Balance (Reverse Payment)
+            if ($payment->type === 'Customer' && $payment->customer_id) {
+                $customer = Customer::find($payment->customer_id);
+                if ($customer) {
+                    $customer->balance += (float)($payment->total_amount ?? 0);
+                    $customer->save();
+                }
+            }
+
+            $payment->delete(); // Cascade delete will handle items
+        });
+
         return redirect()->route('pay-bills.index')->with('success', 'Payment deleted successfully.');
     }
 }
