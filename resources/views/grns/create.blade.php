@@ -48,7 +48,7 @@
                         <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Vendor Name <span class="text-danger">*</span></label>
                             <select name="vendor_id" class="form-select form-select-sm" required>
-                                <option value="">-- Select Vendor --</option>
+                                <option value="">Select Vendor</option>
                                 @foreach($vendors as $v)
                                     <option value="{{ $v->id }}" {{ old('vendor_id') == $v->id ? 'selected' : '' }}>{{ $v->company_name ?? $v->name }}</option>
                                 @endforeach
@@ -57,16 +57,16 @@
                         <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
                             <select name="location_id" class="form-select form-select-sm" required>
-                                <option value="">-- Select Location --</option>
-                                @foreach($locations as $loc)
-                                    <option value="{{ $loc->id }}" data-name="{{ $loc->name }}" {{ (old('location_id') == $loc->id || $loc->name == 'Main Stock') ? 'selected' : '' }}>{{ $loc->name }}</option>
+                                <option value="">Select Location</option>
+                                @foreach($locations as $location)
+                                    <option value="{{ $location->id }}" data-name="{{ $location->name }}" {{ (old('location_id') == $location->id || $location->name == 'Main Stock') ? 'selected' : '' }}>{{ $location->name }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Load</label>
                             <select name="load" class="form-select form-select-sm">
-                                <option value=""></option>
+                                <option value="">Select Order</option>
                             </select>
                         </div>
                     </div>
@@ -98,7 +98,7 @@
                         <div class="col-md-2">
                             <label class="form-label small fw-bold mb-1">Order By</label>
                             <select name="order_by" class="form-select form-select-sm">
-                                <option value=""></option>
+                                <option value="">Select Order By</option>
                                 @foreach($reps as $rep)
                                     <option value="{{ $rep->name }}" {{ old('order_by') == $rep->name ? 'selected' : '' }}>{{ $rep->name }}</option>
                                 @endforeach
@@ -107,7 +107,7 @@
                         <div class="col-md-2">
                             <label class="form-label small fw-bold mb-1">Checked By</label>
                             <select name="checked_by" class="form-select form-select-sm">
-                                <option value=""></option>
+                                <option value="">Select Checked By</option>
                                 @foreach($reps as $rep)
                                     <option value="{{ $rep->name }}" {{ old('checked_by') == $rep->name ? 'selected' : '' }}>{{ $rep->name }}</option>
                                 @endforeach
@@ -116,7 +116,7 @@
                         <div class="col-md-2">
                             <label class="form-label small fw-bold mb-1">Rep</label>
                             <select name="rep" class="form-select form-select-sm">
-                                <option value=""></option>
+                                <option value="">Select Rep</option>
                                 @foreach($reps as $rep)
                                     <option value="{{ $rep->name }}" {{ old('rep') == $rep->name ? 'selected' : '' }}>{{ $rep->name }}</option>
                                 @endforeach
@@ -141,7 +141,7 @@
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Terms</label>
                             <select name="payment_term_id" id="termsSelect" class="form-select form-select-sm">
-                                <option value="">-- Select Terms --</option>
+                                <option value="">Select Terms</option>
                                 @foreach($terms as $term)
                                     @php $label = ($term->days == 0) ? 'Cash Only' : ($term->days.' Days Credit'); @endphp
                                     <option value="{{ $term->id }}" data-days="{{ $term->days }}" {{ old('payment_term_id') == $term->id ? 'selected' : '' }}>{{ $label }}</option>
@@ -240,6 +240,7 @@
 
                     <!-- Blade generated Product List for Guaranteed Client-Side Usage (Safe JSON) -->
                     <script>
+                        window.oldItems = @json(old('items', []));
                         window.serverProductList = @json($products);
                     </script>
 
@@ -261,7 +262,7 @@
                                 <div class="col-md-5">
                                     <label class="form-label small fw-bold mb-1">Account <span class="text-danger">*</span></label>
                                     <select name="account_id" class="form-select form-select-sm border-danger" required>
-                                        <option value="">-- Select Account --</option>
+                                        <option value="">Select Account</option>
                                         @foreach($accounts as $account)
                                             <option value="{{ $account->id }}" {{ old('account_id') == $account->id ? 'selected' : '' }}>{{ $account->name }}</option>
                                         @endforeach
@@ -389,24 +390,25 @@
 
         // --- Table Controller ---
         const grnController = {
-            data: [
-                {
-                    rowId: 0,
-                    product_id: '',
-                    description: '',
-                    onhand: '',
-                    qty: 1,
-                    rate: 0,
-                    amount: 0,
-                    disc_percent: 0,
-                    discount: 0,
-                    total: 0,
-                    location: getDefaultLocation(),
-                    unit: ''
-                }
-            ],
-            rowCount: 1,
+            data: [],
+            rowCount: 0,
             rowTemplateHTML: '',
+
+            init() {
+                const firstRow = document.querySelector('.item-row');
+                this.rowTemplateHTML = firstRow.innerHTML;
+                firstRow.remove();
+
+                if (window.oldItems && window.oldItems.length > 0) {
+                    window.oldItems.forEach(item => {
+                        this.appendRow(item);
+                    });
+                    this.appendRow();
+                } else {
+                    this.appendRow();
+                    this.appendRow();
+                }
+            },
 
             checkAndAppendRow(rowIndex) {
                 if (rowIndex === this.data.length - 1) {
@@ -417,37 +419,36 @@
                 }
             },
 
-            appendRow() {
+            appendRow(itemData = null) {
                 const currentLoc = getDefaultLocation();
-                this.data.push({
+                const rowData = {
                     rowId: this.rowCount,
-                    product_id: '',
-                    description: '',
-                    onhand: '',
-                    qty: 1,
-                    rate: 0,
-                    amount: 0,
-                    disc_percent: 0,
-                    discount: 0,
-                    total: 0,
-                    location: currentLoc,
-                    unit: ''
-                });
-                this.injectRowUI(currentLoc);
+                    product_id: itemData ? itemData.product_id : '',
+                    description: itemData ? itemData.description : '',
+                    onhand: itemData ? itemData.onhand : '',
+                    qty: itemData ? itemData.qty : 1,
+                    rate: itemData ? itemData.rate : 0,
+                    amount: itemData ? itemData.amount : 0,
+                    disc_percent: itemData ? itemData.disc_percent : 0,
+                    discount: itemData ? itemData.discount : 0,
+                    total: itemData ? itemData.total : 0,
+                    location: itemData ? itemData.location : currentLoc,
+                    unit: itemData ? itemData.unit : ''
+                };
+                this.data.push(rowData);
+                this.injectRowUI(rowData);
                 this.rowCount++;
             },
 
-            injectRowUI(currentLoc) {
+            injectRowUI(data) {
                 const newRow = document.createElement('tr');
                 newRow.className = 'item-row';
                 newRow.innerHTML = this.rowTemplateHTML;
                 
                 newRow.querySelectorAll('input').forEach(input => {
                     input.value = '';
-                    if (input.classList.contains('qty-input')) input.value = '1';
-                    if (input.classList.contains('location-input')) input.value = currentLoc;
                 });
-                
+
                 newRow.querySelectorAll('.ts-wrapper').forEach(wrapper => wrapper.remove());
                 newRow.querySelectorAll('select').forEach(select => {
                     select.classList.remove('tomselected', 'ts-hidden-accessible');
@@ -457,15 +458,75 @@
                 });
 
                 const newIndex = this.rowCount;
-                newRow.querySelectorAll('[name]').forEach(el => {
-                    const name = el.getAttribute('name');
-                    if (name) {
-                        el.setAttribute('name', name.replace(/\[\d+\]/, `[${newIndex}]`));
-                    }
-                });
+                const productSelect = newRow.querySelector('.product-select');
+                if (productSelect) {
+                    productSelect.name = `items[${newIndex}][product_id]`;
+                    productSelect.value = data.product_id;
+                }
+
+                const descInput = newRow.querySelector('.description-input');
+                if (descInput) {
+                    descInput.name = `items[${newIndex}][description]`;
+                    descInput.value = data.description;
+                }
+
+                const onhandInput = newRow.querySelector('.onhand-input');
+                if (onhandInput) {
+                    onhandInput.name = `items[${newIndex}][onhand]`;
+                    onhandInput.value = data.onhand;
+                }
+
+                const qtyInput = newRow.querySelector('.qty-input');
+                if (qtyInput) {
+                    qtyInput.name = `items[${newIndex}][qty]`;
+                    qtyInput.value = data.qty;
+                }
+
+                const rateInput = newRow.querySelector('.rate-input');
+                if (rateInput) {
+                    rateInput.name = `items[${newIndex}][rate]`;
+                    rateInput.value = data.rate;
+                }
+
+                const amountInput = newRow.querySelector('.amount-input');
+                if (amountInput) {
+                    amountInput.name = `items[${newIndex}][amount]`;
+                    amountInput.value = data.amount;
+                }
+
+                const discPercentInput = newRow.querySelector('.disc-percent-input');
+                if (discPercentInput) {
+                    discPercentInput.name = `items[${newIndex}][disc_percent]`;
+                    discPercentInput.value = data.disc_percent;
+                }
+
+                const discountInput = newRow.querySelector('.discount-input');
+                if (discountInput) {
+                    discountInput.name = `items[${newIndex}][discount]`;
+                    discountInput.value = data.discount;
+                }
+
+                const totalInput = newRow.querySelector('.total-input');
+                if (totalInput) {
+                    totalInput.name = `items[${newIndex}][total]`;
+                    totalInput.value = data.total;
+                }
+
+                const locationInput = newRow.querySelector('.location-input');
+                if (locationInput) {
+                    locationInput.name = `items[${newIndex}][location]`;
+                    locationInput.value = data.location;
+                }
+
+                const unitInput = newRow.querySelector('.unit-input');
+                if (unitInput) {
+                    unitInput.name = `items[${newIndex}][unit]`;
+                    unitInput.value = data.unit;
+                }
 
                 newRow.dataset.rowIndex = this.data.length - 1;
-                itemsTableBody.appendChild(newRow);
+                document.querySelector('#itemsTable tbody').appendChild(newRow);
+                
                 initRowEvents(newRow);
             },
 
@@ -577,10 +638,6 @@
             }
         };
 
-        const firstRow = document.querySelector('.item-row');
-        grnController.rowTemplateHTML = firstRow.innerHTML;
-        firstRow.dataset.rowIndex = 0;
-
         function fetchItemStock(productId, location, rowIndex, row) {
             const onhandInput = row.querySelector('.onhand-input');
             if (!productId || !location) {
@@ -643,7 +700,7 @@
             }
 
             if (productSelect) {
-                let optionsHTML = '<option value="">-- Select --</option>';
+                let optionsHTML = '<option value="">Select Item</option>';
                 if (window.serverProductList && Array.isArray(window.serverProductList)) {
                     window.serverProductList.forEach(p => {
                         let safeName = (p.name || '').replace(/"/g, '&quot;');
@@ -706,8 +763,7 @@
             });
         }
 
-        initRowEvents(firstRow);
-        grnController.appendRow();
+        grnController.init();
 
         // Header Listeners
         const ssclPercentInput = document.querySelector('input[name="sscl_percent"]');
@@ -768,6 +824,59 @@
                 new TomSelect(termsSelect, { create: false });
             }
         }, 600);
+
+        // --- Form Submission Fix --- //
+        const form = document.getElementById('createGrnForm');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                const rows = document.querySelectorAll('#itemsTable tbody tr.item-row');
+                let validRowIndex = 0;
+                let hasValidRow = false;
+
+                rows.forEach((row) => {
+                    const productSelect = row.querySelector('.product-select');
+                    const productId = productSelect ? productSelect.value : '';
+
+                    if (productId) {
+                        hasValidRow = true;
+                        // Re-index the names to be sequential
+                        row.querySelectorAll('input, select').forEach(el => {
+                            if (el.classList.contains('product-select')) el.name = `items[${validRowIndex}][product_id]`;
+                            if (el.classList.contains('description-input')) el.name = `items[${validRowIndex}][description]`;
+                            if (el.classList.contains('onhand-input')) {
+                                el.name = `items[${validRowIndex}][onhand]`;
+                                if (el.value === '...' || isNaN(parseFloat(el.value))) el.value = '0';
+                            }
+                            if (el.classList.contains('qty-input')) {
+                                el.name = `items[${validRowIndex}][qty]`;
+                                if (isNaN(parseFloat(el.value))) el.value = '1';
+                            }
+                            if (el.classList.contains('rate-input')) {
+                                el.name = `items[${validRowIndex}][rate]`;
+                                if (isNaN(parseFloat(el.value))) el.value = '0';
+                            }
+                            if (el.classList.contains('amount-input')) el.name = `items[${validRowIndex}][amount]`;
+                            if (el.classList.contains('disc-percent-input')) el.name = `items[${validRowIndex}][disc_percent]`;
+                            if (el.classList.contains('discount-input')) el.name = `items[${validRowIndex}][discount]`;
+                            if (el.classList.contains('total-input')) el.name = `items[${validRowIndex}][total]`;
+                            if (el.classList.contains('location-input')) el.name = `items[${validRowIndex}][location]`;
+                            if (el.classList.contains('unit-input')) el.name = `items[${validRowIndex}][unit]`;
+                        });
+                        validRowIndex++;
+                    } else {
+                        // Remove names from empty rows so they are not submitted
+                        row.querySelectorAll('input, select').forEach(el => {
+                            if (el.name) el.removeAttribute('name');
+                        });
+                    }
+                });
+
+                if (!hasValidRow) {
+                    e.preventDefault();
+                    alert('Please add at least one valid item to the GRN.');
+                }
+            });
+        }
     });
 </script>
 @endpush

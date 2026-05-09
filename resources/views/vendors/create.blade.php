@@ -168,7 +168,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-price-tag-3-line"></i></span>
                                             <select class="form-select" id="category" name="category">
-                                                <option value="">-- Select --</option>
+                                                <option value="">Select Category</option>
                                                 @foreach(($categories ?? []) as $cat)
                                                     <option value="{{ $cat->name }}" data-code="{{ $cat->code }}" {{ old('category') == $cat->name ? 'selected' : '' }}>
                                                         {{ $cat->name }}{{ $cat->code ? ' (' . $cat->code . ')' : '' }}
@@ -336,7 +336,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-secure-payment-line"></i></span>
                                             <select class="form-select" id="account_payables" name="account_payables">
-                                                <option value="">-- Select --</option>
+                                                <option value="">Select Account</option>
                                                 @foreach(($accounts ?? []) as $acc)
                                                     <option value="{{ $acc->code ? ($acc->code.' - '.$acc->name) : $acc->name }}" {{ old('account_payables') == ($acc->code ? ($acc->code.' - '.$acc->name) : $acc->name) ? 'selected' : '' }}>
                                                         {{ $acc->name }}{{ $acc->code ? ' (' . $acc->code . ')' : '' }}
@@ -356,7 +356,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="ri-file-list-2-line"></i></span>
                                             <select class="form-select" id="terms" name="terms">
-                                                <option value="">-- Select --</option>
+                                                <option value="">Select Terms</option>
                                                 @foreach(($terms ?? []) as $t)
                                                     @php $label = ($t->days == 0) ? 'Cash Only' : ($t->days.' Days Credit'); @endphp
                                                     <option value="{{ $label }}" data-code="{{ $t->code }}" {{ old('terms') == $label ? 'selected' : '' }}>
