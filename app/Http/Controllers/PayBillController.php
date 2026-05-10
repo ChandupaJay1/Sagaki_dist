@@ -110,7 +110,7 @@ class PayBillController extends Controller
                 'status' => 'Paid',
             ]);
 
-            // Update Customer Balance
+            // 1. Update Customer Balance (Cash part only)
             if ($validated['type'] === 'Customer' && $validated['customer_id']) {
                 $customer = Customer::find($validated['customer_id']);
                 if ($customer) {
@@ -119,10 +119,14 @@ class PayBillController extends Controller
                 }
             }
 
+            $totalCashAllocated = 0;
+
+            // 2. Process Bill Items
             foreach ($request->items as $item) {
-                $amountToPay = (float) ($item['amount_to_pay'] ?? 0);
+                $totalApplied = (float) ($item['amount_to_pay'] ?? 0);
                 $creditUsed = (float) ($item['credit_used'] ?? 0);
-                $totalApplied = $amountToPay + $creditUsed;
+                $cashUsed = $totalApplied - $creditUsed;
+                $totalCashAllocated += $cashUsed;
 
                 if ($totalApplied > 0) {
                     $billNo = '';
@@ -137,8 +141,9 @@ class PayBillController extends Controller
                         $dueDate = $grn->due_date;
                         $billAmount = $grn->total_amount;
                         
-                        // Mark GRN as Paid if fully paid (consider both cash and credit)
-                        if ($totalApplied >= $grn->total_amount) {
+                        // Check cumulative payment to update status
+                        $alreadyPaid = PayBillItem::where('grn_id', $grn->id)->sum('amount_to_pay');
+                        if (($alreadyPaid + $totalApplied) >= $grn->total_amount - 0.01) {
                             $grn->status = 'Paid';
                             $grn->save();
                         }
@@ -149,8 +154,9 @@ class PayBillController extends Controller
                         $dueDate = $invoice->due_date;
                         $billAmount = $invoice->total_amount;
 
-                        // Mark Invoice as Paid if fully paid (consider both cash and credit)
-                        if ($totalApplied >= $invoice->total_amount) {
+                        // Check cumulative payment to update status
+                        $alreadyPaid = PayBillItem::where('invoice_id', $invoice->id)->sum('amount_to_pay');
+                        if (($alreadyPaid + $totalApplied) >= $invoice->total_amount - 0.01) {
                             $invoice->status = 'Paid';
                             $invoice->save();
                         }
@@ -164,12 +170,12 @@ class PayBillController extends Controller
                         'bill_date' => $billDate,
                         'due_date' => $dueDate,
                         'bill_amount' => $billAmount,
-                        'amount_to_pay' => $totalApplied, // Save the total applied to the bill
+                        'amount_to_pay' => $totalApplied, 
                     ]);
                 }
             }
 
-            // Process Used Credits (Returns)
+            // 3. Process Used Credits (Returns)
             if (isset($request->used_credits) && is_array($request->used_credits)) {
                 foreach ($request->used_credits as $creditData) {
                     $amountUsed = (float) $creditData['amount'];
@@ -177,7 +183,6 @@ class PayBillController extends Controller
                         if ($validated['type'] === 'Supplier') {
                             $return = \App\Models\GrnReturn::find($creditData['id']);
                             if ($return) {
-                                // Update total_amount by subtracting used portion
                                 $return->total_amount -= $amountUsed;
                                 $return->subtotal -= $amountUsed;
                                 if ($return->total_amount <= 0.01) {
@@ -188,7 +193,6 @@ class PayBillController extends Controller
                         } else {
                             $return = \App\Models\SalesReturn::find($creditData['id']);
                             if ($return) {
-                                // Update total_amount by subtracting used portion
                                 $return->total_amount -= $amountUsed;
                                 $return->subtotal -= $amountUsed;
                                 if ($return->total_amount <= 0.01) {
@@ -201,19 +205,11 @@ class PayBillController extends Controller
                 }
             }
 
-            // Handle Overpayment (Advance Payment)
-            $totalAllocated = 0;
-            if (isset($request->items) && is_array($request->items)) {
-                foreach ($request->items as $item) {
-                    $totalAllocated += (float) ($item['amount_to_pay'] ?? 0);
-                }
-            }
-            
-            $overpayment = (float) $validated['total_amount'] - $totalAllocated;
+            // 4. Handle Overpayment (Advance Payment) - Cash only
+            $overpayment = (float) $validated['total_amount'] - $totalCashAllocated;
 
-            if ($overpayment > 0.01) { // Use small epsilon for float comparison
+            if ($overpayment > 0.01) {
                 if ($validated['type'] === 'Supplier') {
-                    // Create GRN Return as Advance Credit
                     \App\Models\GrnReturn::create([
                         'vendor_id' => $validated['vendor_id'],
                         'return_no' => 'ADV-' . strtoupper(bin2hex(random_bytes(4))),
@@ -223,10 +219,9 @@ class PayBillController extends Controller
                         'status' => 'Pending',
                         'memo' => 'Advance Payment from Voucher: ' . $validated['voucher_no'],
                         'location_id' => $validated['location_id'],
-                        'account_id' => $request->account_id, // Use the same account
+                        'account_id' => $request->account_id,
                     ]);
                 } else {
-                    // Create Sales Return as Advance Credit
                     \App\Models\SalesReturn::create([
                         'customer_id' => $validated['customer_id'],
                         'return_no' => 'ADV-' . strtoupper(bin2hex(random_bytes(4))),
@@ -236,7 +231,7 @@ class PayBillController extends Controller
                         'status' => 'Pending',
                         'memo' => 'Advance Collection from Voucher: ' . $validated['voucher_no'],
                         'location_id' => $validated['location_id'],
-                        'account_id' => $request->account_id, // Use the same account
+                        'account_id' => $request->account_id,
                     ]);
                 }
             }
