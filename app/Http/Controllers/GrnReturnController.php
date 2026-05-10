@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 
 use App\Models\Account;
+use App\Services\InventoryService;
 
 class GrnReturnController extends Controller
 {
@@ -133,6 +134,17 @@ class GrnReturnController extends Controller
                         'location' => $item['location'] ?? null,
                         'unit' => $item['unit'] ?? null,
                     ]);
+
+                    // Update Inventory
+                    InventoryService::updateStock(
+                        $item['product_id'],
+                        $item['location'] ?? $grnReturn->location_id,
+                        -(float)$item['qty'],
+                        'Out',
+                        'GRN Return',
+                        $grnReturn->id,
+                        "Returned to Vendor via GRN Return: " . ($grnReturn->return_no ?? $grnReturn->id)
+                    );
                 }
             }
         });

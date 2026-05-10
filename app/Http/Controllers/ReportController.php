@@ -30,26 +30,11 @@ class ReportController extends Controller
 
         $products = $query->orderBy('name')->get();
 
-        // Get all transaction data in bulk for performance
-        $grnIn = DB::table('grn_items')->select('product_id', 'location', DB::raw('SUM(qty) as total'))->groupBy('product_id', 'location')->get()->groupBy('product_id');
-        $invoiceOut = DB::table('invoice_items')->select('product_id', 'location', DB::raw('SUM(qty) as total'))->groupBy('product_id', 'location')->get()->groupBy('product_id');
-        $grnReturnOut = DB::table('grn_return_items')->select('product_id', 'location', DB::raw('SUM(qty) as total'))->groupBy('product_id', 'location')->get()->groupBy('product_id');
-        $salesReturnIn = DB::table('sales_return_items')->select('product_id', 'location', DB::raw('SUM(qty) as total'))->groupBy('product_id', 'location')->get()->groupBy('product_id');
-        $invoiceReturnIn = DB::table('invoice_returns')->select('product_id', DB::raw('SUM(qty) as total'))->groupBy('product_id')->get()->pluck('total', 'product_id');
-
-        $transferIn = DB::table('inventory_transfer_items')
-            ->join('inventory_transfers', 'inventory_transfer_items.inventory_transfer_id', '=', 'inventory_transfers.id')
-            ->where('inventory_transfers.status', 'Approved')
-            ->select('product_id', 'inventory_transfers.site_to as location', DB::raw('SUM(qty) as total'))
-            ->groupBy('product_id', 'inventory_transfers.site_to')
-            ->get()->groupBy('product_id');
-
-        $transferOut = DB::table('inventory_transfer_items')
-            ->join('inventory_transfers', 'inventory_transfer_items.inventory_transfer_id', '=', 'inventory_transfers.id')
-            ->where('inventory_transfers.status', 'Approved')
-            ->select('product_id', 'inventory_transfers.site_from as location', DB::raw('SUM(qty) as total'))
-            ->groupBy('product_id', 'inventory_transfers.site_from')
-            ->get()->groupBy('product_id');
+        // Get bulk summary data for performance
+        $summaries = DB::table('inventory_summaries')
+            ->select('product_id', 'location_id', 'qty')
+            ->get()
+            ->groupBy('product_id');
 
         $stockData = [];
         foreach ($products as $product) {
@@ -60,30 +45,21 @@ class ReportController extends Controller
                 'locations' => []
             ];
 
-            $totalStock = 0;
+            $mainStockTotal = 0;
+            $allowedMainStockLocations = ['Main', 'Main Warehouse', 'Showroom', 'Testing', 'Transit'];
+
             foreach ($locations as $location) {
-                $locName = $location->name;
+                $qty = $summaries->get($product->id)?->where('location_id', $location->id)->first()?->qty ?? 0;
+                $itemData['locations'][$location->name] = (float)$qty;
                 
-                $in = ($grnIn->get($product->id)?->where('location', $locName)->first()?->total ?? 0) +
-                     ($salesReturnIn->get($product->id)?->where('location', $locName)->first()?->total ?? 0) +
-                     ($transferIn->get($product->id)?->where('location', $locName)->first()?->total ?? 0);
-                
-                // Invoice returns are currently not site-specific in the DB? 
-                // Let's assume they go to 'Main Stock' or just add to the first location for now if no site info.
-                if ($locName == 'Main Stock' || $locName == 'Main') {
-                    $in += $invoiceReturnIn->get($product->id) ?? 0;
+                if (in_array(trim($location->name), $allowedMainStockLocations)) {
+                    $mainStockTotal += (float)$qty;
                 }
-
-                $out = ($invoiceOut->get($product->id)?->where('location', $locName)->first()?->total ?? 0) +
-                      ($grnReturnOut->get($product->id)?->where('location', $locName)->first()?->total ?? 0) +
-                      ($transferOut->get($product->id)?->where('location', $locName)->first()?->total ?? 0);
-
-                $qty = $in - $out;
-                $itemData['locations'][$locName] = $qty;
-                $totalStock += $qty;
             }
+            
+            $itemData['total_stock'] = $mainStockTotal;
 
-            if ($request->has('no_zero') && $totalStock <= 0) {
+            if ($request->has('no_zero') && $mainStockTotal <= 0) {
                 continue;
             }
 
@@ -113,58 +89,19 @@ class ReportController extends Controller
 
         $products = $query->orderBy('name')->get();
 
-        $location = $request->location;
+        $locationName = $request->location;
+        $locationId = $locationName ? Location::where('name', $locationName)->first()?->id : null;
         
-        // Bulk fetch stock data
-        $grnIn = DB::table('grn_items')->select('product_id', DB::raw('SUM(qty) as total'));
-        if ($location) $grnIn->where('location', $location);
-        $grnIn = $grnIn->groupBy('product_id')->get()->pluck('total', 'product_id');
-
-        $invoiceOut = DB::table('invoice_items')->select('product_id', DB::raw('SUM(qty) as total'));
-        if ($location) $invoiceOut->where('location', $location);
-        $invoiceOut = $invoiceOut->groupBy('product_id')->get()->pluck('total', 'product_id');
-
-        $grnReturnOut = DB::table('grn_return_items')->select('product_id', DB::raw('SUM(qty) as total'));
-        if ($location) $grnReturnOut->where('location', $location);
-        $grnReturnOut = $grnReturnOut->groupBy('product_id')->get()->pluck('total', 'product_id');
-
-        $salesReturnIn = DB::table('sales_return_items')->select('product_id', DB::raw('SUM(qty) as total'));
-        if ($location) $salesReturnIn->where('location', $location);
-        $salesReturnIn = $salesReturnIn->groupBy('product_id')->get()->pluck('total', 'product_id');
-
-        $invoiceReturnIn = DB::table('invoice_returns')->select('product_id', DB::raw('SUM(qty) as total'));
-        // No location in invoice_returns?
-        $invoiceReturnIn = $invoiceReturnIn->groupBy('product_id')->get()->pluck('total', 'product_id');
-
-        $transferIn = DB::table('inventory_transfer_items')
-            ->join('inventory_transfers', 'inventory_transfer_items.inventory_transfer_id', '=', 'inventory_transfers.id')
-            ->where('inventory_transfers.status', 'Approved')
-            ->select('product_id', DB::raw('SUM(qty) as total'));
-        if ($location) $transferIn->where('inventory_transfers.site_to', $location);
-        $transferIn = $transferIn->groupBy('product_id')->get()->pluck('total', 'product_id');
-
-        $transferOut = DB::table('inventory_transfer_items')
-            ->join('inventory_transfers', 'inventory_transfer_items.inventory_transfer_id', '=', 'inventory_transfers.id')
-            ->where('inventory_transfers.status', 'Approved')
-            ->select('product_id', DB::raw('SUM(qty) as total'));
-        if ($location) $transferOut->where('inventory_transfers.site_from', $location);
-        $transferOut = $transferOut->groupBy('product_id')->get()->pluck('total', 'product_id');
+        // Bulk fetch summary data
+        $summaryQuery = DB::table('inventory_summaries');
+        if ($locationId) {
+            $summaryQuery->where('location_id', $locationId);
+        }
+        $summaries = $summaryQuery->select('product_id', DB::raw('SUM(qty) as total'))->groupBy('product_id')->get()->pluck('total', 'product_id');
 
         $reportData = [];
         foreach ($products as $product) {
-            $in = ($grnIn->get($product->id) ?? 0) + 
-                  ($salesReturnIn->get($product->id) ?? 0) + 
-                  ($transferIn->get($product->id) ?? 0);
-            
-            if (!$location || $location == 'Main Stock' || $location == 'Main') {
-                $in += $invoiceReturnIn->get($product->id) ?? 0;
-            }
-
-            $out = ($invoiceOut->get($product->id) ?? 0) + 
-                   ($grnReturnOut->get($product->id) ?? 0) + 
-                   ($transferOut->get($product->id) ?? 0);
-
-            $onHand = $in - $out;
+            $onHand = $summaries->get($product->id) ?? 0;
             
             if ($request->has('no_zero') && $onHand <= 0) {
                 continue;
@@ -175,7 +112,7 @@ class ReportController extends Controller
                 'code' => $product->code,
                 'name' => $product->name,
                 'category' => $product->category,
-                'site' => $product->location,
+                'site' => $locationName ?: 'All',
                 'class' => $product->model,
                 'on_hand' => $onHand,
                 'avg_cost' => $product->cost,

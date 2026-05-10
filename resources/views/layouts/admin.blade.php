@@ -23,7 +23,7 @@
             --sg-topbar-height: 72px;
             --sg-sidebar-width: 260px;
             --sg-primary-gradient: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%);
-            --sg-card-shadow-light: 0 10px 30px rgba(0,0,0,0.06), 0 4px 8px rgba(0,0,0,0.02);
+            --sg-card-shadow-light: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
             --sg-card-shadow-dark: 0 20px 40px rgba(0,0,0,0.3);
             --sg-transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
@@ -35,10 +35,59 @@
 
         /* Support for Dark Mode and Light Mode backgrounds */
         [data-bs-theme="light"] body { 
-            background-color: #f7f9fc !important; 
+            background-color: #f8fafc !important; /* Soft Slate 50/100 mix */
+            color: #1e293b !important; /* Slate 800 */
         }
         [data-bs-theme="dark"] body { 
             background-color: #0c111d !important; 
+        }
+
+        /* Light Theme Typography & Readability */
+        [data-bs-theme="light"] .text-muted, 
+        [data-bs-theme="light"] .secondary-text {
+            color: #64748b !important; /* Slate 500 */
+        }
+
+        [data-bs-theme="light"] h1, [data-bs-theme="light"] h2, [data-bs-theme="light"] h3, 
+        [data-bs-theme="light"] h4, [data-bs-theme="light"] h5, [data-bs-theme="light"] h6 {
+            color: #0f172a !important; /* Slate 900 */
+            letter-spacing: -0.025em;
+        }
+
+        [data-bs-theme="light"] .card {
+            background: #ffffff !important;
+            border: 1px solid rgba(226, 232, 240, 0.8) !important; /* Slate 200 soft */
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.04) !important;
+        }
+
+        /* Tables (Light Mode) */
+        [data-bs-theme="light"] .table thead th {
+            background-color: #f1f5f9 !important; /* Slate 100 */
+            color: #475569 !important; /* Slate 600 */
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid #e2e8f0 !important;
+        }
+
+        [data-bs-theme="light"] .table tbody td {
+            border-bottom: 1px solid #f1f5f9 !important;
+            color: #334155 !important; /* Slate 700 */
+        }
+
+        /* Forms (Light Mode) */
+        [data-bs-theme="light"] .form-control,
+        [data-bs-theme="light"] .form-select {
+            background-color: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            color: #1e293b !important;
+        }
+
+        [data-bs-theme="light"] .form-control:focus,
+        [data-bs-theme="light"] .form-select:focus {
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1) !important;
         }
 
         .main-nav {
@@ -786,6 +835,91 @@
             border-color: rgba(255,255,255,0.1);
             box-shadow: 0 20px 40px rgba(0,0,0,0.3);
         }
+
+        /* Global Preloader - Modern Geometric Design */
+        #global-preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.5s;
+        }
+
+        #global-preloader.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .loader-visual {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loader-cube {
+            width: 40px;
+            height: 40px;
+            background: var(--sg-primary-gradient);
+            border-radius: 12px;
+            animation: cube-morph 2s ease-in-out infinite;
+            box-shadow: 0 0 30px rgba(79, 70, 229, 0.5);
+        }
+
+        .loader-circle {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: circle-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes cube-morph {
+            0% { transform: scale(1) rotate(0deg); border-radius: 12px; }
+            25% { transform: scale(1.2) rotate(90deg); border-radius: 50%; }
+            50% { transform: scale(1) rotate(180deg); border-radius: 12px; }
+            75% { transform: scale(0.8) rotate(270deg); border-radius: 4px; }
+            100% { transform: scale(1) rotate(360deg); border-radius: 12px; }
+        }
+
+        @keyframes circle-pulse {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            50% { transform: scale(1.2); opacity: 0.2; border-width: 4px; }
+            100% { transform: scale(0.8); opacity: 0.5; }
+        }
+
+        .loader-text {
+            margin-top: 32px;
+            color: #f8fafc;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            animation: text-glow 1.5s ease-in-out infinite;
+        }
+
+        @keyframes text-glow {
+            0%, 100% { opacity: 0.5; text-shadow: 0 0 0px rgba(255,255,255,0); }
+            50% { opacity: 1; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        }
+
+        body.loading-state {
+            overflow: hidden !important;
+            pointer-events: none !important;
+        }
+
         .brand-chip {
             display: inline-flex;
             align-items: center;
@@ -830,7 +964,15 @@
     <script src="{{ asset('assets/js/config.min.js') }}"></script>
 </head>
 
-<body>
+<body class="loading-state">
+    <!-- Global Preloader -->
+    <div id="global-preloader">
+        <div class="loader-visual">
+            <div class="loader-circle"></div>
+            <div class="loader-cube"></div>
+        </div>
+        <div class="loader-text">Loading, please wait...</div>
+    </div>
 
     <!-- START Wrapper -->
     <div class="wrapper">
@@ -993,7 +1135,7 @@
                                     </a>
                                 </li>
                                 <li class="menu-item">
-                                    <a class="menu-link" href="{{ route('not-found') }}">
+                                    <a class="menu-link" href="{{ route('inventory-issues.index') }}">
                                         <span class="nav-text">Issue Note</span>
                                     </a>
                                 </li>
@@ -1324,6 +1466,68 @@
             }
             setInterval(poll, 15000);
             setTimeout(poll, 1000);
+        })();
+    </script>
+    <script>
+        (function() {
+            const preloader = document.getElementById('global-preloader');
+            let activeRequests = 0;
+            
+            window.showPreloader = function() {
+                activeRequests++;
+                if (preloader) {
+                    preloader.classList.remove('hidden');
+                    document.body.classList.add('loading-state');
+                }
+            };
+
+            window.hidePreloader = function() {
+                activeRequests--;
+                if (activeRequests <= 0) {
+                    activeRequests = 0;
+                    if (preloader) {
+                        preloader.classList.add('hidden');
+                        document.body.classList.remove('loading-state');
+                    }
+                }
+            };
+
+            // Auto-hide on initial page load completion
+            window.addEventListener('load', function() {
+                // For initial load, we force hide after a small delay
+                activeRequests = 0;
+                setTimeout(window.hidePreloader, 500);
+            });
+
+            // Intercept Fetch API
+            const originalFetch = window.fetch;
+            window.fetch = async (...args) => {
+                const url = typeof args[0] === 'string' ? args[0] : (args[0] instanceof Request ? args[0].url : '');
+                
+                // Exclude background polling tasks (like approval counts or specific stock checks)
+                const isBackground = url.includes('approvals/count') || url.includes('stock?location');
+                
+                if (!isBackground) window.showPreloader();
+                
+                try {
+                    const response = await originalFetch(...args);
+                    if (!isBackground) window.hidePreloader();
+                    return response;
+                } catch (error) {
+                    if (!isBackground) window.hidePreloader();
+                    throw error;
+                }
+            };
+
+            // Intercept jQuery AJAX if present
+            if (window.jQuery) {
+                $(document).ajaxStart(function() {
+                    window.showPreloader();
+                });
+                $(document).ajaxStop(function() {
+                    window.hidePreloader();
+                });
+            }
         })();
     </script>
     @stack('scripts')

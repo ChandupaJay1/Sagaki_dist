@@ -79,7 +79,7 @@
                         <div class="col-md-4">
                             <div class="mb-1">
                                 <label class="form-label small fw-bold mb-0">GRN No</label>
-                                <input type="text" class="form-control form-control-sm bg-light" value="{{ $grn->reference_no }}" readonly>
+                                <input type="text" class="form-control form-control-sm bg-light" value="{{ $grn->grn_no }}" readonly>
                             </div>
                             <div>
                                 <label class="form-label small fw-bold mb-0">Date</label>

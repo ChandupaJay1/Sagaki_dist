@@ -17,7 +17,7 @@ class Product extends Model
         'is_stock_report', 'is_price_level', 'is_multi_price',
         'project', 'supplier_warranty', 'customer_warranty', 'vendor_id',
         'inventory_account', 'cost_account', 'sales_account',
-        'cost', 'unit', 'max_sale_price', 'min_sale_price',
+        'cost', 'stock', 'unit', 'max_sale_price', 'min_sale_price',
         'max_wholesale_price', 'min_wholesale_price', 'discount_percentage',
         'image_path'
     ];
@@ -37,6 +37,7 @@ class Product extends Model
         'is_multi_price' => 'boolean',
         'vendor_id' => 'integer',
         'cost' => 'double',
+        'stock' => 'double',
         'max_sale_price' => 'double',
         'min_sale_price' => 'double',
         'max_wholesale_price' => 'double',
@@ -57,5 +58,10 @@ class Product extends Model
     public function vendor()
     {
         return $this->belongsTo(Vendor::class);
+    }
+
+    public function summaries()
+    {
+        return $this->hasMany(InventorySummary::class);
     }
 }
