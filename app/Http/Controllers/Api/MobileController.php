@@ -10,11 +10,105 @@ use App\Models\Area;
 use App\Models\Territory;
 use App\Models\Customer;
 use App\Models\InventoryTransfer;
+use App\Models\Invoice;
+use App\Models\SalesReturn;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class MobileController extends Controller
 {
+    /**
+     * Get home dashboard statistics for the mobile app
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getHomeStats(Request $request)
+    {
+        try {
+            $user = $request->user();
+            $period = $request->query('period', 'daily'); // daily, weekly, monthly
+            
+            $startDate = Carbon::now();
+            $endDate = Carbon::now();
+
+            if ($period === 'daily') {
+                $startDate = Carbon::today();
+                $endDate = Carbon::today()->endOfDay();
+            } elseif ($period === 'weekly') {
+                $startDate = Carbon::now()->startOfWeek();
+                $endDate = Carbon::now()->endOfWeek();
+            } elseif ($period === 'monthly') {
+                $startDate = Carbon::now()->startOfMonth();
+                $endDate = Carbon::now()->endOfMonth();
+            }
+
+            // 1. Calculate Invoice Sales
+            $invoiceSales = Invoice::where('rep_id', $user->id)
+                ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->sum('total_amount');
+
+            // 2. Calculate Returns Total
+            $returnsTotal = SalesReturn::where('rep', $user->name)
+                ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->sum('total_amount');
+
+            // 3. New Customers (Assigned to this rep's route)
+            $newCustomersCount = Customer::where('route_id', $user->route_id)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count();
+
+            // 4. Weekly Sales Data (Last 7 days for the chart)
+            $weeklySales = [];
+            for ($i = 6; $i >= 0; $i--) {
+                $day = Carbon::now()->subDays($i);
+                $amount = Invoice::where('rep_id', $user->id)
+                    ->whereDate('date', $day->format('Y-m-d'))
+                    ->sum('total_amount');
+                
+                $weeklySales[] = [
+                    'day' => $day->format('D'),
+                    'amount' => (double)$amount
+                ];
+            }
+
+            // 5. Assigned Route and Customers
+            $assignedRoute = null;
+            if ($user->route_id) {
+                $route = Route::find($user->route_id);
+                $customers = Customer::where('route_id', $user->route_id)
+                    ->orderBy('name')
+                    ->limit(10) // Limit to avoid huge response
+                    ->get(['id', 'name', 'address']);
+
+                $assignedRoute = [
+                    'route_name' => $route ? $route->name : 'N/A',
+                    'customers' => $customers
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'invoice_sales' => (double)$invoiceSales,
+                    'returns_total' => (double)$returnsTotal,
+                    'new_customers' => $newCustomersCount,
+                    'weekly_sales' => $weeklySales,
+                    'assigned_route' => $assignedRoute
+                ]
+            ], 200);
+
+        } catch (\Throwable $e) {
+            Log::error('getHomeStats error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     /**
      * Get current user's route information
      * 
