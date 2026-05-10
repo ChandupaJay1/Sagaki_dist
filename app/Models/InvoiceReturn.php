@@ -12,6 +12,7 @@ class InvoiceReturn extends Model
         'qty',
         'rate',
         'discount',
+        'total',
     ];
 
     public function invoice()
