@@ -52,7 +52,7 @@ class AuthController extends Controller
             if (!$user->is_active) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Your account is inactive. Please contact administrator.'
+                    'message' => 'Your account is pending admin approval. Please contact administrator.'
                 ], 403);
             }
 
@@ -160,24 +160,16 @@ class AuthController extends Controller
                 'route_id' => $validated['route_id'] ?? null,
                 'serial_number' => $serialNumber,
                 'serial_expires_at' => $serialExpiresAt,
-                'is_active' => true, // Auto-activate for now, or set to false if admin approval needed
+                'is_active' => false, // Set to false, requires admin approval
             ]);
-
-            // Create token
-            $token = $user->createToken('auth_token')->plainTextToken;
 
             return response()->json([
                 'success' => true,
-                'message' => 'Registration successful',
-                'token' => $token,
+                'message' => 'Registration successful. Your account is pending admin approval.',
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'mobile_number' => $user->mobile_number,
-                    'role' => $user->role,
-                    'serial_number' => $user->serial_number,
-                    'serial_expires_at' => $user->serial_expires_at,
                     'is_active' => $user->is_active,
                 ]
             ], 201);
