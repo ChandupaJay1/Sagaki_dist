@@ -188,7 +188,6 @@
                                     <th class="fw-bold py-2">Number</th>
                                     <th class="fw-bold py-2">Orig.Amt.</th>
                                     <th class="fw-bold py-2">Amt.Due</th>
-                                    <th class="fw-bold py-2">Cr in use</th>
                                     <th class="fw-bold py-2">Discount</th>
                                     <th class="fw-bold py-2" style="width: 150px;">New Payment</th>
                                 </tr>
@@ -314,7 +313,7 @@
                                     <button type="button" class="btn btn-link btn-sm p-0 ms-2 text-decoration-none" id="clearCreditsBtn">Clear All</button>
                                 </div>
                                 <div class="text-end p-2 border-top bg-white">
-                                    <button type="button" class="btn btn-primary btn-sm"><i class="ri-settings-3-line me-1"></i>Set Credit</button>
+                                    <button type="button" id="setCreditBtn" class="btn btn-primary btn-sm"><i class="ri-settings-3-line me-1"></i>Set Credit</button>
                                 </div>
                             </div>
                         </div>
@@ -524,8 +523,40 @@
         const appliedCreditsSummary = document.getElementById('appliedCreditsSummary');
         const appliedCreditsCount = document.getElementById('appliedCreditsCount');
         const clearCreditsBtn = document.getElementById('clearCreditsBtn');
+        const setCreditBtn = document.getElementById('setCreditBtn');
 
         let cachedCredits = [];
+
+        // Handle Set Credit button
+        setCreditBtn.addEventListener('click', function() {
+            // Check if at least one credit and one bill is selected
+            const selectedBills = document.querySelectorAll('.bill-checkbox:checked');
+            const selectedCredits = document.querySelectorAll('.credit-checkbox:checked');
+
+            if (selectedBills.length === 0) {
+                alert('Please select at least one bill first.');
+                return;
+            }
+
+            if (selectedCredits.length === 0) {
+                alert('Please select at least one credit record first.');
+                return;
+            }
+
+            // Perform credit allocation
+            updateTotals(false, true); // Pass true for isSetCreditAction
+            
+            // Provide visual feedback
+            this.innerHTML = '<i class="ri-check-line me-1"></i>Credit Applied';
+            this.classList.remove('btn-primary');
+            this.classList.add('btn-success');
+            
+            setTimeout(() => {
+                this.innerHTML = '<i class="ri-settings-3-line me-1"></i>Set Credit';
+                this.classList.remove('btn-success');
+                this.classList.add('btn-primary');
+            }, 2000);
+        });
 
         // Handle Clear Credits
         clearCreditsBtn.addEventListener('click', function() {
@@ -576,7 +607,7 @@
         document.getElementById('createPayBillForm').addEventListener('submit', function(e) {
             const entityId = entitySelectWrapper.value;
             const totalPay = parseFloat(document.getElementById('totalToPayInput').value) || 0;
-            const totalCreditUsed = Array.from(document.querySelectorAll('.cr-in-use-input'))
+            const totalCreditUsed = Array.from(document.querySelectorAll('.credit-used-hidden'))
                                         .reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
 
             if (!entityId) {
@@ -658,7 +689,7 @@
                     <td class="small text-primary fw-medium">${credit.return_no || '—'}</td>
                     <td class="small">${typeLabel}</td>
                     <td class="text-end small">${amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                    <td class="text-end small">${amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td class="text-end small remaining-balance-cell" data-initial="${amount}">${amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                     <td>
                         <input type="number" class="form-control form-control-sm text-end credit-use-input" 
                                step="any" min="0" max="${amount}" data-available="${amount}" placeholder="0.00" readonly>
@@ -684,7 +715,6 @@
                     <td>${billNo || '—'}</td>
                     <td class="text-end orig-amt-cell">${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                     <td class="text-end amt-due-cell">${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                    <td><input type="text" class="form-control form-control-sm text-end bg-light cr-in-use-input" readonly value="0.00"></td>
                     <td><input type="text" class="form-control form-control-sm text-end bg-light" readonly value="0.00"></td>
                     <td>
                         <input type="hidden" name="items[${index}][${idField}]" value="${item.id}">
@@ -716,12 +746,12 @@
                 checkboxes.forEach(cb => {
                     cb.checked = this.checked;
                 });
-                updateTotals();
+                updateTotals(false, false);
             });
 
             document.querySelectorAll('.bill-checkbox').forEach(cb => {
                 cb.addEventListener('change', function() {
-                    updateTotals();
+                    updateTotals(false, false);
                     
                     // Update Select All state
                     const allChecked = document.querySelectorAll('.bill-checkbox:checked').length === document.querySelectorAll('.bill-checkbox').length;
@@ -740,7 +770,7 @@
                         cb.checked = true;
                     }
                     
-                    updateTotals(true);
+                    updateTotals(true, false);
                 });
 
                 // Format on blur
@@ -753,12 +783,12 @@
                 input.addEventListener('dblclick', function() {
                     const row = this.closest('tr');
                     const cb = row.querySelector('.bill-checkbox');
-                    const crInUse = parseFloat(row.querySelector('.cr-in-use-input').value) || 0;
+                    const creditUsed = parseFloat(row.querySelector('.credit-used-hidden').value) || 0;
                     const due = parseFloat(this.dataset.due) || 0;
                     
-                    this.value = (due - crInUse).toFixed(2);
+                    this.value = (due - creditUsed).toFixed(2);
                     cb.checked = true;
-                    updateTotals(true);
+                    updateTotals(true, false);
                 });
             });
         }
@@ -772,12 +802,12 @@
                 checkboxes.forEach(cb => {
                     cb.checked = this.checked;
                 });
-                updateTotals();
+                updateTotals(false, false);
             });
 
             document.querySelectorAll('.credit-checkbox').forEach(cb => {
                 cb.addEventListener('change', function() {
-                    updateTotals();
+                    updateTotals(false, false);
                     
                     // Update Select All state
                     const allChecked = document.querySelectorAll('.credit-checkbox:checked').length === document.querySelectorAll('.credit-checkbox').length;
@@ -792,18 +822,18 @@
                     const val = parseFloat(this.value) || 0;
                     
                     cb.checked = val > 0;
-                    updateTotals();
+                    updateTotals(false, false);
                 });
             });
         }
 
-        function updateTotals(isUserAction = false) {
+        function updateTotals(isUserAction = false, isSetCreditAction = false) {
             let totalOrigDue = 0;
             let totalCashApplied = 0;
             let totalCreditApplied = 0;
             let selectedCreditsCount = 0;
             
-            // 1. Calculate Available Credit from selected Previous Credits
+            // 1. Determine available credits from checkboxes
             let totalSelectedCreditBalance = 0;
             document.querySelectorAll('.credit-row').forEach(row => {
                 const cb = row.querySelector('.credit-checkbox');
@@ -814,11 +844,14 @@
                 if (cb.checked) {
                     totalSelectedCreditBalance += available;
                     selectedCreditsCount++;
-                    row.classList.add('d-none');
                 } else {
-                    useInput.value = '0.00';
-                    if (amountUsedHidden) amountUsedHidden.value = '0.00';
-                    row.classList.remove('d-none');
+                    // Only reset if it's NOT a set credit action
+                    if (!isSetCreditAction) {
+                        useInput.value = '0.00';
+                        if (amountUsedHidden) amountUsedHidden.value = '0.00';
+                        const remainingCell = row.querySelector('.remaining-balance-cell');
+                        if (remainingCell) remainingCell.textContent = available.toLocaleString(undefined, {minimumFractionDigits: 2});
+                    }
                 }
             });
             
@@ -832,7 +865,7 @@
                 appliedCreditsSummary.classList.add('d-none');
             }
 
-            // 2. Determine Cash Funds
+            // 2. Determine Cash Funds from main input
             const rawAmount = displayAmountInput.value.replace(/,/g, '');
             let totalCashFunds = parseFloat(rawAmount) || 0;
             let remainingCashToAllocate = totalCashFunds;
@@ -840,49 +873,53 @@
             // 3. Allocation to checked bills
             document.querySelectorAll('.bill-row').forEach(row => {
                 const cb = row.querySelector('.bill-checkbox');
-                const payInput = row.querySelector('.pay-input'); // This is the CASH payment field
-                const crInUseInput = row.querySelector('.cr-in-use-input'); // This is the CREDIT use field
+                const payInput = row.querySelector('.pay-input'); // This is the total payment field (Cash + Credit)
                 const amtDueCell = row.querySelector('.amt-due-cell');
                 const origAmt = parseFloat(payInput.dataset.due) || 0;
+                const creditHidden = row.querySelector('.credit-used-hidden');
                 
                 if (cb.checked) {
                     totalOrigDue += origAmt;
 
-                    // A. Allocate Credit First
-                    let creditAllocated = Math.min(origAmt, remainingCreditToAllocate);
-                    crInUseInput.value = creditAllocated.toFixed(2);
-                    
-                    const creditHidden = row.querySelector('.credit-used-hidden');
-                    if (creditHidden) creditHidden.value = creditAllocated.toFixed(2);
-
-                    remainingCreditToAllocate -= creditAllocated;
-                    totalCreditApplied += creditAllocated;
-
-                    // B. Allocate Cash
-                    let remainingBalanceAfterCredit = origAmt - creditAllocated;
-                    let cashAllocated = 0;
-
-                    if (isUserAction) {
-                        // If user edited a row, respect that value but don't let it exceed the bill balance
-                        cashAllocated = parseFloat(payInput.value) || 0;
-                        if (cashAllocated > remainingBalanceAfterCredit) {
-                            cashAllocated = remainingBalanceAfterCredit;
-                        }
-                        
-                        if (document.activeElement !== payInput) {
-                            payInput.value = cashAllocated.toFixed(2);
-                        }
-                    } else {
-                        // Auto-allocate based on totalCashFunds (FIFO)
-                        cashAllocated = Math.min(remainingBalanceAfterCredit, remainingCashToAllocate);
-                        remainingCashToAllocate -= cashAllocated;
-                        payInput.value = cashAllocated.toFixed(2);
+                    // A. Allocate Credit
+                    let creditAllocated = parseFloat(creditHidden.value) || 0;
+                    if (isSetCreditAction) {
+                        creditAllocated = Math.min(origAmt, remainingCreditToAllocate);
+                        remainingCreditToAllocate -= creditAllocated;
+                        creditHidden.value = creditAllocated.toFixed(2);
                     }
 
+                    // B. Allocate Cash (New Payment = Credit + Cash)
+                    let cashAllocated = 0;
+                    let currentNewPayment = 0;
+
+                    if (isUserAction && document.activeElement === payInput) {
+                        // User is manually editing the "New Payment" box
+                        currentNewPayment = parseFloat(payInput.value) || 0;
+                        if (currentNewPayment > origAmt) currentNewPayment = origAmt;
+                        
+                        // If they reduce the total below the previously set credit, reduce the credit part
+                        if (currentNewPayment < creditAllocated) {
+                            creditAllocated = currentNewPayment;
+                            creditHidden.value = creditAllocated.toFixed(2);
+                            cashAllocated = 0;
+                        } else {
+                            cashAllocated = currentNewPayment - creditAllocated;
+                        }
+                    } else {
+                        // Auto-allocation (runs on init, amount change, or set credit click)
+                        let remainingNeeded = origAmt - creditAllocated;
+                        cashAllocated = Math.min(remainingNeeded, remainingCashToAllocate);
+                        remainingCashToAllocate -= cashAllocated;
+                        currentNewPayment = creditAllocated + cashAllocated;
+                        payInput.value = currentNewPayment.toFixed(2);
+                    }
+
+                    totalCreditApplied += creditAllocated;
                     totalCashApplied += cashAllocated;
 
-                    // C. Update Amt. Due cell (Orig. Amt - Credit - Cash)
-                    let finalAmtDue = origAmt - creditAllocated - cashAllocated;
+                    // C. Update Amt. Due cell
+                    let finalAmtDue = origAmt - currentNewPayment;
                     amtDueCell.textContent = finalAmtDue.toLocaleString(undefined, {minimumFractionDigits: 2});
                     
                     if (finalAmtDue <= 0.01) {
@@ -892,11 +929,9 @@
                     }
                 } else {
                     payInput.value = '0.00';
-                    crInUseInput.value = '0.00';
                     amtDueCell.textContent = origAmt.toLocaleString(undefined, {minimumFractionDigits: 2});
                     amtDueCell.classList.remove('text-success', 'fw-bold');
-                    const creditHidden = row.querySelector('.credit-used-hidden');
-                    if (creditHidden) creditHidden.value = '0.00';
+                    creditHidden.value = '0.00';
                 }
             });
 
@@ -905,31 +940,34 @@
             document.getElementById('summaryCredit').value = totalCreditApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('summaryPayment').value = totalCashApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             
-            const summaryTotalPayment = totalCashFunds + totalSelectedCreditBalance;
+            const summaryTotalPayment = totalCashFunds + totalCreditApplied;
             document.getElementById('summaryTotalPayment').value = summaryTotalPayment.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('headerTotalAmount').textContent = totalCashFunds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('totalToPayInput').value = totalCashFunds.toFixed(2);
             lkrTotalAmountInput.value = totalCashFunds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
-            // 5. Update Credit Record usages
+            // 5. Update Credit Record rows (Labels and Inputs)
             let totalCreditConsumedAcrossAllBills = totalCreditApplied;
             document.querySelectorAll('.credit-row').forEach(row => {
                 const cb = row.querySelector('.credit-checkbox');
                 if (cb.checked) {
                     const useInput = row.querySelector('.credit-use-input');
                     const amountUsedHidden = row.querySelector('.credit-amount-used-hidden');
-                    const available = parseFloat(useInput.dataset.available) || 0;
+                    const remainingCell = row.querySelector('.remaining-balance-cell');
+                    const initial = parseFloat(remainingCell.dataset.initial) || 0;
                     
-                    let consumedFromThisRecord = Math.min(available, totalCreditConsumedAcrossAllBills);
+                    let consumedFromThisRecord = Math.min(initial, totalCreditConsumedAcrossAllBills);
                     useInput.value = consumedFromThisRecord.toFixed(2);
                     if (amountUsedHidden) amountUsedHidden.value = consumedFromThisRecord.toFixed(2);
+                    
+                    let remaining = initial - consumedFromThisRecord;
+                    remainingCell.textContent = remaining.toLocaleString(undefined, {minimumFractionDigits: 2});
                     
                     totalCreditConsumedAcrossAllBills -= consumedFromThisRecord;
                 }
             });
 
             // 6. Handle Overpayment
-            // Logic: Header Amount - Total Cash actually applied to bills = Credit
             const overPaymentAmount = Math.max(0, totalCashFunds - totalCashApplied);
             updateOverpaymentRow(overPaymentAmount);
         }
