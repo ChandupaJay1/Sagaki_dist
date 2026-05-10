@@ -28,6 +28,7 @@
                         <th class="text-muted small fw-bold text-uppercase">GRN No</th>
                         <th class="text-muted small fw-bold text-uppercase">Date</th>
                         <th class="text-muted small fw-bold text-uppercase">Total</th>
+                        <th class="text-muted small fw-bold text-uppercase">Status</th>
                         <th class="text-end pe-4 text-muted small fw-bold text-uppercase">Action</th>
                     </tr>
                 </thead>
@@ -35,17 +36,26 @@
                     @forelse($grns as $g)
                         <tr>
                             <td class="ps-4">{{ $g->vendor->company_name ?? $g->vendor->name ?? '—' }}</td>
-                            <td>{{ $g->reference_no ?? '—' }}</td>
+                            <td><span class="fw-bold">{{ $g->grn_no }}</span></td>
                             <td>{{ $g->date ?? '—' }}</td>
                             <td>{{ number_format($g->total_amount, 2) }}</td>
+                            <td>
+                                @if($g->status === 'Approved')
+                                    <span class="badge bg-success-subtle text-success border-success-subtle">Approved</span>
+                                @else
+                                    <span class="badge bg-warning-subtle text-warning border-warning-subtle">{{ $g->status ?? 'Pending' }}</span>
+                                @endif
+                            </td>
                             <td class="text-end pe-4">
                                 <div class="d-flex justify-content-end gap-2">
                                     <a href="{{ route('grns.show', $g->id) }}" class="btn btn-soft-info btn-sm icon-btn">
                                         <i class="ri-eye-line"></i>
                                     </a>
-                                    <a href="{{ route('grns.edit', $g->id) }}" class="btn btn-soft-success btn-sm icon-btn">
-                                        <i class="ri-pencil-line"></i>
-                                    </a>
+                                    @if($g->status !== 'Approved')
+                                        <a href="{{ route('grns.edit', $g->id) }}" class="btn btn-soft-success btn-sm icon-btn">
+                                            <i class="ri-pencil-line"></i>
+                                        </a>
+                                    @endif
                                     <form action="{{ route('grns.destroy', $g->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure?');">
                                         @csrf
                                         @method('DELETE')

@@ -28,6 +28,7 @@
                         <th class="text-muted small fw-bold text-uppercase">PO No</th>
                         <th class="text-muted small fw-bold text-uppercase">Date</th>
                         <th class="text-muted small fw-bold text-uppercase">Total</th>
+                        <th class="text-muted small fw-bold text-uppercase">Status</th>
                         <th class="text-end pe-4 text-muted small fw-bold text-uppercase">Action</th>
                     </tr>
                 </thead>
@@ -35,9 +36,16 @@
                     @forelse($orders as $o)
                         <tr>
                             <td class="ps-4">{{ $o->vendor->company_name ?? $o->vendor->name ?? '—' }}</td>
-                            <td>{{ $o->reference_no ?? '—' }}</td>
+                            <td><span class="fw-bold">{{ $o->po_no }}</span></td>
                             <td>{{ $o->date ?? '—' }}</td>
                             <td>{{ number_format($o->total_amount, 2) }}</td>
+                            <td>
+                                @if($o->status === 'Approved')
+                                    <span class="badge bg-success-subtle text-success border-success-subtle">Approved</span>
+                                @else
+                                    <span class="badge bg-warning-subtle text-warning border-warning-subtle">{{ $o->status ?? 'Pending' }}</span>
+                                @endif
+                            </td>
                             <td class="text-end pe-4">
                                 <div class="d-flex justify-content-end gap-2">
                                     <a href="{{ route('purchase-orders.show', $o->id) }}" class="btn btn-soft-info btn-sm icon-btn">

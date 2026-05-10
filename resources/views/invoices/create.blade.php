@@ -793,8 +793,7 @@
                         // Re-index the names to be sequential
                         row.querySelectorAll('input, select').forEach(el => {
                             if (el.name) {
-                                const baseName = el.name.split(']')[1]; // e.g., "[product_id]"
-                                el.name = `items[${validRowIndex}]${baseName}`;
+                                el.name = el.name.replace(/items\[\d+\]/, `items[${validRowIndex}]`);
                             }
 
                             if (el.classList.contains('onhand-input')) {

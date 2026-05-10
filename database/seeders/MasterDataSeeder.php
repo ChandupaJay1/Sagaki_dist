@@ -3,18 +3,14 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Account;
-use App\Models\Area;
-use App\Models\Territory;
-use App\Models\Route;
-use App\Models\CustomerCategory;
-use App\Models\Category;
-use App\Models\ProductSubCategory;
-use App\Models\Unit;
-use App\Models\Brand;
+use App\Models\User;
 use App\Models\Location;
-use App\Models\Currency;
-use App\Models\ItemCategory;
+use App\Models\Product;
+use App\Models\Vendor;
+use App\Models\InventorySummary;
+use App\Models\InventoryLog;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class MasterDataSeeder extends Seeder
 {
@@ -23,95 +19,77 @@ class MasterDataSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Accounts
-        $accounts = [
-            ['name' => 'Main Cash Account', 'code' => '1000', 'type' => 'Asset', 'is_active' => 1],
-            ['name' => 'Petty Cash', 'code' => '1010', 'type' => 'Asset', 'is_active' => 1],
-            ['name' => 'HNB Bank Account', 'code' => '1100', 'type' => 'Asset', 'is_active' => 1],
-            ['name' => 'Commercial Bank Account', 'code' => '1110', 'type' => 'Asset', 'is_active' => 1],
-            ['name' => 'Inventory Asset', 'code' => '1300', 'type' => 'Asset', 'is_active' => 1],
-            ['name' => 'Accounts Receivable', 'code' => '1200', 'type' => 'Asset', 'is_active' => 1],
-            ['name' => 'Accounts Payable', 'code' => '2000', 'type' => 'Liability', 'is_active' => 1],
-            ['name' => 'Sales Income', 'code' => '4000', 'type' => 'Income', 'is_active' => 1],
-            ['name' => 'Cost of Goods Sold', 'code' => '5000', 'type' => 'Expense', 'is_active' => 1],
-            ['name' => 'Electricity Expense', 'code' => '6000', 'type' => 'Expense', 'is_active' => 1],
-            ['name' => 'Rent Expense', 'code' => '6010', 'type' => 'Expense', 'is_active' => 1],
-        ];
+        // 1. Admin User
+        User::updateOrCreate(
+            ['email' => 'mgpdesaman@gmail.com'],
+            [
+                'name' => 'Admin',
+                'password' => Hash::make('12345678'),
+            ]
+        );
 
-        foreach ($accounts as $acc) {
-            Account::updateOrCreate(['code' => $acc['code']], $acc);
-        }
+        // 2. Locations
+        $loc1 = Location::updateOrCreate(['name' => 'Main Warehouse'], ['is_active' => 1]);
+        $loc2 = Location::updateOrCreate(['name' => 'Showroom'], ['is_active' => 1]);
 
-        // 2. Territories, Areas, Routes
-        $territory = Territory::updateOrCreate(['code' => 'TER-001'], ['name' => 'Western Province', 'is_active' => 1]);
-        
-        $areas = [
-            ['name' => 'Colombo', 'code' => 'ARE-001', 'is_active' => 1],
-            ['name' => 'Gampaha', 'code' => 'ARE-002', 'is_active' => 1],
-        ];
+        // 3. Demo Vendor
+        $vendor = Vendor::firstOrCreate(
+            ['email' => 'demo@example.com'],
+            ['name' => 'Demo Vendor', 'phone' => '0771234567', 'address' => 'Colombo']
+        );
 
-        foreach ($areas as $areaData) {
-            $area = Area::updateOrCreate(['code' => $areaData['code']], $areaData);
-            $area->territories()->syncWithoutDetaching([$territory->id]);
+        // 4. Product
+        $product = Product::updateOrCreate(
+            ['code' => 'LIVE-001'],
+            [
+                'name' => 'Live Demo Product',
+                'sku' => '88888888',
+                'category' => 'Electronics',
+                'cost' => 100.00,
+                'max_sale_price' => 150.00,
+                'vendor_id' => $vendor->id,
+                'inventory_account' => '1300 - Inventory Asset',
+                'cost_account' => '5000 - Cost of Goods Sold',
+                'sales_account' => '4000 - Sales Income',
+                'description' => 'This product was automatically created for testing.',
+                'is_purchase' => true,
+                'is_sale' => true,
+                'stock' => 8.00 // Total stock (3 + 5)
+            ]
+        );
 
-            Route::updateOrCreate(
-                ['code' => 'ROU-' . $areaData['code']],
-                [
-                    'name' => $areaData['name'] . ' Route 01',
-                    'area_id' => $area->id,
-                    'territory_id' => $territory->id,
-                    'is_active' => 1
-                ]
-            );
-        }
+        // 5. Inventory Summaries (Location Stock)
+        InventorySummary::updateOrCreate(
+            ['product_id' => $product->id, 'location_id' => $loc1->id],
+            ['qty' => 3.00]
+        );
 
-        // 3. Customer Categories
-        $customerCats = ['Retail', 'Wholesale', 'Corporate', 'Distributor'];
-        foreach ($customerCats as $cat) {
-            CustomerCategory::updateOrCreate(['name' => $cat], ['is_active' => 1]);
-        }
+        InventorySummary::updateOrCreate(
+            ['product_id' => $product->id, 'location_id' => $loc2->id],
+            ['qty' => 5.00]
+        );
 
-        // 4. Item Categories & Sub Categories
-        $itemCats = [
-            'Electronics' => ['Mobile Phones', 'Laptops', 'Accessories'],
-            'Beverages' => ['Soft Drinks', 'Juices', 'Water'],
-            'Groceries' => ['Rice', 'Flour', 'Sugar'],
-        ];
+        // 6. Inventory Logs (Transaction History for initial stock)
+        InventoryLog::create([
+            'product_id' => $product->id,
+            'location_id' => $loc1->id,
+            'change_qty' => 3.00,
+            'after_qty' => 3.00,
+            'type' => 'Opening',
+            'reference_type' => 'Initial Seed',
+            'reference_id' => 0,
+            'description' => 'Initial stock seed for Main Warehouse'
+        ]);
 
-        foreach ($itemCats as $mainCat => $subCats) {
-            $category = ItemCategory::updateOrCreate(['name' => $mainCat], ['is_active' => 1]);
-            foreach ($subCats as $sub) {
-                ProductSubCategory::updateOrCreate(
-                    ['name' => $sub],
-                    ['item_category_id' => $category->id, 'is_active' => 1]
-                );
-            }
-        }
-
-        // 5. Units
-        $units = [
-            ['name' => 'Each', 'code' => 'PCS', 'is_active' => 1],
-            ['name' => 'Kilogram', 'code' => 'KG', 'is_active' => 1],
-            ['name' => 'Liter', 'code' => 'L', 'is_active' => 1],
-            ['name' => 'Box', 'code' => 'BOX', 'is_active' => 1],
-            ['name' => 'Packet', 'code' => 'PKT', 'is_active' => 1],
-        ];
-        foreach ($units as $u) {
-            Unit::updateOrCreate(['code' => $u['code']], $u);
-        }
-
-        // 6. Brands
-        $brands = ['Samsung', 'Apple', 'Coca-Cola', 'Anchor', 'Munchee'];
-        foreach ($brands as $b) {
-            Brand::updateOrCreate(['name' => $b], ['is_active' => 1]);
-        }
-
-        // 7. Currencies
-        Currency::updateOrCreate(['code' => 'LKR'], ['name' => 'Sri Lankan Rupee', 'is_active' => 1]);
-        Currency::updateOrCreate(['code' => 'USD'], ['name' => 'US Dollar', 'is_active' => 1]);
-
-        // 8. Locations (Warehouses)
-        Location::updateOrCreate(['name' => 'Main Warehouse'], ['is_active' => 1]);
-        Location::updateOrCreate(['name' => 'Showroom'], ['is_active' => 1]);
+        InventoryLog::create([
+            'product_id' => $product->id,
+            'location_id' => $loc2->id,
+            'change_qty' => 5.00,
+            'after_qty' => 5.00,
+            'type' => 'Opening',
+            'reference_type' => 'Initial Seed',
+            'reference_id' => 0,
+            'description' => 'Initial stock seed for Showroom'
+        ]);
     }
 }

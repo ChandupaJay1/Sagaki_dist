@@ -46,6 +46,7 @@ use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\GrnController;
 use App\Http\Controllers\GrnReturnController;
 use App\Http\Controllers\InventoryTransferController;
+use App\Http\Controllers\InventoryIssueController;
 use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\ReportController;
 
@@ -80,11 +81,16 @@ Route::middleware('auth')->group(function () {
     Route::resource('invoices', InvoiceController::class);
     Route::resource('sales-returns', SalesReturnController::class);
     Route::resource('purchase-orders', PurchaseOrderController::class);
+    Route::patch('purchase-orders/{id}/approve', [PurchaseOrderController::class, 'approve'])->name('purchase-orders.approve');
     Route::resource('grns', GrnController::class);
+    Route::patch('grns/{id}/approve', [GrnController::class, 'approve'])->name('grns.approve');
     Route::resource('grn-returns', GrnReturnController::class);
     Route::resource('inventory-transfers', InventoryTransferController::class)->only(['index','create','store']);
     Route::patch('inventory-transfers/{id}/status', [InventoryTransferController::class, 'updateStatus'])->name('inventory-transfers.update-status');
-    Route::resource('stock-adjustments', StockAdjustmentController::class)->only(['index','create','store']);
+    Route::resource('inventory-issues', InventoryIssueController::class);
+    Route::patch('inventory-issues/{id}/approve', [InventoryIssueController::class, 'approve'])->name('inventory-issues.approve');
+    Route::resource('stock-adjustments', StockAdjustmentController::class);
+    Route::patch('stock-adjustments/{id}/approve', [StockAdjustmentController::class, 'approve'])->name('stock-adjustments.approve');
 
     Route::resource('admins', AdminController::class);
     Route::resource('routes', RouteController::class);

@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 
 use App\Models\Account;
+use App\Services\InventoryService;
 
 class SalesReturnController extends Controller
 {
@@ -115,6 +116,17 @@ class SalesReturnController extends Controller
                         'location' => $item['location'] ?? null,
                         'unit' => $item['unit'] ?? null,
                     ]);
+
+                    // Update Inventory
+                    InventoryService::updateStock(
+                        $item['product_id'],
+                        $item['location'] ?? $salesReturn->location_id,
+                        (float)$item['qty'],
+                        'In',
+                        'Sales Return',
+                        $salesReturn->id,
+                        "Stock returned via Sales Return: " . ($salesReturn->return_no ?? $salesReturn->id)
+                    );
                 }
             }
         });
@@ -225,6 +237,19 @@ class SalesReturnController extends Controller
                 }
             }
 
+            // Reverse old stock
+            foreach ($salesReturn->items as $oldItem) {
+                InventoryService::reverseStock(
+                    $oldItem->product_id,
+                    $oldItem->location ?? $salesReturn->location_id,
+                    (float)$oldItem->qty,
+                    'In Reverse',
+                    'Sales Return',
+                    $salesReturn->id,
+                    "Reversed old Sales Return item for update: " . ($salesReturn->return_no ?? $salesReturn->id)
+                );
+            }
+
             $salesReturn->items()->delete();
             foreach ($request->items as $item) {
                 if (!empty($item['product_id'])) {
@@ -245,6 +270,17 @@ class SalesReturnController extends Controller
                         'location' => $item['location'] ?? null,
                         'unit' => $item['unit'] ?? null,
                     ]);
+
+                    // Update New Stock
+                    InventoryService::updateStock(
+                        $item['product_id'],
+                        $item['location'] ?? $salesReturn->location_id,
+                        (float)$item['qty'],
+                        'In',
+                        'Sales Return',
+                        $salesReturn->id,
+                        "Updated via Sales Return: " . ($salesReturn->return_no ?? $salesReturn->id)
+                    );
                 }
             }
         });
@@ -262,6 +298,19 @@ class SalesReturnController extends Controller
             if ($customer) {
                 $customer->balance += (float)($salesReturn->total_amount ?? 0);
                 $customer->save();
+            }
+
+            // Reverse stock
+            foreach ($salesReturn->items as $item) {
+                InventoryService::reverseStock(
+                    $item->product_id,
+                    $item->location ?? $salesReturn->location_id,
+                    (float)$item->qty,
+                    'In Reverse',
+                    'Sales Return',
+                    $salesReturn->id,
+                    "Reversed stock due to Sales Return deletion: " . ($salesReturn->return_no ?? $salesReturn->id)
+                );
             }
 
             $salesReturn->items()->delete();

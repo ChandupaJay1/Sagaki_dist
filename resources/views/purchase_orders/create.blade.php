@@ -171,46 +171,50 @@
                         <table class="table table-sm table-bordered mb-0 align-middle text-center" id="itemsTable">
                              <thead class="bg-primary text-white">
                                 <tr>
-                                    <th>Item Code</th>
-                                    <th>Description</th>
-                                    <th>OnHand</th>
-                                    <th>Qty</th>
-                                    <th>Rate(LKR)</th>
-                                    <th>Amount</th>
-                                    <th>Disc%</th>
-                                    <th>Discount</th>
-                                    <th>Total</th>
-                                    <th>Location</th>
-                                    <th>Unit</th>
+                                    <th class="fw-bold py-2 text-uppercase">Item Code</th>
+                                    <th class="fw-bold py-2 text-uppercase">Description</th>
+                                    <th class="fw-bold py-2 text-uppercase">OnHand</th>
+                                    <th class="fw-bold py-2 text-uppercase">Qty</th>
+                                    <th class="fw-bold py-2 text-uppercase">Rate(LKR)</th>
+                                    <th class="fw-bold py-2 text-uppercase">Amount</th>
+                                    <th class="fw-bold py-2 text-uppercase">Disc%</th>
+                                    <th class="fw-bold py-2 text-uppercase">Discount</th>
+                                    <th class="fw-bold py-2 text-uppercase">Total</th>
+                                    <th class="fw-bold py-2 text-uppercase">Location</th>
+                                    <th class="fw-bold py-2 text-uppercase">Unit</th>
+                                    <th class="fw-bold py-2 text-uppercase" style="width: 40px"></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr class="item-row">
                                     <td>
-                                        <select class="form-select form-select-sm product-select border-0"><option></option></select>
+                                        <select class="form-select form-select-sm product-select border-0"><option value="">Select Item</option></select>
                                     </td>
                                     <td><input type="text" class="form-control form-control-sm description-input bg-light" readonly></td>
                                     <td><input type="text" class="form-control form-control-sm onhand-input text-center bg-light" readonly></td>
-                                    <td><input type="number" class="form-control form-control-sm text-center qty-input" step="any"></td>
-                                    <td><input type="number" class="form-control form-control-sm text-end rate-input" step="any"></td>
-                                    <td><input type="number" class="form-control form-control-sm text-end amount-input bg-light" readonly></td>
+                                    <td><input type="number" class="form-control form-control-sm text-center qty-input" step="any" value="1"></td>
+                                    <td><input type="number" class="form-control form-control-sm text-end rate-input" step="any" value="0.00"></td>
+                                    <td><input type="number" class="form-control form-control-sm text-end amount-input bg-light" value="0.00" readonly></td>
                                     <td><input type="number" class="form-control form-control-sm text-center disc-percent-input" step="any" placeholder="0"></td>
                                     <td><input type="number" class="form-control form-control-sm text-end discount-input" step="any" placeholder="0.00"></td>
-                                    <td><input type="number" class="form-control form-control-sm text-end total-input bg-light fw-bold" readonly></td>
+                                    <td><input type="number" class="form-control form-control-sm text-end total-input bg-light fw-bold" value="0.00" readonly></td>
                                     <td><input type="text" class="form-control form-control-sm location-input text-center bg-light" value="Main Stock" readonly></td>
                                     <td><input type="text" class="form-control form-control-sm unit-input bg-light text-center" readonly></td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-link text-danger p-0 remove-row-btn"><i class="ri-delete-bin-line"></i></button>
+                                    </td>
                                 </tr>
                             </tbody>
                             <tfoot class="bg-light">
                                 <tr>
                                     <td colspan="3" class="text-end fw-bold">Qty</td>
-                                    <td><input type="text" class="form-control form-control-sm text-center bg-white footer-qty" readonly></td>
+                                    <td><input type="text" class="form-control form-control-sm text-center bg-white footer-qty fw-bold" readonly></td>
                                     <td class="text-end fw-bold">Amount</td>
-                                    <td><input type="text" class="form-control form-control-sm text-end bg-white footer-amount" readonly></td>
+                                    <td><input type="text" class="form-control form-control-sm text-end bg-white footer-amount fw-bold" readonly></td>
                                     <td class="text-end fw-bold">Discount</td>
-                                    <td><input type="text" class="form-control form-control-sm text-end bg-white footer-discount" readonly></td>
+                                    <td><input type="text" class="form-control form-control-sm text-end bg-white footer-discount fw-bold" readonly></td>
                                     <td class="text-end fw-bold">Total</td>
-                                    <td colspan="2"><input type="text" class="form-control form-control-sm text-end bg-white fw-bold footer-total" readonly></td>
+                                    <td colspan="3"><input type="text" class="form-control form-control-sm text-end bg-white fw-bold footer-total" readonly></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -424,37 +428,37 @@
                 const newRow = document.createElement('tr');
                 newRow.className = 'item-row';
                 newRow.dataset.rowIndex = index;
-                newRow.innerHTML = this.rowTemplateHTML;
                 
-                newRow.querySelectorAll('input').forEach(input => {
-                    input.value = '';
-                    if (input.classList.contains('qty-input')) input.value = '1';
-                    if (input.classList.contains('location-input')) input.value = currentLoc;
-                });
-                
-                newRow.querySelectorAll('.ts-wrapper').forEach(wrapper => wrapper.remove());
-                newRow.querySelectorAll('select').forEach(select => {
-                    select.classList.remove('tomselected', 'ts-hidden-accessible');
-                    select.style.display = '';
-                    if (select.hasAttribute('id')) select.removeAttribute('id');
-                    select.value = '';
-                });
-
-                newRow.querySelectorAll('input, select').forEach(el => {
-                    if (el.classList.contains('product-select')) el.name = `items[${index}][product_id]`;
-                    if (el.classList.contains('description-input')) el.name = `items[${index}][description]`;
-                    if (el.classList.contains('onhand-input')) el.name = `items[${index}][onhand]`;
-                    if (el.classList.contains('qty-input')) el.name = `items[${index}][qty]`;
-                    if (el.classList.contains('rate-input')) el.name = `items[${index}][rate]`;
-                    if (el.classList.contains('amount-input')) el.name = `items[${index}][amount]`;
-                    if (el.classList.contains('disc-percent-input')) el.name = `items[${index}][disc_percent]`;
-                    if (el.classList.contains('discount-input')) el.name = `items[${index}][discount]`;
-                    if (el.classList.contains('total-input')) el.name = `items[${index}][total]`;
-                    if (el.classList.contains('location-input')) el.name = `items[${index}][location]`;
-                    if (el.classList.contains('unit-input')) el.name = `items[${index}][unit]`;
-                });
+                // Construct clean HTML with unique IDs if needed, but classes are enough
+                newRow.innerHTML = `
+                    <td>
+                        <select class="form-select form-select-sm product-select border-0" name="items[${index}][product_id]">
+                            <option value="">Select Item</option>
+                        </select>
+                    </td>
+                    <td><input type="text" class="form-control form-control-sm description-input bg-light" name="items[${index}][description]" readonly></td>
+                    <td><input type="text" class="form-control form-control-sm onhand-input text-center bg-light" name="items[${index}][onhand]" readonly></td>
+                    <td><input type="number" class="form-control form-control-sm text-center qty-input" name="items[${index}][qty]" step="any" value="1"></td>
+                    <td><input type="number" class="form-control form-control-sm text-end rate-input" name="items[${index}][rate]" step="any" value="0.00"></td>
+                    <td><input type="number" class="form-control form-control-sm text-end amount-input bg-light" name="items[${index}][amount]" value="0.00" readonly></td>
+                    <td><input type="number" class="form-control form-control-sm text-center disc-percent-input" name="items[${index}][disc_percent]" step="any" placeholder="0"></td>
+                    <td><input type="number" class="form-control form-control-sm text-end discount-input" name="items[${index}][discount]" step="any" placeholder="0.00"></td>
+                    <td><input type="number" class="form-control form-control-sm text-end total-input bg-light fw-bold" name="items[${index}][total]" value="0.00" readonly></td>
+                    <td><input type="text" class="form-control form-control-sm location-input text-center bg-light" name="items[${index}][location]" value="${currentLoc}" readonly></td>
+                    <td><input type="text" class="form-control form-control-sm unit-input bg-light text-center" name="items[${index}][unit]" readonly></td>
+                    <td class="text-center">
+                        <button type="button" class="btn btn-link text-danger p-0 remove-row-btn"><i class="ri-delete-bin-line"></i></button>
+                    </td>
+                `;
 
                 document.querySelector('#itemsTable tbody').appendChild(newRow);
+                
+                // Ensure no existing TomSelect instance on this new element (though it shouldn't exist)
+                const productSelect = newRow.querySelector('.product-select');
+                if (productSelect && productSelect.tomselect) {
+                    productSelect.tomselect.destroy();
+                }
+                
                 initRowEvents(newRow);
             },
 
@@ -468,10 +472,14 @@
                 if (!this.data[rowIndex]) return;
                 
                 const dataRow = this.data[rowIndex];
-                dataRow.amount = dataRow.qty * dataRow.rate;
+                const qty = parseFloat(dataRow.qty) || 0;
+                const rate = parseFloat(dataRow.rate) || 0;
+                
+                dataRow.amount = qty * rate;
                 
                 if (sourceField === 'disc_percent') {
-                    dataRow.discount = (dataRow.amount * dataRow.disc_percent) / 100;
+                    const discPercent = parseFloat(dataRow.disc_percent) || 0;
+                    dataRow.discount = (dataRow.amount * discPercent) / 100;
                     rowElement.querySelector('.discount-input').value = dataRow.discount > 0 ? dataRow.discount.toFixed(2) : '';
                 } else if (sourceField === 'discount') {
                     dataRow.disc_percent = 0;
@@ -493,10 +501,12 @@
                 let grandTotal = 0;
 
                 this.data.forEach(row => {
-                    grandQty += parseFloat(row.qty) || 0;
-                    grandAmount += parseFloat(row.amount) || 0;
-                    grandDiscount += parseFloat(row.discount) || 0;
-                    grandTotal += parseFloat(row.total) || 0;
+                    if (row.product_id) {
+                        grandQty += parseFloat(row.qty) || 0;
+                        grandAmount += parseFloat(row.amount) || 0;
+                        grandDiscount += parseFloat(row.discount) || 0;
+                        grandTotal += parseFloat(row.total) || 0;
+                    }
                 });
     
                 document.querySelector('.footer-qty').value = grandQty.toFixed(2);
@@ -511,23 +521,103 @@
                 let headerDiscPercent = parseFloat(headerDiscPercentInput.value) || 0;
                 let headerDiscAmount = parseFloat(headerDiscAmountInput.value) || 0;
                 
-                if (sourceField === 'header_percent' || (sourceField === 'none' && headerDiscPercent > 0)) {
+                if (sourceField === 'header_percent') {
                     headerDiscAmount = (subTotal * headerDiscPercent) / 100;
                     headerDiscAmountInput.value = headerDiscAmount > 0 ? headerDiscAmount.toFixed(2) : '';
                 } else if (sourceField === 'header_amount') {
-                    headerDiscPercent = 0;
-                    headerDiscPercentInput.value = '';
+                    if (subTotal > 0) {
+                        headerDiscPercent = (headerDiscAmount / subTotal) * 100;
+                        headerDiscPercentInput.value = headerDiscPercent > 0 ? headerDiscPercent.toFixed(2) : '';
+                    } else {
+                        headerDiscPercentInput.value = '';
+                    }
+                } else if (sourceField === 'none' && headerDiscPercent > 0) {
+                    headerDiscAmount = (subTotal * headerDiscPercent) / 100;
+                    headerDiscAmountInput.value = headerDiscAmount > 0 ? headerDiscAmount.toFixed(2) : '';
                 }
 
                 const finalTotal = subTotal - headerDiscAmount;
+                
+                // Update LKR Grand Total
                 const lkrSummary = document.querySelector('.footer-grand-total');
                 if(lkrSummary) lkrSummary.value = finalTotal.toFixed(2);
 
+                // Update Summary Section
                 const subTotalInput = document.querySelector('.summary-subtotal');
                 if(subTotalInput) subTotalInput.value = subTotal.toFixed(2);
 
+                // Update Summary SSCL and VAT (Assuming 0 for now as per current view logic)
+                const ssclPercentInput = document.querySelector('input[name="sscl_percent"]');
+                const ssclAmountInput = document.querySelector('input[name="sscl_amount"]');
+                const vatPercentInput = document.querySelector('input[name="vat_percent"]');
+                const vatAmountInput = document.querySelector('input[name="vat_amount"]');
+
+                let amountAfterHeaderDisc = subTotal - headerDiscAmount;
+                
+                let ssclPercent = parseFloat(ssclPercentInput ? ssclPercentInput.value : 0) || 0;
+                let ssclAmount = (amountAfterHeaderDisc * ssclPercent) / 100;
+                if(ssclAmountInput) ssclAmountInput.value = ssclAmount.toFixed(2);
+
+                let amountAfterSSCL = amountAfterHeaderDisc + ssclAmount;
+                let vatPercent = parseFloat(vatPercentInput ? vatPercentInput.value : 0) || 0;
+                let vatAmount = (amountAfterSSCL * vatPercent) / 100;
+                if(vatAmountInput) vatAmountInput.value = vatAmount.toFixed(2);
+
+                const finalTotalWithTax = amountAfterSSCL + vatAmount;
+
                 const totalInput = document.querySelector('.summary-total');
-                if(totalInput) totalInput.value = finalTotal.toFixed(2);
+                if(totalInput) totalInput.value = finalTotalWithTax.toFixed(2);
+                if(lkrSummary) lkrSummary.value = finalTotalWithTax.toFixed(2);
+            },
+
+            removeRow(rowIndex, rowElement) {
+                if (this.data.length > 2) {
+                    this.data.splice(rowIndex, 1);
+                    
+                    const select = rowElement.querySelector('.product-select');
+                    if (select && select.tomselect) {
+                        select.tomselect.destroy();
+                    }
+                    
+                    rowElement.remove();
+                    this.reindexRows();
+                    this.calculateGrandTotal();
+                } else {
+                    const productSelect = rowElement.querySelector('.product-select');
+                    if (productSelect && productSelect.tomselect) {
+                        productSelect.tomselect.clear();
+                    }
+                    
+                    rowElement.querySelectorAll('input').forEach(input => {
+                        input.value = '';
+                        if (input.classList.contains('qty-input')) input.value = '1';
+                        if (input.classList.contains('rate-input')) input.value = '0.00';
+                        if (input.classList.contains('amount-input')) input.value = '0.00';
+                        if (input.classList.contains('total-input')) input.value = '0.00';
+                    });
+                    this.updateRowData(rowIndex, 'product_id', '');
+                    this.updateRowData(rowIndex, 'description', '');
+                    this.updateRowData(rowIndex, 'onhand', '');
+                    this.updateRowData(rowIndex, 'qty', 1);
+                    this.updateRowData(rowIndex, 'rate', 0);
+                    this.updateRowData(rowIndex, 'amount', 0);
+                    this.updateRowData(rowIndex, 'disc_percent', 0);
+                    this.updateRowData(rowIndex, 'discount', 0);
+                    this.updateRowData(rowIndex, 'total', 0);
+                    this.calculateGrandTotal();
+                }
+            },
+
+            reindexRows() {
+                const rows = document.querySelectorAll('#itemsTable tbody tr.item-row');
+                rows.forEach((row, idx) => {
+                    row.dataset.rowIndex = idx;
+                    row.querySelectorAll('input, select').forEach(el => {
+                        if (el.name) {
+                            el.name = el.name.replace(/items\[\d+\]/, `items[${idx}]`);
+                        }
+                    });
+                });
             }
         };
 
@@ -571,7 +661,7 @@
                     if (selectedObj) {
                         const desc = selectedObj.name || '';
                         const unit = selectedObj.unit || '';
-                        const rate = parseFloat(selectedObj.cost) || parseFloat(selectedObj.max_sale_price) || 0;
+                        const rate = parseFloat(selectedObj.cost) || 0;
 
                         purchaseOrderController.updateRowData(rowIndex, 'description', desc);
                         purchaseOrderController.updateRowData(rowIndex, 'unit', unit);
@@ -602,14 +692,19 @@
                     window.serverProductList.forEach(p => {
                         let safeName = (p.name || '').replace(/"/g, '&quot;');
                         let safeCode = (p.code || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                        let rate = parseFloat(p.cost) || parseFloat(p.max_sale_price) || 0;
+                        let rate = parseFloat(p.cost) || 0;
                         optionsHTML += `<option value="${p.id}" data-name="${safeName}" data-unit="${p.unit || ''}" data-rate="${rate}">${safeCode}</option>`;
                     });
                 }
                 productSelect.innerHTML = optionsHTML;
             }
 
+            // TomSelect initialization pattern used in Invoice/GRN
             if (window.TomSelect) {
+                if (productSelect.tomselect) {
+                    productSelect.tomselect.destroy();
+                }
+
                 new TomSelect(productSelect, {
                     create: false,
                     sortField: { field: "text", order: "asc" },
@@ -643,6 +738,13 @@
                     purchaseOrderController.calculateRow(rowIndex, row, sourceField);
                 });
             });
+
+            const removeBtn = row.querySelector('.remove-row-btn');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function() {
+                    purchaseOrderController.removeRow(rowIndex, row);
+                });
+            }
         }
 
         purchaseOrderController.init();
