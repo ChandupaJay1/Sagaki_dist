@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 
 use App\Models\Account;
+use App\Services\InventoryService;
 
 class GrnController extends Controller
 {
@@ -112,6 +113,7 @@ class GrnController extends Controller
                 $data['grn_no'] = 'GRN' . str_pad($lastNo + 1, 5, '0', STR_PAD_LEFT);
             }
 
+            $data['status'] = 'Pending';
             $grn = Grn::create($data);
 
             foreach ($request->items as $item) {
@@ -153,6 +155,11 @@ class GrnController extends Controller
     public function edit($id)
     {
         $grn = Grn::with('items')->findOrFail($id);
+        
+        if ($grn->status === 'Approved') {
+            return redirect()->route('grns.show', $id)->with('error', 'Approved GRNs cannot be edited.');
+        }
+
         $vendors = Vendor::orderBy('company_name')->get();
         $products = Product::orderBy('name')->get();
         $units = Unit::orderBy('name')->get();
@@ -167,6 +174,10 @@ class GrnController extends Controller
     public function update(Request $request, $id)
     {
         $grn = Grn::findOrFail($id);
+
+        if ($grn->status === 'Approved') {
+            return redirect()->route('grns.show', $id)->with('error', 'Approved GRNs cannot be updated.');
+        }
 
         if ($request->has('items')) {
             $items = collect($request->items)->filter(function($item) {
@@ -244,11 +255,59 @@ class GrnController extends Controller
         return redirect()->route('grns.index')->with('success', 'GRN updated successfully.');
     }
 
+    public function approve($id)
+    {
+        $grn = Grn::with('items')->findOrFail($id);
+
+        if ($grn->status === 'Approved') {
+            return redirect()->back()->with('error', 'GRN is already approved.');
+        }
+
+        \DB::transaction(function () use ($grn) {
+            $grn->status = 'Approved';
+            $grn->save();
+
+            // Update Inventory
+            foreach ($grn->items as $item) {
+                InventoryService::updateStock(
+                    $item->product_id,
+                    $item->location ?? $grn->location_id,
+                    (float)$item->qty,
+                    'In',
+                    'GRN',
+                    $grn->id,
+                    "Received via GRN: " . $grn->grn_no
+                );
+            }
+        });
+
+        return redirect()->route('grns.show', $id)->with('success', 'GRN approved and stock updated successfully.');
+    }
+
     public function destroy($id)
     {
-        $grn = Grn::findOrFail($id);
-        $grn->items()->delete();
-        $grn->delete();
+        \DB::transaction(function () use ($id) {
+            $grn = Grn::findOrFail($id);
+            
+            // Reverse stock ONLY if it was Approved
+            if ($grn->status === 'Approved') {
+                foreach ($grn->items as $item) {
+                    InventoryService::reverseStock(
+                        $item->product_id,
+                        $item->location ?? $grn->location_id,
+                        (float)$item->qty,
+                        'In Reverse',
+                        'GRN',
+                        $grn->id,
+                        "Reversed stock due to GRN deletion: " . $grn->grn_no
+                    );
+                }
+            }
+
+            $grn->items()->delete();
+            $grn->delete();
+        });
+        
         return redirect()->route('grns.index')->with('success', 'GRN deleted successfully.');
     }
 }

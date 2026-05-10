@@ -163,17 +163,18 @@
                         <table class="table table-sm table-bordered mb-0 align-middle text-center" id="itemsTable">
                              <thead class="bg-primary text-white">
                                 <tr>
-                                    <th>Item Code</th>
-                                    <th>Description</th>
-                                    <th>OnHand</th>
-                                    <th>Qty</th>
-                                    <th>Rate(LKR)</th>
-                                    <th>Amount</th>
-                                    <th>Disc%</th>
-                                    <th>Discount</th>
-                                    <th>Total</th>
-                                    <th>Location</th>
-                                    <th>Unit</th>
+                                    <th class="fw-bold py-2 text-uppercase">Item Code</th>
+                                    <th class="fw-bold py-2 text-uppercase">Description</th>
+                                    <th class="fw-bold py-2 text-uppercase">OnHand</th>
+                                    <th class="fw-bold py-2 text-uppercase">Qty</th>
+                                    <th class="fw-bold py-2 text-uppercase">Rate(LKR)</th>
+                                    <th class="fw-bold py-2 text-uppercase">Amount</th>
+                                    <th class="fw-bold py-2 text-uppercase">Disc%</th>
+                                    <th class="fw-bold py-2 text-uppercase">Discount</th>
+                                    <th class="fw-bold py-2 text-uppercase">Total</th>
+                                    <th class="fw-bold py-2 text-uppercase">Location</th>
+                                    <th class="fw-bold py-2 text-uppercase">Unit</th>
+                                    <th class="fw-bold py-2 text-uppercase" style="width: 40px"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -191,6 +192,9 @@
                                     <td><input type="number" class="form-control form-control-sm text-end total-input bg-light fw-bold" readonly></td>
                                     <td><input type="text" class="form-control form-control-sm location-input text-center bg-light" value="Main Stock" readonly></td>
                                     <td><input type="text" class="form-control form-control-sm unit-input bg-light text-center" readonly></td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-link text-danger p-0 remove-row-btn"><i class="ri-delete-bin-line"></i></button>
+                                    </td>
                                 </tr>
                             </tbody>
                             <tfoot class="bg-light">
@@ -258,11 +262,31 @@
                                     </div>
                                     <div class="d-flex justify-content-between mb-2 align-items-center">
                                         <span class="small fw-bold">Sub Total</span>
-                                        <input type="text" class="form-control form-control-sm text-end w-50 bg-white summary-subtotal" value="0.00" readonly>
+                                        <input type="text" name="subtotal" class="form-control form-control-sm text-end w-50 bg-white summary-subtotal" value="{{ number_format($order->subtotal, 2, '.', '') }}" readonly>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="small fw-bold mb-0">SSCL %</label>
+                                            <input type="text" name="sscl_percent" class="form-control form-control-sm text-center" value="{{ old('sscl_percent', $order->sscl_percent) }}">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="small fw-bold mb-0">SSCL</label>
+                                            <input type="text" name="sscl_amount" class="form-control form-control-sm text-end" value="{{ old('sscl_amount', $order->sscl_amount) }}">
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <label class="small fw-bold mb-0">VAT %</label>
+                                            <input type="text" name="vat_percent" class="form-control form-control-sm text-center" value="{{ old('vat_percent', $order->vat_percent) }}">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="small fw-bold mb-0">VAT</label>
+                                            <input type="text" name="vat_amount" class="form-control form-control-sm text-end" value="{{ old('vat_amount', $order->vat_amount) }}">
+                                        </div>
                                     </div>
                                     <div class="d-flex justify-content-between align-items-center">
                                         <span class="small fw-bold h6 text-primary mb-0">Total</span>
-                                        <input type="text" class="form-control form-control-sm text-end w-50 bg-white fw-bold text-primary summary-total" value="{{ number_format($order->total_amount, 2, '.', '') }}" readonly>
+                                        <input type="text" name="total_amount" class="form-control form-control-sm text-end w-50 bg-white fw-bold text-primary summary-total" value="{{ number_format($order->total_amount, 2, '.', '') }}" readonly>
                                     </div>
                                 </div>
                             </div>
@@ -484,9 +508,74 @@
                 }
 
                 const finalTotal = subTotal - headerDiscAmount;
-                document.querySelector('.footer-grand-total').value = finalTotal.toFixed(2);
-                document.querySelector('.summary-subtotal').value = subTotal.toFixed(2);
-                document.querySelector('.summary-total').value = finalTotal.toFixed(2);
+                
+                // Update LKR Grand Total
+                const lkrSummary = document.querySelector('.footer-grand-total');
+                if(lkrSummary) lkrSummary.value = finalTotal.toFixed(2);
+
+                // Update Summary Section
+                const subTotalInput = document.querySelector('.summary-subtotal');
+                if(subTotalInput) subTotalInput.value = subTotal.toFixed(2);
+
+                // Update Summary SSCL and VAT
+                const ssclPercentInput = document.querySelector('input[name="sscl_percent"]');
+                const ssclAmountInput = document.querySelector('input[name="sscl_amount"]');
+                const vatPercentInput = document.querySelector('input[name="vat_percent"]');
+                const vatAmountInput = document.querySelector('input[name="vat_amount"]');
+
+                let amountAfterHeaderDisc = subTotal - headerDiscAmount;
+                
+                let ssclPercent = parseFloat(ssclPercentInput ? ssclPercentInput.value : 0) || 0;
+                let ssclAmount = (amountAfterHeaderDisc * ssclPercent) / 100;
+                if(ssclAmountInput) ssclAmountInput.value = ssclAmount.toFixed(2);
+
+                let amountAfterSSCL = amountAfterHeaderDisc + ssclAmount;
+                let vatPercent = parseFloat(vatPercentInput ? vatPercentInput.value : 0) || 0;
+                let vatAmount = (amountAfterSSCL * vatPercent) / 100;
+                if(vatAmountInput) vatAmountInput.value = vatAmount.toFixed(2);
+
+                const finalTotalWithTax = amountAfterSSCL + vatAmount;
+
+                const totalInput = document.querySelector('.summary-total');
+                if(totalInput) totalInput.value = finalTotalWithTax.toFixed(2);
+                if(lkrSummary) lkrSummary.value = finalTotalWithTax.toFixed(2);
+            },
+
+            removeRow(rowIndex, rowElement) {
+                if (this.data.length > 2) {
+                    this.data.splice(rowIndex, 1);
+                    const select = rowElement.querySelector('.product-select');
+                    if (select && select.tomselect) {
+                        select.tomselect.destroy();
+                    }
+                    rowElement.remove();
+                    this.reindexRows();
+                    this.calculateGrandTotal();
+                } else {
+                    const productSelect = rowElement.querySelector('.product-select');
+                    if (productSelect && productSelect.tomselect) {
+                        productSelect.tomselect.clear();
+                    }
+                    rowElement.querySelectorAll('input').forEach(input => {
+                        input.value = '';
+                        if (input.classList.contains('qty-input')) input.value = '1';
+                    });
+                    this.updateRowData(rowIndex, 'product_id', '');
+                    this.updateRowData(rowIndex, 'qty', 1);
+                    this.calculateGrandTotal();
+                }
+            },
+
+            reindexRows() {
+                const rows = document.querySelectorAll('#itemsTable tbody tr.item-row:not(.d-none)');
+                rows.forEach((row, idx) => {
+                    row.dataset.rowIndex = idx;
+                    row.querySelectorAll('input, select').forEach(el => {
+                        if (el.name) {
+                            el.name = el.name.replace(/items\[\d+\]/, `items[${idx}]`);
+                        }
+                    });
+                });
             }
         };
 
@@ -592,6 +681,13 @@
                     });
                 }
             });
+
+            const removeBtn = row.querySelector('.remove-row-btn');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function() {
+                    purchaseOrderController.removeRow(rowIndex, row);
+                });
+            }
         }
 
         purchaseOrderController.init();
@@ -624,6 +720,13 @@
 
         document.querySelector('.header-discount-percent').addEventListener('input', () => purchaseOrderController.calculateGrandTotal('header_percent'));
         document.querySelector('.header-discount-amount').addEventListener('input', () => purchaseOrderController.calculateGrandTotal('header_amount'));
+        
+        const ssclPercentInput = document.querySelector('input[name="sscl_percent"]');
+        if (ssclPercentInput) ssclPercentInput.addEventListener('input', () => purchaseOrderController.calculateGrandTotal());
+        
+        const vatPercentInput = document.querySelector('input[name="vat_percent"]');
+        if (vatPercentInput) vatPercentInput.addEventListener('input', () => purchaseOrderController.calculateGrandTotal());
+
         if (vendorSelect) vendorSelect.addEventListener('change', function () { fetchVendorDetails(this.value); });
     });
 </script>

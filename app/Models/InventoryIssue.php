@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class StockAdjustment extends Model
+class InventoryIssue extends Model
 {
     protected $fillable = [
-        'adjustment_no',
+        'issue_no',
         'location_id',
+        'account_id',
         'date',
         'memo',
         'status',
@@ -20,6 +21,11 @@ class StockAdjustment extends Model
         return $this->belongsTo(Location::class);
     }
 
+    public function account()
+    {
+        return $this->belongsTo(Account::class);
+    }
+
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
@@ -27,6 +33,6 @@ class StockAdjustment extends Model
 
     public function items()
     {
-        return $this->hasMany(StockAdjustmentItem::class);
+        return $this->hasMany(InventoryIssueItem::class);
     }
 }

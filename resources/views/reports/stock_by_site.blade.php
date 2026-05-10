@@ -27,7 +27,7 @@
                     <div class="row g-2">
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Class</label>
-                            <select name="category" class="form-select form-select-sm">
+                            <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
                                 <option value="">All</option>
                                 @foreach($categories as $cat)
                                     <option value="{{ $cat->name }}" {{ request('category') == $cat->name ? 'selected' : '' }}>{{ $cat->name }}</option>
@@ -66,6 +66,7 @@
                                 @foreach($locations as $location)
                                     <th>{{ $location->name }}</th>
                                 @endforeach
+                                <th class="bg-dark">Total Stock</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -76,10 +77,11 @@
                                     @foreach($locations as $location)
                                         <td class="text-center small">{{ number_format($data['locations'][$location->name], 2) }}</td>
                                     @endforeach
+                                    <td class="text-center small fw-bold bg-light">{{ number_format($data['total_stock'], 2) }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="{{ count($locations) + 2 }}" class="text-center">No data found</td>
+                                    <td colspan="{{ count($locations) + 3 }}" class="text-center">No data found</td>
                                 </tr>
                             @endforelse
                         </tbody>

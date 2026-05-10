@@ -7,9 +7,17 @@
     <div class="col-12">
         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
             <h4 class="mb-sm-0">GRN Details</h4>
-            <div class="page-title-right">
+            <div class="page-title-right d-flex gap-2">
                 <a href="{{ route('grns.index') }}" class="btn btn-secondary btn-sm"><i class="ri-arrow-left-line me-1"></i>Back to List</a>
-                <a href="{{ route('grns.edit', $grn->id) }}" class="btn btn-primary btn-sm"><i class="ri-pencil-line me-1"></i>Edit GRN</a>
+                @if($grn->status !== 'Approved')
+                    <a href="{{ route('grns.edit', $grn->id) }}" class="btn btn-primary btn-sm"><i class="ri-pencil-line me-1"></i>Edit GRN</a>
+                    <form action="{{ route('grns.approve', $grn->id) }}" method="POST" class="d-inline">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Approve this GRN and update stock?')"><i class="ri-checkbox-circle-line me-1"></i>Approve GRN</button>
+                    </form>
+                @endif
+                <button type="button" class="btn btn-info btn-sm" onclick="window.print()"><i class="ri-printer-line me-1"></i>Print GRN</button>
             </div>
         </div>
     </div>
@@ -18,8 +26,18 @@
 <div class="row">
     <div class="col-lg-12">
         <div class="card">
-            <div class="card-header bg-soft-info py-2">
-                <h5 class="card-title mb-0">GRN No: {{ $grn->reference_no ?? '—' }}</h5>
+            <div class="card-header bg-soft-info d-flex justify-content-between align-items-center py-2">
+                <div class="d-flex align-items-center gap-3">
+                    <h5 class="card-title mb-0">GRN No: <span class="text-primary">{{ $grn->grn_no }}</span></h5>
+                    @if($grn->status === 'Approved')
+                        <span class="badge bg-success"><i class="ri-checkbox-circle-line me-1"></i>Approved</span>
+                    @else
+                        <span class="badge bg-warning text-dark"><i class="ri-time-line me-1"></i>{{ $grn->status ?? 'Pending' }}</span>
+                    @endif
+                </div>
+                @if($grn->reference_no)
+                    <span class="badge bg-light text-dark border small">Ref: {{ $grn->reference_no }}</span>
+                @endif
             </div>
             <div class="card-body">
                 <div class="row mb-4">

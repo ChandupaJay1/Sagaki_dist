@@ -52,15 +52,24 @@ class ProductController extends Controller
     public function stock(Request $request, string $id)
     {
         $location = $request->input('location');
-        
-        // Summing up quantities from various transaction tables
-        $grnIn = \Illuminate\Support\Facades\DB::table('grn_items')->where('product_id', $id)->where('location', $location)->sum('qty');
-        $invoiceOut = \Illuminate\Support\Facades\DB::table('invoice_items')->where('product_id', $id)->where('location', $location)->sum('qty');
-        $grnReturnOut = \Illuminate\Support\Facades\DB::table('grn_return_items')->where('product_id', $id)->where('location', $location)->sum('qty');
-        $salesReturnIn = \Illuminate\Support\Facades\DB::table('sales_return_items')->where('product_id', $id)->where('location', $location)->sum('qty');
-        $invoiceReturnIn = \Illuminate\Support\Facades\DB::table('invoice_returns')->where('product_id', $id)->sum('qty'); // Assuming all returns are at the same location for now
-        
-        $stock = ($grnIn + $salesReturnIn + $invoiceReturnIn) - ($invoiceOut + $grnReturnOut);
+        $locationId = null;
+
+        if (is_numeric($location)) {
+            $locationId = $location;
+        } else {
+            $loc = \App\Models\Location::where('name', $location)->first();
+            if ($loc) {
+                $locationId = $loc->id;
+            }
+        }
+
+        if (!$locationId) {
+            return response()->json(['stock' => 0], 200);
+        }
+
+        $stock = \App\Models\InventorySummary::where('product_id', $id)
+            ->where('location_id', $locationId)
+            ->value('qty') ?? 0;
         
         return response()->json(['stock' => (float) $stock], 200);
     }

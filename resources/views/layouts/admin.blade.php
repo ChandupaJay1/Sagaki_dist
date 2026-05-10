@@ -993,7 +993,7 @@
                                     </a>
                                 </li>
                                 <li class="menu-item">
-                                    <a class="menu-link" href="{{ route('not-found') }}">
+                                    <a class="menu-link" href="{{ route('inventory-issues.index') }}">
                                         <span class="nav-text">Issue Note</span>
                                     </a>
                                 </li>

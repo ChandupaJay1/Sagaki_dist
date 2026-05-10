@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 
 use App\Models\Account;
+use App\Services\InventoryService;
 
 class InvoiceController extends Controller
 {
@@ -112,6 +113,17 @@ class InvoiceController extends Controller
                         'location' => $item['location'] ?? null,
                         'unit' => $item['unit'] ?? null,
                     ]);
+
+                    // Update Inventory
+                    InventoryService::updateStock(
+                        $item['product_id'],
+                        $item['location'] ?? $invoice->location_id,
+                        -(float)$item['qty'],
+                        'Out',
+                        'Invoice',
+                        $invoice->id,
+                        "Sold via Invoice: " . ($invoice->invoice_no ?? $invoice->id)
+                    );
                 }
             }
         });
@@ -218,14 +230,27 @@ class InvoiceController extends Controller
                 // Customer changed
                 $oldCustomer = Customer::find($oldCustomerId);
                 if ($oldCustomer) {
-                    $oldCustomer->balance -= $oldTotalAmount;
+                    $oldCustomer->balance -= $oldTotalAmount; // Reverse old invoice
                     $oldCustomer->save();
                 }
                 $newCustomer = Customer::find($newCustomerId);
                 if ($newCustomer) {
-                    $newCustomer->balance += $newTotalAmount;
+                    $newCustomer->balance += $newTotalAmount; // Apply new invoice
                     $newCustomer->save();
                 }
+            }
+
+            // Reverse old stock
+            foreach ($invoice->items as $oldItem) {
+                InventoryService::updateStock(
+                    $oldItem->product_id,
+                    $oldItem->location ?? $invoice->location_id,
+                    (float)$oldItem->qty, // Add back
+                    'Out Reverse',
+                    'Invoice',
+                    $invoice->id,
+                    "Reversed old Invoice item for update: " . ($invoice->invoice_no ?? $invoice->id)
+                );
             }
 
             $invoice->items()->delete();
@@ -248,6 +273,17 @@ class InvoiceController extends Controller
                         'location' => $item['location'] ?? null,
                         'unit' => $item['unit'] ?? null,
                     ]);
+
+                    // Update New Stock
+                    InventoryService::updateStock(
+                        $item['product_id'],
+                        $item['location'] ?? $invoice->location_id,
+                        -(float)$item['qty'],
+                        'Out',
+                        'Invoice',
+                        $invoice->id,
+                        "Updated via Invoice: " . ($invoice->invoice_no ?? $invoice->id)
+                    );
                 }
             }
         });

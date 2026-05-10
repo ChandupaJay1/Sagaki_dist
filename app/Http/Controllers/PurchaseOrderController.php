@@ -103,24 +103,33 @@ class PurchaseOrderController extends Controller
                 $data['po_no'] = 'POND' . str_pad($lastNo + 1, 5, '0', STR_PAD_LEFT);
             }
             
+            $data['status'] = 'Pending';
+            
             $purchaseOrder = PurchaseOrder::create($data);
 
             foreach ($request->items as $item) {
                 if (!empty($item['product_id'])) {
-                    $amountCalc = (float)($item['qty'] ?? 0) * (float)($item['rate'] ?? 0);
-                    $discPercent = isset($item['disc_percent']) && $item['disc_percent'] !== '' ? (float)$item['disc_percent'] : 0;
-                    $discountVal = isset($item['discount']) && $item['discount'] !== '' ? (float)$item['discount'] : 0;
-                    $amountVal = isset($item['amount']) && $item['amount'] !== '' ? (float)$item['amount'] : $amountCalc;
-                    $totalVal = isset($item['total']) && $item['total'] !== '' ? (float)$item['total'] : ($amountVal - $discountVal);
+                    $qty = (float)($item['qty'] ?? 0);
+                    $rate = (float)($item['rate'] ?? 0);
+                    $amount = $qty * $rate;
+                    $discPercent = (float)($item['disc_percent'] ?? 0);
+                    $discount = (float)($item['discount'] ?? 0);
+                    
+                    if ($discPercent > 0 && $discount == 0) {
+                        $discount = ($amount * $discPercent) / 100;
+                    }
+                    
+                    $total = $amount - $discount;
+
                     $purchaseOrder->items()->create([
                         'product_id' => $item['product_id'],
                         'description' => $item['description'] ?? '',
-                        'qty' => (float)($item['qty'] ?? 0),
-                        'rate' => (float)($item['rate'] ?? 0),
-                        'amount' => $amountVal,
+                        'qty' => $qty,
+                        'rate' => $rate,
+                        'amount' => $amount,
                         'disc_percent' => $discPercent,
-                        'discount' => $discountVal,
-                        'total' => $totalVal,
+                        'discount' => $discount,
+                        'total' => $total,
                         'location' => $item['location'] ?? null,
                         'unit' => $item['unit'] ?? null,
                     ]);
@@ -128,11 +137,14 @@ class PurchaseOrderController extends Controller
             }
         });
 
+        $po = PurchaseOrder::latest()->first();
+        $message = "Purchase Order " . ($po ? $po->po_no : '') . " created successfully.";
+
         if ($request->action === 'save_and_new') {
-            return redirect()->route('purchase-orders.create')->with('success', 'Purchase Order created successfully.');
+            return redirect()->route('purchase-orders.create')->with('success', $message);
         }
 
-        return redirect()->route('purchase-orders.index')->with('success', 'Purchase Order created successfully.');
+        return redirect()->route('purchase-orders.index')->with('success', $message);
     }
 
     public function show($id)
@@ -212,20 +224,27 @@ class PurchaseOrderController extends Controller
             $purchaseOrder->items()->delete();
             foreach ($request->items as $item) {
                 if (!empty($item['product_id'])) {
-                    $amountCalc = (float)($item['qty'] ?? 0) * (float)($item['rate'] ?? 0);
-                    $discPercent = isset($item['disc_percent']) && $item['disc_percent'] !== '' ? (float)$item['disc_percent'] : 0;
-                    $discountVal = isset($item['discount']) && $item['discount'] !== '' ? (float)$item['discount'] : 0;
-                    $amountVal = isset($item['amount']) && $item['amount'] !== '' ? (float)$item['amount'] : $amountCalc;
-                    $totalVal = isset($item['total']) && $item['total'] !== '' ? (float)$item['total'] : ($amountVal - $discountVal);
+                    $qty = (float)($item['qty'] ?? 0);
+                    $rate = (float)($item['rate'] ?? 0);
+                    $amount = $qty * $rate;
+                    $discPercent = (float)($item['disc_percent'] ?? 0);
+                    $discount = (float)($item['discount'] ?? 0);
+                    
+                    if ($discPercent > 0 && $discount == 0) {
+                        $discount = ($amount * $discPercent) / 100;
+                    }
+                    
+                    $total = $amount - $discount;
+
                     $purchaseOrder->items()->create([
                         'product_id' => $item['product_id'],
                         'description' => $item['description'] ?? '',
-                        'qty' => (float)($item['qty'] ?? 0),
-                        'rate' => (float)($item['rate'] ?? 0),
-                        'amount' => $amountVal,
+                        'qty' => $qty,
+                        'rate' => $rate,
+                        'amount' => $amount,
                         'disc_percent' => $discPercent,
-                        'discount' => $discountVal,
-                        'total' => $totalVal,
+                        'discount' => $discount,
+                        'total' => $total,
                         'location' => $item['location'] ?? null,
                         'unit' => $item['unit'] ?? null,
                     ]);
@@ -233,7 +252,21 @@ class PurchaseOrderController extends Controller
             }
         });
 
-        return redirect()->route('purchase-orders.index')->with('success', 'Purchase Order updated successfully.');
+        return redirect()->route('purchase-orders.index')->with('success', 'Purchase Order ' . $purchaseOrder->po_no . ' updated successfully.');
+    }
+
+    public function approve($id)
+    {
+        $purchaseOrder = PurchaseOrder::findOrFail($id);
+        
+        if ($purchaseOrder->status === 'Approved') {
+            return redirect()->back()->with('error', 'Purchase Order is already approved.');
+        }
+
+        $purchaseOrder->status = 'Approved';
+        $purchaseOrder->save();
+
+        return redirect()->route('purchase-orders.show', $id)->with('success', 'Purchase Order approved successfully.');
     }
 
     public function destroy($id)

@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Unit;
 use App\Models\Location;
 use Illuminate\Http\Request;
+use App\Services\InventoryService;
 
 class InventoryTransferController extends Controller
 {
@@ -85,9 +86,66 @@ class InventoryTransferController extends Controller
             'status' => 'required|in:Approved,Rejected,Pending'
         ]);
 
-        $transfer = InventoryTransfer::findOrFail($id);
-        $transfer->status = $request->status;
-        $transfer->save();
+        \DB::transaction(function () use ($request, $id) {
+            $transfer = InventoryTransfer::with('items')->findOrFail($id);
+            $oldStatus = $transfer->status;
+            $newStatus = $request->status;
+
+            if ($oldStatus !== 'Approved' && $newStatus === 'Approved') {
+                // Transitioning to Approved: Update Inventory
+                foreach ($transfer->items as $item) {
+                    // 1. Decrease from source
+                    InventoryService::updateStock(
+                        $item->product_id,
+                        $transfer->site_from,
+                        -$item->qty,
+                        'Transfer Out',
+                        'MTA',
+                        $transfer->id,
+                        "Transfer from {$transfer->site_from} to {$transfer->site_to} (MTA: {$transfer->transfer_no})"
+                    );
+
+                    // 2. Increase in destination
+                    InventoryService::updateStock(
+                        $item->product_id,
+                        $transfer->site_to,
+                        $item->qty,
+                        'Transfer In',
+                        'MTA',
+                        $transfer->id,
+                        "Transfer from {$transfer->site_from} to {$transfer->site_to} (MTA: {$transfer->transfer_no})"
+                    );
+                }
+            } elseif ($oldStatus === 'Approved' && $newStatus !== 'Approved') {
+                // Reversing Approval: Reverse Inventory
+                foreach ($transfer->items as $item) {
+                    // 1. Reverse decrease from source (Add back)
+                    InventoryService::updateStock(
+                        $item->product_id,
+                        $transfer->site_from,
+                        $item->qty,
+                        'Transfer Out Reverse',
+                        'MTA',
+                        $transfer->id,
+                        "Reversed Transfer from {$transfer->site_from} to {$transfer->site_to} (MTA: {$transfer->transfer_no})"
+                    );
+
+                    // 2. Reverse increase in destination (Subtract)
+                    InventoryService::updateStock(
+                        $item->product_id,
+                        $transfer->site_to,
+                        -$item->qty,
+                        'Transfer In Reverse',
+                        'MTA',
+                        $transfer->id,
+                        "Reversed Transfer from {$transfer->site_from} to {$transfer->site_to} (MTA: {$transfer->transfer_no})"
+                    );
+                }
+            }
+
+            $transfer->status = $newStatus;
+            $transfer->save();
+        });
 
         return redirect()->back()->with('success', 'Inventory Transfer status updated to ' . $request->status);
     }
