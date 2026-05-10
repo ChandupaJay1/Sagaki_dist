@@ -786,6 +786,89 @@
             border-color: rgba(255,255,255,0.1);
             box-shadow: 0 20px 40px rgba(0,0,0,0.3);
         }
+
+        /* Global Preloader */
+        #global-preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+
+        #global-preloader.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .loader-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+
+        .loader-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            border-top-color: #6366f1;
+            animation: loader-spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        }
+
+        .loader-ring:nth-child(2) {
+            width: 70%;
+            height: 70%;
+            top: 15%;
+            left: 15%;
+            border-top-color: #a855f7;
+            animation-direction: reverse;
+            animation-duration: 0.8s;
+        }
+
+        .loader-ring:nth-child(3) {
+            width: 40%;
+            height: 40%;
+            top: 30%;
+            left: 30%;
+            border-top-color: #f97316;
+            animation-duration: 1.5s;
+        }
+
+        @keyframes loader-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loader-text {
+            margin-top: 24px;
+            color: #f8fafc;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            animation: loader-pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes loader-pulse {
+            0%, 100% { opacity: 0.6; transform: scale(0.98); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+
+        body.loading-state {
+            overflow: hidden !important;
+            pointer-events: none !important;
+        }
+
         .brand-chip {
             display: inline-flex;
             align-items: center;
@@ -830,7 +913,16 @@
     <script src="{{ asset('assets/js/config.min.js') }}"></script>
 </head>
 
-<body>
+<body class="loading-state">
+    <!-- Global Preloader -->
+    <div id="global-preloader">
+        <div class="loader-container">
+            <div class="loader-ring"></div>
+            <div class="loader-ring"></div>
+            <div class="loader-ring"></div>
+        </div>
+        <div class="loader-text">Loading, please wait...</div>
+    </div>
 
     <!-- START Wrapper -->
     <div class="wrapper">
@@ -1324,6 +1416,60 @@
             }
             setInterval(poll, 15000);
             setTimeout(poll, 1000);
+        })();
+    </script>
+    <script>
+        (function() {
+            const preloader = document.getElementById('global-preloader');
+            
+            window.showPreloader = function() {
+                if (preloader) {
+                    preloader.classList.remove('hidden');
+                    document.body.classList.add('loading-state');
+                }
+            };
+
+            window.hidePreloader = function() {
+                if (preloader) {
+                    preloader.classList.add('hidden');
+                    document.body.classList.remove('loading-state');
+                }
+            };
+
+            // Auto-hide on initial page load completion
+            window.addEventListener('load', function() {
+                setTimeout(hidePreloader, 400); // Slight delay for smoothness
+            });
+
+            // Intercept Fetch API
+            const originalFetch = window.fetch;
+            window.fetch = async (...args) => {
+                const url = typeof args[0] === 'string' ? args[0] : (args[0] instanceof Request ? args[0].url : '');
+                
+                // Exclude background polling tasks
+                const isBackground = url.includes('approvals/count') || url.includes('stock?location');
+                
+                if (!isBackground) showPreloader();
+                
+                try {
+                    const response = await originalFetch(...args);
+                    if (!isBackground) hidePreloader();
+                    return response;
+                } catch (error) {
+                    if (!isBackground) hidePreloader();
+                    throw error;
+                }
+            };
+
+            // Intercept jQuery AJAX if present
+            if (window.jQuery) {
+                $(document).ajaxStart(function() {
+                    showPreloader();
+                });
+                $(document).ajaxStop(function() {
+                    hidePreloader();
+                });
+            }
         })();
     </script>
     @stack('scripts')
