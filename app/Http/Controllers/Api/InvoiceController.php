@@ -37,15 +37,15 @@ class InvoiceController extends Controller
                 'discount_amount' => 'nullable|numeric',
                 'net_total' => 'required|numeric',
                 'date' => 'required|date',
-                'items' => 'required|array|min:1',
-                'items.*.product_id' => 'required|exists:products,id',
-                'items.*.qty' => 'required|numeric|min:0',
-                'items.*.rate' => 'required|numeric|min:0',
+                'items' => 'nullable|array',
+                'items.*.product_id' => 'required_with:items|exists:products,id',
+                'items.*.qty' => 'required_with:items|numeric|min:0',
+                'items.*.rate' => 'required_with:items|numeric|min:0',
                 'items.*.discount' => 'nullable|numeric|min:0',
                 'return_items' => 'nullable|array',
-                'return_items.*.product_id' => 'required|exists:products,id',
-                'return_items.*.qty' => 'required|numeric|min:0',
-                'return_items.*.rate' => 'required|numeric|min:0',
+                'return_items.*.product_id' => 'required_with:return_items|exists:products,id',
+                'return_items.*.qty' => 'required_with:return_items|numeric|min:0',
+                'return_items.*.rate' => 'required_with:return_items|numeric|min:0',
                 'return_items.*.discount' => 'nullable|numeric|min:0',
                 'payment_cash' => 'nullable|numeric|min:0',
                 'payment_bank' => 'nullable|numeric|min:0',
@@ -55,6 +55,14 @@ class InvoiceController extends Controller
                 'cheques.*.bank_name' => 'required|string',
                 'cheques.*.amount' => 'required|numeric|min:0',
             ]);
+
+            if (empty($validated['items']) && empty($validated['return_items'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => ['items' => ['At least one item or return item is required.']]
+                ], 422);
+            }
 
             return DB::transaction(function () use ($validated) {
                 // Generate Invoice Number
@@ -75,42 +83,44 @@ class InvoiceController extends Controller
                 ]);
 
                 // 2. Save Items and Update Stock
-                foreach ($validated['items'] as $item) {
-                    $qty = (float)$item['qty'];
-                    $rate = (float)$item['rate'];
-                    $discount = (float)($item['discount'] ?? 0);
-                    $amount = $qty * $rate;
-                    $total = $amount - $discount;
+                if (!empty($validated['items'])) {
+                    foreach ($validated['items'] as $item) {
+                        $qty = (float)$item['qty'];
+                        $rate = (float)$item['rate'];
+                        $discount = (float)($item['discount'] ?? 0);
+                        $amount = $qty * $rate;
+                        $total = $amount - $discount;
 
-                    InvoiceItem::create([
-                        'invoice_id' => $invoice->id,
-                        'product_id' => $item['product_id'],
-                        'qty' => $qty,
-                        'rate' => $rate,
-                        'discount' => $discount,
-                        'amount' => $amount,
-                        'total' => $total,
-                        // Using default location from invoice
-                        'location' => DB::table('locations')->where('id', $invoice->location_id)->value('name'),
-                    ]);
+                        InvoiceItem::create([
+                            'invoice_id' => $invoice->id,
+                            'product_id' => $item['product_id'],
+                            'qty' => $qty,
+                            'rate' => $rate,
+                            'discount' => $discount,
+                            'amount' => $amount,
+                            'total' => $total,
+                            // Using default location from invoice
+                            'location' => DB::table('locations')->where('id', $invoice->location_id)->value('name'),
+                        ]);
 
-                    // Update Stock (Decrement)
-                    $product = Product::lockForUpdate()->find($item['product_id']);
-                    $oldQty = (float)($product->qty_in_bulk ?? 0);
-                    $newQty = $oldQty - $qty;
-                    $product->update(['qty_in_bulk' => $newQty]);
+                        // Update Stock (Decrement)
+                        $product = Product::lockForUpdate()->find($item['product_id']);
+                        $oldQty = (float)($product->qty_in_bulk ?? 0);
+                        $newQty = $oldQty - $qty;
+                        $product->update(['qty_in_bulk' => $newQty]);
 
-                    // Inventory Log
-                    InventoryLog::create([
-                        'product_id' => $product->id,
-                        'location_id' => $invoice->location_id,
-                        'reference_type' => 'Invoice',
-                        'reference_id' => $invoice->id,
-                        'change_qty' => -$qty,
-                        'after_qty' => $newQty,
-                        'type' => 'Sale',
-                        'description' => "Invoice #{$invoice->invoice_no} Sale"
-                    ]);
+                        // Inventory Log
+                        InventoryLog::create([
+                            'product_id' => $product->id,
+                            'location_id' => $invoice->location_id,
+                            'reference_type' => 'Invoice',
+                            'reference_id' => $invoice->id,
+                            'change_qty' => -$qty,
+                            'after_qty' => $newQty,
+                            'type' => 'Sale',
+                            'description' => "Invoice #{$invoice->invoice_no} Sale"
+                        ]);
+                    }
                 }
 
                 // 3. Save Returns and Update Stock
