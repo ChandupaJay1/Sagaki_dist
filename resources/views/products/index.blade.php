@@ -83,7 +83,7 @@
                                             <a href="{{ route('products.edit', $product->id) }}" class="btn btn-sm btn-light border-0 rounded-circle text-primary" title="Edit">
                                                 <i class="ri-edit-2-line fs-16"></i>
                                             </a>
-                                            <form action="{{ route('products.destroy', $product->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure?');">
+                                            <form action="{{ route('products.destroy', $product->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this product? This action cannot be undone.');">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-light border-0 rounded-circle text-danger" title="Delete">
