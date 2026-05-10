@@ -39,6 +39,7 @@ Route::prefix('v1')->name('api.')->group(function () {
         Route::get('/products/{id}/stock', [ProductController::class, 'stock']);
 
         // ==================== MOBILE ROUTES (For Ref App) ====================
+        Route::get('/home-stats', [MobileController::class, 'getHomeStats']);
         Route::get('/my-route', [MobileController::class, 'myRoute']);
         Route::put('/my-route', [MobileController::class, 'updateMyRoute']);
         Route::get('/my-route/customers', [MobileController::class, 'myRouteCustomers']);
