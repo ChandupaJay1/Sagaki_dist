@@ -138,8 +138,8 @@ class AuthController extends Controller
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
-                'mobile_number' => 'required|string|unique:users',
-                'password' => 'required|string|min:8|confirmed',
+                'mobile_number' => 'nullable|string|unique:users',
+                'password' => 'required|string|min:8' . ($request->has('password_confirmation') ? '|confirmed' : ''),
                 'role' => 'nullable|string|in:ref', // Only 'ref' can register through API
                 'route_id' => 'nullable|exists:routes,id',
             ]);
@@ -154,7 +154,7 @@ class AuthController extends Controller
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
-                'mobile_number' => $validated['mobile_number'],
+                'mobile_number' => $validated['mobile_number'] ?? null,
                 'password' => Hash::make($validated['password']),
                 'role' => $validated['role'] ?? 'ref',
                 'route_id' => $validated['route_id'] ?? null,
