@@ -35,9 +35,18 @@
                         </td>
                         <td class="fw-bold text-dark">{{ $p->name }}</td>
                         <td class="pe-4 text-end">
-                            <a href="{{ route('products.edit', $p->id) }}" class="btn btn-sm btn-light border-0 rounded-circle text-primary" title="Edit">
-                                <i class="ri-edit-2-line fs-16"></i>
-                            </a>
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{{ route('products.edit', $p->id) }}" class="btn btn-sm btn-light border-0 rounded-circle text-primary" title="Edit">
+                                    <i class="ri-edit-2-line fs-16"></i>
+                                </a>
+                                <form action="{{ route('products.destroy', $p->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this main product?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-light border-0 rounded-circle text-danger" title="Delete">
+                                        <i class="ri-delete-bin-line fs-16"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 @empty

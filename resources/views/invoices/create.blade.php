@@ -183,6 +183,7 @@
                                     <th>Total</th>
                                     <th>Location</th>
                                     <th>Unit</th>
+                                    <th style="width: 30px;"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -200,6 +201,9 @@
                                     <td><input type="number" class="form-control form-control-sm text-end total-input bg-light fw-bold" readonly></td>
                                     <td><input type="text" class="form-control form-control-sm location-input text-center bg-light" value="Main Stock" readonly></td>
                                     <td><input type="text" class="form-control form-control-sm unit-input bg-light text-center" readonly></td>
+                                    <td>
+                                        <i class="ri-delete-bin-line text-slate-400 delete-row-btn" style="cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'"></i>
+                                    </td>
                                 </tr>
                             </tbody>
                             <tfoot class="bg-light">
@@ -536,6 +540,32 @@
                 initRowEvents(newRow);
             },
 
+            deleteRow(rowElement) {
+                const allRows = document.querySelectorAll('#itemsTable tbody tr.item-row');
+                if (allRows.length <= 1) {
+                    return; // Don't delete last row
+                }
+
+                const rowIndex = parseInt(rowElement.dataset.rowIndex);
+                // Remove from data array
+                this.data.splice(rowIndex, 1);
+                // Remove from DOM
+                rowElement.remove();
+
+                // Re-index remaining rows in DOM and data
+                document.querySelectorAll('#itemsTable tbody tr.item-row').forEach((row, newIdx) => {
+                    row.dataset.rowIndex = newIdx;
+                    // Update input names for form submission
+                    row.querySelectorAll('input, select').forEach(el => {
+                        if (el.name) {
+                            el.name = el.name.replace(/items\[\d+\]/, `items[${newIdx}]`);
+                        }
+                    });
+                });
+
+                this.calculateGrandTotal();
+            },
+
             updateRowData(rowIndex, field, value) {
                 if (this.data[rowIndex]) {
                     this.data[rowIndex][field] = value;
@@ -625,8 +655,15 @@
             const qtyInput = row.querySelector('.qty-input');
             const rateInput = row.querySelector('.rate-input');
             const discPercentInput = row.querySelector('.disc-percent-input');
+            const deleteBtn = row.querySelector('.delete-row-btn');
 
             if (!qtyInput.value) qtyInput.value = '1';
+
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', function() {
+                    invoiceController.deleteRow(row);
+                });
+            }
 
             function handleProductChange(value) {
                 invoiceController.updateRowData(rowIndex, 'product_id', value);

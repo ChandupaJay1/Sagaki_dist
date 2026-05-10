@@ -607,7 +607,9 @@
         document.getElementById('createPayBillForm').addEventListener('submit', function(e) {
             const entityId = entitySelectWrapper.value;
             const totalPay = parseFloat(document.getElementById('totalToPayInput').value) || 0;
-            const totalCreditUsed = Array.from(document.querySelectorAll('.credit-used-hidden'))
+            
+            // Check if any credit is applied by looking at the credit table inputs
+            const totalCreditUsed = Array.from(document.querySelectorAll('.credit-amount-used-hidden'))
                                         .reduce((sum, input) => sum + (parseFloat(input.value) || 0), 0);
 
             if (!entityId) {
@@ -616,6 +618,7 @@
                 return false;
             }
 
+            // USER REQUIREMENT 2: Allow saving with 0.00 amount if credit is selected
             if (totalPay <= 0 && totalCreditUsed <= 0) {
                 e.preventDefault();
                 alert('Please enter a payment amount or select a credit to use.');
@@ -745,13 +748,39 @@
                 const checkboxes = document.querySelectorAll('.bill-checkbox');
                 checkboxes.forEach(cb => {
                     cb.checked = this.checked;
+                    
+                    // USER REQUIREMENT 2: Checkbox Toggle Assist for Select All
+                    const row = cb.closest('tr');
+                    const payInput = row.querySelector('.pay-input');
+                    const amtDue = parseFloat(payInput.dataset.due) || 0;
+                    
+                    if (this.checked) {
+                        if (parseFloat(payInput.value) <= 0 || !payInput.value) {
+                            payInput.value = amtDue.toFixed(2);
+                        }
+                    } else {
+                        payInput.value = '0.00';
+                    }
                 });
-                updateTotals(false, false);
+                updateTotals(true, false);
             });
 
             document.querySelectorAll('.bill-checkbox').forEach(cb => {
                 cb.addEventListener('change', function() {
-                    updateTotals(false, false);
+                    // USER REQUIREMENT 2: Checkbox Toggle Assist
+                    const row = this.closest('tr');
+                    const payInput = row.querySelector('.pay-input');
+                    const amtDue = parseFloat(payInput.dataset.due) || 0;
+                    
+                    if (this.checked) {
+                        if (parseFloat(payInput.value) <= 0 || !payInput.value) {
+                            payInput.value = amtDue.toFixed(2);
+                        }
+                    } else {
+                        payInput.value = '0.00';
+                    }
+
+                    updateTotals(true, false);
                     
                     // Update Select All state
                     const allChecked = document.querySelectorAll('.bill-checkbox:checked').length === document.querySelectorAll('.bill-checkbox').length;
@@ -783,10 +812,9 @@
                 input.addEventListener('dblclick', function() {
                     const row = this.closest('tr');
                     const cb = row.querySelector('.bill-checkbox');
-                    const creditUsed = parseFloat(row.querySelector('.credit-used-hidden').value) || 0;
                     const due = parseFloat(this.dataset.due) || 0;
                     
-                    this.value = (due - creditUsed).toFixed(2);
+                    this.value = due.toFixed(2);
                     cb.checked = true;
                     updateTotals(true, false);
                 });
@@ -845,7 +873,6 @@
                     totalSelectedCreditBalance += available;
                     selectedCreditsCount++;
                 } else {
-                    // Only reset if it's NOT a set credit action
                     if (!isSetCreditAction) {
                         useInput.value = '0.00';
                         if (amountUsedHidden) amountUsedHidden.value = '0.00';
@@ -857,7 +884,6 @@
             
             let remainingCreditToAllocate = totalSelectedCreditBalance;
 
-            // Update Applied Credits Summary UI
             if (selectedCreditsCount > 0) {
                 appliedCreditsSummary.classList.remove('d-none');
                 appliedCreditsCount.textContent = selectedCreditsCount;
@@ -865,15 +891,26 @@
                 appliedCreditsSummary.classList.add('d-none');
             }
 
-            // 2. Determine Cash Funds from main input
-            const rawAmount = displayAmountInput.value.replace(/,/g, '');
-            let totalCashFunds = parseFloat(rawAmount) || 0;
-            let remainingCashToAllocate = totalCashFunds;
-
-            // 3. Allocation to checked bills
+            // 2. USER REQUIREMENT 1: Sum up "New Payment" values for checked rows to update header
+            // This happens every time a "New Payment" input is updated OR a checkbox is toggled.
+            // We use the current table values to drive the header amount.
+            let sumNewPayments = 0;
             document.querySelectorAll('.bill-row').forEach(row => {
                 const cb = row.querySelector('.bill-checkbox');
-                const payInput = row.querySelector('.pay-input'); // This is the total payment field (Cash + Credit)
+                const payInput = row.querySelector('.pay-input');
+                if (cb.checked) {
+                    sumNewPayments += parseFloat(payInput.value) || 0;
+                }
+            });
+
+            // Re-read header amount to prevent crash in overpayment logic
+            const rawAmount = displayAmountInput.value.replace(/,/g, '');
+            let totalCashFunds = parseFloat(rawAmount) || 0;
+
+            // 3. Allocation & Calculations
+            document.querySelectorAll('.bill-row').forEach(row => {
+                const cb = row.querySelector('.bill-checkbox');
+                const payInput = row.querySelector('.pay-input'); 
                 const amtDueCell = row.querySelector('.amt-due-cell');
                 const origAmt = parseFloat(payInput.dataset.due) || 0;
                 const creditHidden = row.querySelector('.credit-used-hidden');
@@ -889,36 +926,25 @@
                         creditHidden.value = creditAllocated.toFixed(2);
                     }
 
-                    // B. Allocate Cash (New Payment = Credit + Cash)
-                    let cashAllocated = 0;
-                    let currentNewPayment = 0;
-
-                    if (isUserAction && document.activeElement === payInput) {
-                        // User is manually editing the "New Payment" box
-                        currentNewPayment = parseFloat(payInput.value) || 0;
-                        if (currentNewPayment > origAmt) currentNewPayment = origAmt;
-                        
-                        // If they reduce the total below the previously set credit, reduce the credit part
-                        if (currentNewPayment < creditAllocated) {
-                            creditAllocated = currentNewPayment;
-                            creditHidden.value = creditAllocated.toFixed(2);
-                            cashAllocated = 0;
-                        } else {
-                            cashAllocated = currentNewPayment - creditAllocated;
-                        }
-                    } else {
-                        // Auto-allocation (runs on init, amount change, or set credit click)
-                        let remainingNeeded = origAmt - creditAllocated;
-                        cashAllocated = Math.min(remainingNeeded, remainingCashToAllocate);
-                        remainingCashToAllocate -= cashAllocated;
-                        currentNewPayment = creditAllocated + cashAllocated;
+                    // B. Determine Cash Part (New Payment - Credit)
+                    let currentNewPayment = parseFloat(payInput.value) || 0;
+                    if (currentNewPayment > origAmt) {
+                        currentNewPayment = origAmt;
                         payInput.value = currentNewPayment.toFixed(2);
                     }
+                    
+                    // If credit allocated is more than total payment (can happen if user reduced total), reduce credit
+                    if (creditAllocated > currentNewPayment) {
+                        creditAllocated = currentNewPayment;
+                        creditHidden.value = creditAllocated.toFixed(2);
+                    }
+
+                    let cashAllocated = currentNewPayment - creditAllocated;
 
                     totalCreditApplied += creditAllocated;
                     totalCashApplied += cashAllocated;
 
-                    // C. Update Amt. Due cell
+                    // C. Update Amt. Due cell (Remaining Balance after this payment)
                     let finalAmtDue = origAmt - currentNewPayment;
                     amtDueCell.textContent = finalAmtDue.toLocaleString(undefined, {minimumFractionDigits: 2});
                     
@@ -935,16 +961,20 @@
                 }
             });
 
-            // 4. Summary Box Updates
+            // 4. Update Header Fields (Sync to Table)
+            // USER REQUIREMENT 1: Automatically update the main Amount and LKR Total display fields
+            displayAmountInput.value = totalCashApplied.toFixed(2);
+            lkrTotalAmountInput.value = totalCashApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('headerTotalAmount').textContent = totalCashApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('totalToPayInput').value = totalCashApplied.toFixed(2);
+
+            // 5. Summary Box Updates
             document.getElementById('summaryAmountDue').value = totalOrigDue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('summaryCredit').value = totalCreditApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('summaryPayment').value = totalCashApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             
-            const summaryTotalPayment = totalCashFunds + totalCreditApplied;
+            const summaryTotalPayment = totalCashApplied + totalCreditApplied;
             document.getElementById('summaryTotalPayment').value = summaryTotalPayment.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('headerTotalAmount').textContent = totalCashFunds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('totalToPayInput').value = totalCashFunds.toFixed(2);
-            lkrTotalAmountInput.value = totalCashFunds.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
             // 5. Update Credit Record rows (Labels and Inputs)
             let totalCreditConsumedAcrossAllBills = totalCreditApplied;

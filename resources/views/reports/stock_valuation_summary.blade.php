@@ -76,6 +76,7 @@
                                 <th>Site</th>
                                 <th>Class</th>
                                 <th>On Hand</th>
+                                <th class="bg-info">Good in Transit</th>
                                 <th>AVG. Cost</th>
                                 <th>Asset Value</th>
                                 <th style="width: 50px;">Action</th>
@@ -96,8 +97,8 @@
                                     <td class="small text-center">{{ $data['site'] }}</td>
                                     <td class="small text-center">{{ $data['class'] }}</td>
                                     <td class="text-center small">{{ number_format($data['on_hand'], 2) }}</td>
+                                    <td class="text-center small fw-bold bg-soft-info">{{ number_format($data['git'], 2) }}</td>
                                     <td class="text-end small">{{ number_format($data['avg_cost'], 2) }}</td>
-                                    <td class="text-end small">{{ number_format($data['asset_value'], 2) }}</td>
                                     <td class="text-center">
                                         <a href="{{ route('reports.stock-valuation-details', ['product_id' => $data['id']]) }}" class="btn btn-soft-primary btn-sm btn-icon"><i class="ri-eye-line"></i></a>
                                     </td>

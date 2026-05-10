@@ -66,6 +66,7 @@
                                 @foreach($locations as $location)
                                     <th>{{ $location->name }}</th>
                                 @endforeach
+                                <th class="bg-info">Good in Transit</th>
                                 <th class="bg-dark">Total Stock</th>
                             </tr>
                         </thead>
@@ -77,6 +78,7 @@
                                     @foreach($locations as $location)
                                         <td class="text-center small">{{ number_format($data['locations'][$location->name], 2) }}</td>
                                     @endforeach
+                                    <td class="text-center small fw-bold bg-soft-info">{{ number_format($data['good_in_transit'], 2) }}</td>
                                     <td class="text-center small fw-bold bg-light">{{ number_format($data['total_stock'], 2) }}</td>
                                 </tr>
                             @empty

@@ -36,13 +36,22 @@ class ReportController extends Controller
             ->get()
             ->groupBy('product_id');
 
+        // Calculate Good in Transit (Pending GRNs)
+        $goodInTransit = DB::table('grn_items')
+            ->join('grns', 'grn_items.grn_id', '=', 'grns.id')
+            ->where('grns.status', 'Pending')
+            ->select('product_id', DB::raw('SUM(qty) as total_qty'))
+            ->groupBy('product_id')
+            ->pluck('total_qty', 'product_id');
+
         $stockData = [];
         foreach ($products as $product) {
             $itemData = [
                 'id' => $product->id,
                 'code' => $product->code,
                 'name' => $product->name,
-                'locations' => []
+                'locations' => [],
+                'good_in_transit' => (float)($goodInTransit->get($product->id) ?? 0)
             ];
 
             $mainStockTotal = 0;
@@ -99,11 +108,25 @@ class ReportController extends Controller
         }
         $summaries = $summaryQuery->select('product_id', DB::raw('SUM(qty) as total'))->groupBy('product_id')->get()->pluck('total', 'product_id');
 
+        // Calculate Good in Transit (Pending GRNs)
+        $gitQuery = DB::table('grn_items')
+            ->join('grns', 'grn_items.grn_id', '=', 'grns.id')
+            ->where('grns.status', 'Pending');
+        
+        if ($locationId) {
+            $gitQuery->where('grns.location_id', $locationId);
+        }
+
+        $goodInTransit = $gitQuery->select('product_id', DB::raw('SUM(qty) as total_qty'))
+            ->groupBy('product_id')
+            ->pluck('total_qty', 'product_id');
+
         $reportData = [];
         foreach ($products as $product) {
             $onHand = $summaries->get($product->id) ?? 0;
+            $git = $goodInTransit->get($product->id) ?? 0;
             
-            if ($request->has('no_zero') && $onHand <= 0) {
+            if ($request->has('no_zero') && ($onHand <= 0 && $git <= 0)) {
                 continue;
             }
 
@@ -114,7 +137,8 @@ class ReportController extends Controller
                 'category' => $product->category,
                 'site' => $locationName ?: 'All',
                 'class' => $product->model,
-                'on_hand' => $onHand,
+                'on_hand' => (float)$onHand,
+                'git' => (float)$git,
                 'avg_cost' => $product->cost,
                 'asset_value' => $onHand * $product->cost
             ];
@@ -132,10 +156,18 @@ class ReportController extends Controller
         $productId = $request->product_id;
         $transactions = [];
         $selectedProduct = null;
+        $goodInTransit = 0;
 
         if ($productId) {
             $selectedProduct = Product::find($productId);
             
+            // Calculate Good in Transit (Pending GRNs)
+            $goodInTransit = DB::table('grn_items')
+                ->join('grns', 'grn_items.grn_id', '=', 'grns.id')
+                ->where('grns.status', 'Pending')
+                ->where('product_id', $productId)
+                ->sum('qty');
+
             // Fetch all transactions for this product
             $grns = DB::table('grn_items')
                 ->join('grns', 'grn_items.grn_id', '=', 'grns.id')
@@ -172,7 +204,7 @@ class ReportController extends Controller
             }
         }
 
-        return view('reports.stock_valuation_details', compact('products', 'categories', 'locations', 'transactions', 'selectedProduct'));
+        return view('reports.stock_valuation_details', compact('products', 'categories', 'locations', 'transactions', 'selectedProduct', 'goodInTransit'));
     }
 
     private function calculateStock($productId, $location = null)
