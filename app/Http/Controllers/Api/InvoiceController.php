@@ -117,13 +117,17 @@ class InvoiceController extends Controller
                 if (!empty($validated['return_items'])) {
                     foreach ($validated['return_items'] as $return) {
                         $returnQty = (float)$return['qty'];
+                        $returnRate = (float)$return['rate'];
+                        $returnDiscount = (float)($return['discount'] ?? 0);
+                        $returnTotal = ($returnQty * $returnRate) - $returnDiscount;
                         
                         InvoiceReturn::create([
                             'invoice_id' => $invoice->id,
                             'product_id' => $return['product_id'],
                             'qty' => $returnQty,
-                            'rate' => $return['rate'],
-                            'discount' => $return['discount'] ?? 0,
+                            'rate' => $returnRate,
+                            'discount' => $returnDiscount,
+                            'total' => $returnTotal,
                         ]);
 
                         // Update Stock (Increment)

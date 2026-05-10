@@ -109,6 +109,53 @@
                         </tfoot>
                     </table>
                 </div>
+
+                @if($invoice->returns && count($invoice->returns) > 0)
+                <div class="mt-4">
+                    <h6 class="text-muted text-uppercase fw-semibold mb-2">Return Items</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm align-middle">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="text-center" style="width: 50px;">#</th>
+                                    <th>Item Code</th>
+                                    <th>Product</th>
+                                    <th class="text-center">Qty</th>
+                                    <th class="text-end">Rate</th>
+                                    <th class="text-end">Discount</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php $totalReturnQty = 0; $totalReturnAmount = 0; @endphp
+                                @foreach($invoice->returns as $index => $return)
+                                    <tr>
+                                        <td class="text-center">{{ $index + 1 }}</td>
+                                        <td>{{ $return->product->code ?? '—' }}</td>
+                                        <td>{{ $return->product->name ?? '—' }}</td>
+                                        <td class="text-center">{{ number_format($return->qty, 2) }}</td>
+                                        <td class="text-end">{{ number_format($return->rate, 2) }}</td>
+                                        <td class="text-end">{{ number_format($return->discount, 2) }}</td>
+                                        <td class="text-end fw-medium">{{ number_format($return->total, 2) }}</td>
+                                    </tr>
+                                    @php 
+                                        $totalReturnQty += $return->qty; 
+                                        $totalReturnAmount += $return->total;
+                                    @endphp
+                                @endforeach
+                            </tbody>
+                            <tfoot class="bg-light fw-bold">
+                                <tr>
+                                    <td colspan="3" class="text-end">Total Return Qty</td>
+                                    <td class="text-center">{{ number_format($totalReturnQty, 2) }}</td>
+                                    <td colspan="2" class="text-end">Total Return Amount</td>
+                                    <td class="text-end">{{ number_format($totalReturnAmount, 2) }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
     </div>

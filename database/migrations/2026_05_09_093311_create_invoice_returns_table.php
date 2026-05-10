@@ -18,6 +18,7 @@ return new class extends Migration
             $table->decimal('qty', 15, 2);
             $table->decimal('rate', 15, 2);
             $table->decimal('discount', 15, 2)->default(0);
+            $table->decimal('total', 15, 2);
             $table->timestamps();
         });
     }
