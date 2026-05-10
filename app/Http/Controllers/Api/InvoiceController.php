@@ -124,12 +124,14 @@ class InvoiceController extends Controller
                 }
 
                 // 3. Save Returns and Update Stock
+                $totalReturnAmount = 0;
                 if (!empty($validated['return_items'])) {
                     foreach ($validated['return_items'] as $return) {
                         $returnQty = (float)$return['qty'];
                         $returnRate = (float)$return['rate'];
                         $returnDiscount = (float)($return['discount'] ?? 0);
                         $returnTotal = ($returnQty * $returnRate) - $returnDiscount;
+                        $totalReturnAmount += $returnTotal;
                         
                         InvoiceReturn::create([
                             'invoice_id' => $invoice->id,
@@ -205,8 +207,8 @@ class InvoiceController extends Controller
 
                 // 5. Update Customer Balance
                 $customer = Customer::lockForUpdate()->find($validated['customer_id']);
-                // Balance increases by net_total and decreases by totalPaid
-                $customer->balance += ($validated['net_total'] - $totalPaid);
+                // Balance increases by net_total and decreases by totalPaid and totalReturnAmount
+                $customer->balance += ($validated['net_total'] - $totalPaid - $totalReturnAmount);
                 $customer->save();
 
                 // 6. Return specific JSON format
