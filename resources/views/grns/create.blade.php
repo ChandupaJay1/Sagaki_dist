@@ -64,10 +64,11 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold mb-1">Load</label>
+                            <label class="form-label small fw-bold mb-1">Load <span class="text-muted fw-normal">(prior GRN)</span></label>
                             <select id="loadDropdown" class="form-select form-select-sm">
-                                <option value="">Select Order</option>
+                                <option value="">Select GRN to copy</option>
                             </select>
+                            <input type="hidden" name="load" id="grnLoadSourceField" value="">
                         </div>
                     </div>
 
@@ -348,23 +349,31 @@
 
         function fetchVendorGrns(vendorId) {
             if (!loadDropdown) return;
-            
+
+            const loadHidden = document.getElementById('grnLoadSourceField');
+            if (loadHidden) loadHidden.value = '';
+
             // Clear current options
             if (loadDropdown.tomselect) {
-                loadDropdown.tomselect.clear();
+                loadDropdown.tomselect.clear(true);
                 loadDropdown.tomselect.clearOptions();
+                loadDropdown.tomselect.addOption({ value: '', text: 'Select GRN to copy' });
             } else {
-                loadDropdown.innerHTML = '<option value="">Select Order</option>';
+                loadDropdown.innerHTML = '<option value="">Select GRN to copy</option>';
             }
 
             if (!vendorId) return;
 
-            fetch(`/ajax/vendors/${vendorId}/grns`)
-                .then(response => response.json())
+            fetch(`/ajax/vendors/${vendorId}/grns`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+                .then(response => {
+                    if (!response.ok) throw new Error('GRN list request failed: ' + response.status);
+                    return response.json();
+                })
                 .then(data => {
-                    const options = data.map(grn => ({
-                        value: grn.id,
-                        text: `${grn.grn_no} - ${grn.date} (Rs. ${parseFloat(grn.total_amount).toLocaleString(undefined, {minimumFractionDigits: 2})})`
+                    const rows = Array.isArray(data) ? data : [];
+                    const options = rows.map(grn => ({
+                        value: String(grn.id),
+                        text: `${grn.grn_no || 'GRN'} - ${grn.date || ''} (Rs. ${parseFloat(grn.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })})`
                     }));
 
                     if (loadDropdown.tomselect) {
@@ -402,6 +411,79 @@
             return 'PCS';
         }
 
+        function setSelectByValue(selectEl, value) {
+            if (!selectEl || value === undefined || value === null || value === '') return;
+            const strVal = String(value);
+            const hasOption = Array.from(selectEl.options).some(o => o.value === strVal);
+            if (!hasOption) return;
+            selectEl.value = strVal;
+            if (selectEl.tomselect) {
+                selectEl.tomselect.setValue(strVal, true);
+            }
+        }
+
+        function applyLoadedGrnHeader(grn) {
+            if (!grn || typeof grn !== 'object') return;
+
+            const loadHidden = document.getElementById('grnLoadSourceField');
+            if (loadHidden && grn.grn_no) {
+                loadHidden.value = grn.grn_no;
+            }
+
+            const setInput = (name, val) => {
+                if (val === undefined || val === null) return;
+                const el = document.querySelector(`[name="${name}"]`);
+                if (!el || el.type === 'checkbox') return;
+                el.value = val;
+            };
+
+            setInput('reference_no', grn.reference_no);
+            setInput('date', grn.date);
+            setInput('invoice_date', grn.invoice_date);
+            setInput('expected_date', grn.expected_date);
+            setInput('due_date', grn.due_date);
+            setInput('attent', grn.attent);
+            setInput('manual_no', grn.manual_no);
+            setInput('memo', grn.memo);
+
+            if (addressTextarea && grn.address !== undefined) {
+                addressTextarea.value = grn.address || '';
+            }
+            if (deliveryDestinationTextarea && grn.delivery_destination !== undefined) {
+                deliveryDestinationTextarea.value = grn.delivery_destination || '';
+            }
+
+            setSelectByValue(document.querySelector('select[name="location_id"]'), grn.location_id);
+            setSelectByValue(document.getElementById('termsSelect'), grn.payment_term_id);
+            setSelectByValue(document.querySelector('select[name="order_by"]'), grn.order_by);
+            setSelectByValue(document.querySelector('select[name="checked_by"]'), grn.checked_by);
+            setSelectByValue(document.querySelector('select[name="rep"]'), grn.rep);
+            setSelectByValue(document.querySelector('select[name="account_id"]'), grn.account_id);
+
+            const numericPairs = [
+                ['sscl_percent', grn.sscl_percent],
+                ['sscl_amount', grn.sscl_amount],
+                ['vat_percent', grn.vat_percent],
+                ['vat_amount', grn.vat_amount],
+                ['subtotal', grn.subtotal],
+                ['header_discount_percent', grn.header_discount_percent],
+                ['header_discount_amount', grn.header_discount_amount],
+                ['tax_amount', grn.tax_amount],
+                ['total_amount', grn.total_amount],
+            ];
+            numericPairs.forEach(([name, val]) => {
+                if (val === undefined || val === null || val === '') return;
+                const el = document.querySelector(`[name="${name}"]`);
+                if (!el) return;
+                const n = parseFloat(val);
+                el.value = Number.isFinite(n) ? n.toFixed(2) : String(val);
+            });
+
+            if (typeof grnController !== 'undefined' && grnController.calculateGrandTotal) {
+                setTimeout(() => grnController.calculateGrandTotal(), 0);
+            }
+        }
+
         function loadGrnDetails(grnId) {
             if (!grnId) return;
 
@@ -413,7 +495,7 @@
                 labelEl.innerHTML = 'Load <span class="spinner-border spinner-border-sm text-primary" role="status"></span>';
             }
 
-            fetch(`/ajax/grns/${grnId}/details`)
+            fetch(`/ajax/grns/${grnId}/details`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('GRN details request failed: ' + response.status);
@@ -421,6 +503,17 @@
                     return response.json();
                 })
                 .then(res => {
+                    const selectedVendorId = vendorSelect && vendorSelect.tomselect
+                        ? vendorSelect.tomselect.getValue()
+                        : (vendorSelect ? vendorSelect.value : '');
+                    if (res.grn && res.grn.vendor_id != null && String(res.grn.vendor_id) !== String(selectedVendorId || '')) {
+                        alert('This GRN belongs to a different vendor. Select the correct vendor first.');
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+                        return;
+                    }
+                    if (res.grn) {
+                        applyLoadedGrnHeader(res.grn);
+                    }
                     const items = normalizeGrnItemsPayload(res);
                     if (items.length === 0) {
                         alert('No items found in this GRN.');
@@ -558,6 +651,9 @@
                         grnController._loadingGrn = false;
 
                         if (labelEl) labelEl.innerHTML = originalLabel;
+
+                        const itemsTable = document.getElementById('itemsTable');
+                        if (itemsTable) itemsTable.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     }, 50);
                 })
                 .catch(error => {
@@ -571,7 +667,7 @@
         function fetchVendorDetails(vendorId) {
             if (vendorId) {
                 const url = "{{ url('api/vendors') }}/" + vendorId;
-                fetch(url)
+                fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
                     .then(response => response.json())
                     .then(data => {
                         if (addressTextarea) addressTextarea.value = data.address || '';
@@ -1088,8 +1184,9 @@
 
         function attachVendorListener() {
             if (vendorSelect.tomselect) {
-                vendorSelect.tomselect.on('change', function(value) {
-                    fetchVendorDetails(value);
+                vendorSelect.tomselect.on('change', function (value) {
+                    const v = (value != null && value !== '') ? value : vendorSelect.tomselect.getValue();
+                    fetchVendorDetails(v);
                 });
                 if (vendorSelect.tomselect.getValue()) {
                     fetchVendorDetails(vendorSelect.tomselect.getValue());
@@ -1098,8 +1195,8 @@
                 vendorSelect.addEventListener('change', function () {
                     fetchVendorDetails(this.value);
                 });
-                if (this.value) {
-                    fetchVendorDetails(this.value);
+                if (vendorSelect.value) {
+                    fetchVendorDetails(vendorSelect.value);
                 }
             }
         }
@@ -1107,21 +1204,33 @@
         setTimeout(attachVendorListener, 500);
 
         function initLoadDropdown() {
-            if (loadDropdown && window.TomSelect) {
-                if (loadDropdown.tomselect) return; // Already initialized
-
-                new TomSelect(loadDropdown, {
-                    create: false,
-                    placeholder: "Select Order",
-                    allowEmptyOption: true,
-                    onChange: function(value) {
-                        if (value) {
-                            loadGrnDetails(value);
-                        }
-                    }
-                });
-                console.log("Load dropdown TomSelect initialized.");
+            if (!loadDropdown || !window.TomSelect) return;
+            if (loadDropdown.dataset.grnLoadDropdownInit === '1') return;
+            if (loadDropdown.tomselect) {
+                loadDropdown.tomselect.destroy();
             }
+
+            new TomSelect(loadDropdown, {
+                create: false,
+                placeholder: 'Select GRN to copy',
+                allowEmptyOption: true,
+                plugins: ['clear_button'],
+                dropdownParent: 'body',
+                closeAfterSelect: true,
+                onChange: function (value) {
+                    const loadHidden = document.getElementById('grnLoadSourceField');
+                    const ts = loadDropdown.tomselect;
+                    const id = (value != null && value !== '')
+                        ? String(value)
+                        : (ts && ts.getValue ? String(ts.getValue() || '') : '');
+                    if (!id) {
+                        if (loadHidden) loadHidden.value = '';
+                        return;
+                    }
+                    loadGrnDetails(id);
+                }
+            });
+            loadDropdown.dataset.grnLoadDropdownInit = '1';
         }
 
         // Initialize immediately if TomSelect is available, otherwise wait

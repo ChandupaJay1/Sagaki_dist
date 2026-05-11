@@ -1374,6 +1374,8 @@
             var selects = document.querySelectorAll('select.form-select');
             selects.forEach(function(el) {
                 if (el.tomselect) return;
+                /* GRN create page wires #loadDropdown itself (copy prior GRN + fill form). */
+                if (el.id === 'loadDropdown') return;
                 var plugins = [];
                 if (el.hasAttribute('multiple')) { plugins.push('remove_button'); } else { plugins.push('clear_button'); }
                 new TomSelect(el, {
