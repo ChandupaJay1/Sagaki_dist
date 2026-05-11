@@ -65,8 +65,16 @@
 <div class="row mt-3">
     <div class="col-lg-12">
         <div class="card">
-            <div class="card-header bg-light">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
                 <h6 class="mb-0 fw-bold">{{ $selectedProduct->code }} - {{ $selectedProduct->name }}</h6>
+                <div class="d-flex gap-3">
+                    <span class="badge bg-soft-info text-info fs-12 fw-bold border border-info px-3 py-2">
+                        <i class="ri-truck-line me-1"></i> Good in Transit: {{ number_format($goodInTransit, 2) }}
+                    </span>
+                    <span class="badge bg-soft-success text-success fs-12 fw-bold border border-success px-3 py-2">
+                        <i class="ri-checkbox-circle-line me-1"></i> Total Available: {{ number_format(($transactions->last()->balance ?? 0) + $goodInTransit, 2) }}
+                    </span>
+                </div>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
