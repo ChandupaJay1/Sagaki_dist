@@ -93,28 +93,37 @@ class VendorController extends Controller
             return response()->json(['message' => 'Vendor not found'], 404);
         }
 
-        // Fetch GRNs (Bills) for this vendor that are not fully paid
-        $bills = \App\Models\Grn::where('vendor_id', $id)
-            ->where('status', '!=', 'Paid')
-            ->select('id', 'date', 'due_date', 'reference_no', 'grn_no', 'total_amount')
-            ->orderBy('date', 'desc')
-            ->get()
-            ->map(function($bill) {
-                $paid = \App\Models\PayBillItem::where('grn_id', $bill->id)->sum('amount_to_pay');
-                $bill->total_amount = round($bill->total_amount - $paid, 2);
-                return $bill;
-            })
-            ->filter(function($bill) {
-                return $bill->total_amount > 0.01;
-            })
-            ->values();
+        // Fetch Outstanding Bills (Note: GRNs are excluded here as they are treated as Credits)
+        // We only fetch records that are explicitly marked as Bills or Invoices from the supplier if applicable.
+        // Currently, we return an empty collection for bills because GRNs are now moved to Credits.
+        $bills = collect([]);
 
         // Fetch GRN Returns (Credits) for this vendor
-        $credits = \App\Models\GrnReturn::where('vendor_id', $id)
+        $grnReturns = \App\Models\GrnReturn::where('vendor_id', $id)
             ->where('total_amount', '>', 0.01) // Only show credits with balance
             ->select('id', 'date', 'return_no', 'total_amount')
             ->orderBy('date', 'desc')
             ->get();
+
+        // Fetch Approved GRNs as Credits (Requirement: GRN is a Credit, not a Bill)
+        $grnCredits = \App\Models\Grn::where('vendor_id', $id)
+            ->where('status', 'Approved') // Requirement: Only Approved GRNs
+            ->where('total_amount', '>', 0.01)
+            ->select('id', 'date', 'due_date', 'reference_no', 'grn_no as return_no', 'total_amount')
+            ->orderBy('date', 'desc')
+            ->get()
+            ->map(function($grn) {
+                // Check if any payment already applied to this GRN (though treated as credit, it might have partial usage)
+                $paid = \App\Models\PayBillItem::where('grn_id', $grn->id)->sum('amount_to_pay');
+                $grn->total_amount = round($grn->total_amount - $paid, 2);
+                return $grn;
+            })
+            ->filter(function($grn) {
+                return $grn->total_amount > 0.01;
+            });
+
+        // Merge GRN Returns and Approved GRN Credits
+        $credits = $grnReturns->concat($grnCredits)->sortByDesc('date')->values();
 
         return response()->json([
             'vendor' => $vendor,

@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
+use App\Http\Controllers\InventoryTransferController as WebTransferController;
+
 class MobileController extends Controller
 {
     /**
@@ -567,18 +569,31 @@ class MobileController extends Controller
                 'status' => 'required|in:Approved,Rejected,Pending'
             ]);
 
-            $transfer = InventoryTransfer::findOrFail($id);
-            $transfer->status = $validated['status'];
-            $transfer->save();
+            return \DB::transaction(function () use ($validated, $id) {
+                $transfer = InventoryTransfer::with('items')->findOrFail($id);
+                $oldStatus = $transfer->status;
+                $newStatus = $validated['status'];
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Status updated successfully',
-                'data' => [
-                    'id' => $transfer->id,
-                    'status' => $transfer->status
-                ]
-            ], 200);
+                if ($oldStatus !== 'Approved' && $newStatus === 'Approved') {
+                    // Transitioning to Approved: Update Inventory
+                    WebTransferController::completeTransfer($transfer);
+                } elseif ($oldStatus === 'Approved' && $newStatus !== 'Approved') {
+                    // Reversing Approval: Reverse Destination only
+                    WebTransferController::reverseTransfer($transfer);
+                }
+
+                $transfer->status = $newStatus;
+                $transfer->save();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Status updated and inventory synchronized successfully',
+                    'data' => [
+                        'id' => $transfer->id,
+                        'status' => $transfer->status
+                    ]
+                ], 200);
+            });
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([

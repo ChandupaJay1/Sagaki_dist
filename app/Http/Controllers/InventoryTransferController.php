@@ -45,39 +45,84 @@ class InventoryTransferController extends Controller
             'items.*.qty' => 'required|numeric|min:0.01',
         ]);
 
-        // Generate Transfer No
-        $lastTransfer = InventoryTransfer::orderBy('id', 'desc')->first();
-        $nextId = $lastTransfer ? $lastTransfer->id + 1 : 1;
-        $transferNo = 'TN-' . str_pad($nextId, 5, '0', STR_PAD_LEFT);
+        \DB::transaction(function () use ($validated, $request) {
+            // Generate Transfer No
+            $lastTransfer = InventoryTransfer::orderBy('id', 'desc')->first();
+            $nextId = $lastTransfer ? $lastTransfer->id + 1 : 1;
+            $transferNo = 'TN-' . str_pad($nextId, 5, '0', STR_PAD_LEFT);
 
-        $transfer = InventoryTransfer::create([
-            'site_from' => $validated['site_from'],
-            'site_to' => $validated['site_to'],
-            'transfer_no' => $transferNo,
-            'date' => $validated['date'],
-            'memo' => $validated['memo'],
-            'status' => 'Pending',
-        ]);
+            $transfer = InventoryTransfer::create([
+                'site_from' => $validated['site_from'],
+                'site_to' => $validated['site_to'],
+                'transfer_no' => $transferNo,
+                'date' => $validated['date'],
+                'memo' => $validated['memo'],
+                'status' => 'Pending',
+            ]);
 
-        foreach ($request->items as $item) {
-            if (!empty($item['product_id'])) {
-                // Ensure onhand is numeric to avoid SQL errors
-                $onhand = $item['onhand'] ?? 0;
-                if (!is_numeric($onhand)) {
-                    $onhand = 0;
+            foreach ($request->items as $item) {
+                if (!empty($item['product_id'])) {
+                    // Ensure onhand is numeric to avoid SQL errors
+                    $onhand = $item['onhand'] ?? 0;
+                    if (!is_numeric($onhand)) {
+                        $onhand = 0;
+                    }
+
+                    $transferItem = $transfer->items()->create([
+                        'product_id' => $item['product_id'],
+                        'description' => $item['description'] ?? '',
+                        'onhand' => $onhand,
+                        'qty' => $item['qty'],
+                        'unit' => $item['unit'] ?? '',
+                    ]);
+
+                    // Deduct from Source Location immediately (Even when Pending)
+                    InventoryService::updateStock(
+                        $transferItem->product_id,
+                        $transfer->site_from,
+                        -$transferItem->qty,
+                        'Transfer Out (Pending)',
+                        'MTA',
+                        $transfer->id,
+                        "Pending transfer from {$transfer->site_from} to {$transfer->site_to} (MTA: {$transfer->transfer_no})"
+                    );
                 }
-
-                $transfer->items()->create([
-                    'product_id' => $item['product_id'],
-                    'description' => $item['description'] ?? '',
-                    'onhand' => $onhand,
-                    'qty' => $item['qty'],
-                    'unit' => $item['unit'] ?? '',
-                ]);
             }
-        }
+        });
 
-        return redirect()->route('inventory-transfers.index')->with('success', 'Inventory Transfer created successfully. Number: ' . $transferNo);
+        return redirect()->route('inventory-transfers.index')->with('success', 'Inventory Transfer created successfully.');
+    }
+
+    public static function completeTransfer($transfer)
+    {
+        foreach ($transfer->items as $item) {
+            // Only increase in destination. Source was already deducted on creation.
+            InventoryService::updateStock(
+                $item->product_id,
+                $transfer->site_to,
+                $item->qty,
+                'Transfer In',
+                'MTA',
+                $transfer->id,
+                "Received Transfer from {$transfer->site_from} to {$transfer->site_to} (MTA: {$transfer->transfer_no})"
+            );
+        }
+    }
+
+    public static function reverseTransfer($transfer)
+    {
+        foreach ($transfer->items as $item) {
+            // Reverse increase in destination (Subtract)
+            InventoryService::updateStock(
+                $item->product_id,
+                $transfer->site_to,
+                -$item->qty,
+                'Transfer In Reverse',
+                'MTA',
+                $transfer->id,
+                "Reversed Receipt from {$transfer->site_from} to {$transfer->site_to} (MTA: {$transfer->transfer_no})"
+            );
+        }
     }
 
     public function updateStatus(Request $request, $id)
@@ -93,54 +138,10 @@ class InventoryTransferController extends Controller
 
             if ($oldStatus !== 'Approved' && $newStatus === 'Approved') {
                 // Transitioning to Approved: Update Inventory
-                foreach ($transfer->items as $item) {
-                    // 1. Decrease from source
-                    InventoryService::updateStock(
-                        $item->product_id,
-                        $transfer->site_from,
-                        -$item->qty,
-                        'Transfer Out',
-                        'MTA',
-                        $transfer->id,
-                        "Transfer from {$transfer->site_from} to {$transfer->site_to} (MTA: {$transfer->transfer_no})"
-                    );
-
-                    // 2. Increase in destination
-                    InventoryService::updateStock(
-                        $item->product_id,
-                        $transfer->site_to,
-                        $item->qty,
-                        'Transfer In',
-                        'MTA',
-                        $transfer->id,
-                        "Transfer from {$transfer->site_from} to {$transfer->site_to} (MTA: {$transfer->transfer_no})"
-                    );
-                }
+                self::completeTransfer($transfer);
             } elseif ($oldStatus === 'Approved' && $newStatus !== 'Approved') {
-                // Reversing Approval: Reverse Inventory
-                foreach ($transfer->items as $item) {
-                    // 1. Reverse decrease from source (Add back)
-                    InventoryService::updateStock(
-                        $item->product_id,
-                        $transfer->site_from,
-                        $item->qty,
-                        'Transfer Out Reverse',
-                        'MTA',
-                        $transfer->id,
-                        "Reversed Transfer from {$transfer->site_from} to {$transfer->site_to} (MTA: {$transfer->transfer_no})"
-                    );
-
-                    // 2. Reverse increase in destination (Subtract)
-                    InventoryService::updateStock(
-                        $item->product_id,
-                        $transfer->site_to,
-                        -$item->qty,
-                        'Transfer In Reverse',
-                        'MTA',
-                        $transfer->id,
-                        "Reversed Transfer from {$transfer->site_from} to {$transfer->site_to} (MTA: {$transfer->transfer_no})"
-                    );
-                }
+                // Reversing Approval: Reverse Destination only
+                self::reverseTransfer($transfer);
             }
 
             $transfer->status = $newStatus;
