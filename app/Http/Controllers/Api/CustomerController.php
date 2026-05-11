@@ -144,8 +144,9 @@ class CustomerController extends Controller
             })
             ->values();
 
-        // Fetch Sales Returns (Credits) for this customer
-        $credits = \App\Models\SalesReturn::where('customer_id', $id)
+        // Fetch Sales Returns (Credits) for this customer (Requirement: Only Approved)
+        $salesReturns = \App\Models\SalesReturn::where('customer_id', $id)
+            ->where('status', 'Approved') // Requirement: Only Approved Sales Returns
             ->where('total_amount', '>', 0.01) // Only show credits with balance
             ->select('id', 'date', 'return_no', 'total_amount')
             ->orderBy('date', 'desc')
@@ -154,7 +155,7 @@ class CustomerController extends Controller
         return response()->json([
             'customer' => $customer,
             'invoices' => $invoices,
-            'credits' => $credits
+            'credits' => $salesReturns
         ]);
     }
 }
