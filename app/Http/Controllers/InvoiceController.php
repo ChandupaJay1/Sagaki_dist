@@ -133,7 +133,7 @@ class InvoiceController extends Controller
 
     public function show($id)
     {
-        $invoice = Invoice::with(['customer', 'items.product'])->findOrFail($id);
+        $invoice = Invoice::with(['customer', 'items.product', 'payments.cheques', 'payBillItems.payBill'])->findOrFail($id);
         
         // Calculate Customer Outstanding
         $totalInvoices = Invoice::where('customer_id', $invoice->customer_id)->sum('total_amount');

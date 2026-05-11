@@ -113,6 +113,7 @@
                                     <th>Total</th>
                                     <th>Location</th>
                                     <th>Unit</th>
+                                    <th style="width: 30px;"></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -130,6 +131,9 @@
                                     <td><input type="number" class="form-control form-control-sm text-end total-input bg-light fw-bold" readonly></td>
                                     <td><input type="text" class="form-control form-control-sm location-input text-center bg-light" value="Main Stock" readonly></td>
                                     <td><input type="text" class="form-control form-control-sm unit-input bg-light text-center" readonly></td>
+                                    <td>
+                                        <i class="ri-delete-bin-line text-slate-400 delete-row-btn" style="cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'"></i>
+                                    </td>
                                 </tr>
                             </tbody>
                             <tfoot class="bg-light">
@@ -249,22 +253,27 @@
             rowTemplateHTML: templateRow.innerHTML,
 
             init() {
+                // Clear initial table body to prevent duplicate template or blank rows
+                itemsTableBody.innerHTML = '';
+                
                 if (window.existingItems && window.existingItems.length > 0) {
                     window.existingItems.forEach((item, idx) => {
+                        // Enrich data from serverProductList if available
+                        const product = window.serverProductList ? window.serverProductList.find(p => String(p.id) === String(item.product_id)) : null;
                         const newIdx = this.data.length;
                         this.data.push({
                             rowId: newIdx,
                             product_id: item.product_id,
-                            description: item.description,
+                            description: item.description || (product ? product.name : ''),
                             onhand: '',
                             qty: parseFloat(item.qty) || 0,
                             rate: parseFloat(item.rate) || 0,
-                            amount: parseFloat(item.amount) || 0,
+                            amount: (parseFloat(item.qty) || 0) * (parseFloat(item.rate) || 0),
                             disc_percent: parseFloat(item.disc_percent) || 0,
                             discount: parseFloat(item.discount) || 0,
                             total: parseFloat(item.total) || 0,
                             location: item.location || getDefaultLocation(),
-                            unit: item.unit || ''
+                            unit: item.unit || (product ? product.unit : '')
                         });
                         this.injectRowUI(this.data[newIdx], newIdx);
                         this.rowCount++;
@@ -297,8 +306,10 @@
                     });
                 }
 
-                // Start with ONE empty row at the end
-                this.appendRow();
+                // Start with ONE empty row at the end ONLY if we don't have items or user wants to add more
+                if (this.data.length === 0) {
+                    this.appendRow();
+                }
             },
 
             checkAndAppendRow(rowIndex) {
@@ -357,7 +368,10 @@
 
                 if (data.product_id) {
                     const sel = newRow.querySelector('.product-select');
-                    this.populateSel(sel, data.product_id);
+                    const productId = String(data.product_id);
+                    sel.setAttribute('data-initial-value', productId);
+                    this.populateSel(sel, productId);
+                    
                     newRow.querySelector('.description-input').value = data.description || '';
                     newRow.querySelector('.qty-input').value = data.qty;
                     newRow.querySelector('.rate-input').value = data.rate;
@@ -368,13 +382,39 @@
                     newRow.querySelector('.location-input').value = data.location;
                     newRow.querySelector('.unit-input').value = data.unit || '';
                     
-                    fetchItemStock(data.product_id, data.location, index, newRow);
+                    fetchItemStock(productId, data.location, index, newRow);
                 } else {
                     newRow.querySelector('.qty-input').value = '1';
                     newRow.querySelector('.location-input').value = data.location;
                 }
 
+                // Add delete button functionality
+                const deleteBtn = newRow.querySelector('.delete-row-btn');
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', function() {
+                        salesReturnController.deleteRow(newRow);
+                    });
+                }
+
                 initRowEvents(newRow);
+            },
+
+            deleteRow(rowElement) {
+                const allRows = document.querySelectorAll('#itemsTable tbody tr.item-row');
+                if (allRows.length <= 1) return;
+
+                const rowIndex = parseInt(rowElement.dataset.rowIndex);
+                this.data.splice(rowIndex, 1);
+                rowElement.remove();
+
+                document.querySelectorAll('#itemsTable tbody tr.item-row').forEach((row, newIdx) => {
+                    row.dataset.rowIndex = newIdx;
+                    row.querySelectorAll('input, select').forEach(el => {
+                        if (el.name) el.name = el.name.replace(/items\[\d+\]/, `items[${newIdx}]`);
+                    });
+                });
+
+                this.calculateGrandTotal();
             },
 
             populateSel(sel, val) {
@@ -384,7 +424,9 @@
                         let safeName = (p.name || '').replace(/"/g, '&quot;');
                         let safeCode = (p.code || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                         let rate = parseFloat(p.max_sale_price) || 0;
-                        optionsHTML += `<option value="${p.id}" data-name="${safeName}" data-unit="${p.unit || ''}" data-rate="${rate}" ${p.id == val ? 'selected' : ''}>${safeCode}</option>`;
+                        // Use string comparison for IDs to be safe
+                        let isSelected = String(p.id) === String(val) ? 'selected' : '';
+                        optionsHTML += `<option value="${p.id}" data-name="${safeName}" data-unit="${p.unit || ''}" data-rate="${rate}" ${isSelected}>${safeCode}</option>`;
                     });
                 }
                 sel.innerHTML = optionsHTML;
@@ -521,19 +563,27 @@
             }
 
             if (window.TomSelect) {
-                new TomSelect(productSelect, {
+                const ts = new TomSelect(productSelect, {
+                    valueField: 'id',
+                    labelField: 'code',
+                    searchField: ['code', 'name'],
+                    options: (window.serverProductList || []).map(p => ({
+                        id: String(p.id),
+                        code: p.code || '',
+                        name: p.name || ''
+                    })),
                     create: false,
-                    sortField: { field: "text", order: "asc" },
+                    sortField: { field: "code", order: "asc" },
                     dropdownParent: 'body',
                     render: {
                         option: function(data, escape) {
                             return `<div class="px-2 py-1">
-                                        <div class="fw-bold fs-12">${escape(data.text)}</div>
+                                        <div class="fw-bold fs-12">${escape(data.code)}</div>
                                         <div class="text-muted fs-10">${escape(data.name)}</div>
                                     </div>`;
                         },
                         item: function(data, escape) {
-                            return `<div title="${escape(data.name)}">${escape(data.text)}</div>`;
+                            return `<div title="${escape(data.name)}">${escape(data.code)}</div>`;
                         }
                     },
                     onChange: (val) => {
@@ -541,6 +591,42 @@
                         handleProductChange(val);
                     }
                 });
+                
+                // Ultimate Force-Binding Logic
+                const initialValue = productSelect.getAttribute('data-initial-value');
+                if (initialValue) {
+                    const productId = String(initialValue);
+                    
+                    // 1. Force add option if missing from registry
+                    const productData = (window.serverProductList || []).find(p => String(p.id) === productId);
+                    if (productData && !ts.options[productId]) {
+                        ts.addOption({
+                            id: String(productData.id),
+                            code: productData.code || '',
+                            name: productData.name || ''
+                        });
+                    }
+                    
+                    // 2. Force select value with a micro-delay to bypass DOM render queue
+                    setTimeout(() => {
+                        ts.setValue(productId, true); // Silent to avoid ghost rows
+                        
+                        // 3. Explicit Fallback for Unit & Description (Hard Sync)
+                        if (productData) {
+                            const descInput = row.querySelector('.description-input');
+                            const unitInput = row.querySelector('.unit-input');
+                            const rateInput = row.querySelector('.rate-input');
+                            
+                            if (descInput && !descInput.value) descInput.value = productData.name || '';
+                            if (unitInput && !unitInput.value) unitInput.value = productData.unit || '';
+                            if (rateInput && (!rateInput.value || rateInput.value == 0)) rateInput.value = productData.max_sale_price || 0;
+                        }
+                        
+                        // 4. Dispatch change to hidden input for form consistency
+                        productSelect.value = productId;
+                        productSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    }, 50);
+                }
             }
 
             [qtyInput, rateInput, discPercentInput, discountInput].forEach(el => {
@@ -557,13 +643,6 @@
                 }
             });
         }
-
-        salesReturnController.init();
-        salesReturnController.calculateGrandTotal();
-
-        document.querySelector('.header-discount-percent').addEventListener('input', () => salesReturnController.calculateGrandTotal('header_percent'));
-        document.querySelector('.header-discount-amount').addEventListener('input', () => salesReturnController.calculateGrandTotal('header_amount'));
-        if (customerSelect) customerSelect.addEventListener('change', function () { fetchCustomerDetails(this.value); });
 
         salesReturnController.init();
         salesReturnController.calculateGrandTotal();
