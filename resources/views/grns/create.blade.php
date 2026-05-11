@@ -65,7 +65,7 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label small fw-bold mb-1">Load</label>
-                            <select name="load" class="form-select form-select-sm">
+                            <select id="loadDropdown" class="form-select form-select-sm">
                                 <option value="">Select Order</option>
                             </select>
                         </div>
@@ -344,6 +344,229 @@
         const termsSelect = document.getElementById('termsSelect');
         const creditLimitSpan = document.getElementById('vendor-credit-limit');
         const itemsTableBody = document.querySelector('#itemsTable tbody');
+        const loadDropdown = document.getElementById('loadDropdown');
+
+        function fetchVendorGrns(vendorId) {
+            if (!loadDropdown) return;
+            
+            // Clear current options
+            if (loadDropdown.tomselect) {
+                loadDropdown.tomselect.clear();
+                loadDropdown.tomselect.clearOptions();
+            } else {
+                loadDropdown.innerHTML = '<option value="">Select Order</option>';
+            }
+
+            if (!vendorId) return;
+
+            fetch(`/ajax/vendors/${vendorId}/grns`)
+                .then(response => response.json())
+                .then(data => {
+                    const options = data.map(grn => ({
+                        value: grn.id,
+                        text: `${grn.grn_no} - ${grn.date} (Rs. ${parseFloat(grn.total_amount).toLocaleString(undefined, {minimumFractionDigits: 2})})`
+                    }));
+
+                    if (loadDropdown.tomselect) {
+                        loadDropdown.tomselect.addOptions(options);
+                    } else {
+                        options.forEach(opt => {
+                            const option = document.createElement('option');
+                            option.value = opt.value;
+                            option.textContent = opt.text;
+                            loadDropdown.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error fetching vendor GRNs:', error));
+        }
+
+        function normalizeGrnItemsPayload(res) {
+            let items = res.items || res.grn_items || (res.data && res.data.items) || (res.grn && res.grn.items) || [];
+            if (!Array.isArray(items) && items && typeof items === 'object') {
+                items = Object.values(items);
+            }
+            return Array.isArray(items) ? items : [];
+        }
+
+        function parseLoadedUnit(item) {
+            if (item.unit != null && typeof item.unit === 'object') {
+                return item.unit.short_name || item.unit.name || 'PCS';
+            }
+            if (item.unit) return String(item.unit);
+            if (item.product && item.product.unit) {
+                const u = item.product.unit;
+                if (typeof u === 'object') return u.short_name || u.name || 'PCS';
+                return String(u);
+            }
+            return 'PCS';
+        }
+
+        function loadGrnDetails(grnId) {
+            if (!grnId) return;
+
+            const loadContainer = loadDropdown && loadDropdown.closest('.col-md-4');
+            const labelEl = loadContainer && loadContainer.querySelector('label');
+            const originalLabel = labelEl ? labelEl.innerHTML : '';
+
+            if (labelEl) {
+                labelEl.innerHTML = 'Load <span class="spinner-border spinner-border-sm text-primary" role="status"></span>';
+            }
+
+            fetch(`/ajax/grns/${grnId}/details`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('GRN details request failed: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(res => {
+                    const items = normalizeGrnItemsPayload(res);
+                    if (items.length === 0) {
+                        alert('No items found in this GRN.');
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+                        return;
+                    }
+
+                    const tbody = document.querySelector('#itemsTable tbody');
+                    if (!tbody) {
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+                        return;
+                    }
+
+                    tbody.innerHTML = '';
+                    grnController.data = [];
+                    grnController.rowCount = 0;
+
+                    grnController._loadingGrn = true;
+
+                    const loadedRowsData = [];
+                    let appended = 0;
+
+                    items.forEach((item) => {
+                        const pId = item.product_id || item.item_id || (item.product && item.product.id) || null;
+                        if (!pId) return;
+
+                        const qty = parseFloat(item.qty || item.quantity || 0) || 0;
+                        const rate = parseFloat(item.rate || item.unit_price || (item.product && (item.product.cost != null ? item.product.cost : 0)) || 0) || 0;
+                        let amount = parseFloat(item.amount);
+                        if (isNaN(amount)) amount = qty * rate;
+                        let discount = parseFloat(item.discount);
+                        if (isNaN(discount)) discount = 0;
+                        const discPercent = parseFloat(item.disc_percent || item.discount_percent || 0) || 0;
+                        let total = parseFloat(item.total);
+                        if (isNaN(total)) total = amount - discount;
+
+                        const rowData = {
+                            product_id: pId,
+                            description: item.description || (item.product && item.product.name) || '',
+                            onhand: item.onhand != null && item.onhand !== '' ? item.onhand : '',
+                            qty: qty,
+                            rate: rate,
+                            amount: amount,
+                            disc_percent: discPercent,
+                            discount: discount,
+                            total: total,
+                            location: item.location || getDefaultLocation() || 'Main Stock',
+                            unit: parseLoadedUnit(item)
+                        };
+
+                        if (rowData.amount === 0 && rowData.qty > 0 && rowData.rate > 0) {
+                            rowData.amount = rowData.qty * rowData.rate;
+                        }
+                        if ((rowData.total === 0 || isNaN(rowData.total)) && rowData.amount > 0) {
+                            rowData.total = rowData.amount - rowData.discount;
+                        }
+
+                        loadedRowsData.push(rowData);
+                        grnController.appendRow(rowData);
+                        appended++;
+                    });
+
+                    if (appended === 0) {
+                        grnController._loadingGrn = false;
+                        alert('No valid line items (missing product) in this GRN.');
+                        grnController.appendRow();
+                        grnController.appendRow();
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+                        return;
+                    }
+
+                    setTimeout(() => {
+                        const allRows = tbody.querySelectorAll('tr.item-row');
+                        allRows.forEach((row, idx) => {
+                            if (idx >= loadedRowsData.length) return;
+
+                            const rd = loadedRowsData[idx];
+                            const dataIdx = parseInt(row.dataset.rowIndex, 10);
+                            if (isNaN(dataIdx) || !grnController.data[dataIdx]) return;
+
+                            const d = grnController.data[dataIdx];
+                            d.description = rd.description;
+                            d.onhand = rd.onhand;
+                            d.qty = rd.qty;
+                            d.rate = rd.rate;
+                            d.amount = rd.amount;
+                            d.disc_percent = rd.disc_percent;
+                            d.discount = rd.discount;
+                            d.total = rd.total;
+                            d.location = rd.location;
+                            d.unit = rd.unit;
+                            d.product_id = rd.product_id;
+
+                            const descInput = row.querySelector('.description-input');
+                            const qtyInput = row.querySelector('.qty-input');
+                            const rateInput = row.querySelector('.rate-input');
+                            const amountInput = row.querySelector('.amount-input');
+                            const discPercentInput = row.querySelector('.disc-percent-input');
+                            const discountInput = row.querySelector('.discount-input');
+                            const totalInput = row.querySelector('.total-input');
+                            const unitInput = row.querySelector('.unit-input');
+                            const locInput = row.querySelector('.location-input');
+                            const productSelect = row.querySelector('.product-select');
+
+                            if (descInput) descInput.value = rd.description;
+                            if (qtyInput) qtyInput.value = String(rd.qty);
+                            if (rateInput) rateInput.value = String(rd.rate);
+                            if (amountInput) amountInput.value = Number(rd.amount).toFixed(2);
+                            if (discPercentInput) discPercentInput.value = rd.disc_percent ? String(rd.disc_percent) : '';
+                            if (discountInput) discountInput.value = rd.discount > 0 ? Number(rd.discount).toFixed(2) : '';
+                            if (totalInput) totalInput.value = Number(rd.total).toFixed(2);
+                            if (unitInput) unitInput.value = rd.unit;
+                            if (locInput) locInput.value = rd.location;
+
+                            const pidStr = String(rd.product_id);
+                            if (productSelect) {
+                                if (productSelect.tomselect) {
+                                    productSelect.tomselect.setValue(pidStr, true);
+                                } else {
+                                    productSelect.value = pidStr;
+                                }
+                            }
+
+                            const rowCalcSource = parseFloat(rd.disc_percent) > 0 ? 'disc_percent' : 'discount';
+                            grnController.calculateRow(dataIdx, row, rowCalcSource);
+
+                            if (productSelect && productSelect.value && rd.location) {
+                                fetchItemStock(productSelect.value, rd.location, dataIdx, row);
+                            }
+                        });
+
+                        grnController.appendRow();
+                        grnController.calculateGrandTotal();
+
+                        grnController._loadingGrn = false;
+
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+                    }, 50);
+                })
+                .catch(error => {
+                    console.error('CRITICAL LOAD ERROR:', error);
+                    grnController._loadingGrn = false;
+                    if (labelEl) labelEl.innerHTML = originalLabel;
+                    alert('Error: Data could not be loaded. Check console for details.');
+                });
+        }
 
         function fetchVendorDetails(vendorId) {
             if (vendorId) {
@@ -378,8 +601,13 @@
                                 }
                             }
                         }
+
+                        // Fetch GRNs for Load dropdown
+                        fetchVendorGrns(vendorId);
                     })
                     .catch(error => console.error('Error fetching vendor details:', error));
+            } else {
+                fetchVendorGrns(null);
             }
         }
 
@@ -708,6 +936,11 @@
 
             function handleProductChange(selectedOption, value) {
                 grnController.updateRowData(rowIndex, 'product_id', value);
+
+                // During GRN loading, skip overwriting loaded values with
+                // product master data-attributes. The loaded GRN data takes
+                // priority. Also skip auto-appending rows and stock fetches.
+                if (grnController._loadingGrn) return;
                 
                 if (value && selectedOption) {
                     const desc = selectedOption.dataset.name || '';
@@ -754,7 +987,7 @@
                     productSelect.tomselect.destroy();
                 }
 
-                new TomSelect(productSelect, {
+                const ts = new TomSelect(productSelect, {
                     create: false,
                     sortField: { field: "text", order: "asc" },
                     dropdownParent: 'body',
@@ -777,6 +1010,23 @@
                         handleProductChange(selectedOption, value);
                     }
                 });
+
+                // Get row data from controller to check if we need to pre-set value
+                const rowData = grnController.data[rowIndex];
+                if (rowData && rowData.product_id) {
+                    // Force populate fields immediately if loading from data
+                    if (rowData.description) row.querySelector('.description-input').value = rowData.description;
+                    if (rowData.unit) row.querySelector('.unit-input').value = rowData.unit;
+                    if (rowData.rate) row.querySelector('.rate-input').value = rowData.rate;
+                    if (rowData.qty) row.querySelector('.qty-input').value = rowData.qty;
+                    if (rowData.amount) row.querySelector('.amount-input').value = rowData.amount.toFixed(2);
+                    if (rowData.disc_percent) row.querySelector('.disc-percent-input').value = rowData.disc_percent;
+                    if (rowData.discount) row.querySelector('.discount-input').value = rowData.discount.toFixed(2);
+                    if (rowData.total) row.querySelector('.total-input').value = rowData.total.toFixed(2);
+                    if (rowData.location) row.querySelector('.location-input').value = rowData.location;
+
+                    ts.setValue(String(rowData.product_id), true);
+                }
             }
 
             [qtyInput, rateInput, discPercentInput, discountInput].forEach(input => {
@@ -856,10 +1106,34 @@
 
         setTimeout(attachVendorListener, 500);
 
+        function initLoadDropdown() {
+            if (loadDropdown && window.TomSelect) {
+                if (loadDropdown.tomselect) return; // Already initialized
+
+                new TomSelect(loadDropdown, {
+                    create: false,
+                    placeholder: "Select Order",
+                    allowEmptyOption: true,
+                    onChange: function(value) {
+                        if (value) {
+                            loadGrnDetails(value);
+                        }
+                    }
+                });
+                console.log("Load dropdown TomSelect initialized.");
+            }
+        }
+
+        // Initialize immediately if TomSelect is available, otherwise wait
+        if (window.TomSelect) {
+            initLoadDropdown();
+        }
+
         setTimeout(() => {
             if (termsSelect && window.TomSelect && !termsSelect.tomselect) {
                 new TomSelect(termsSelect, { create: false });
             }
+            initLoadDropdown(); // Fallback initialization
         }, 600);
 
         // --- Form Submission Fix --- //
