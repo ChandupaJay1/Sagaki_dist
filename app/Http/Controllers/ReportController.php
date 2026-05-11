@@ -36,13 +36,13 @@ class ReportController extends Controller
             ->get()
             ->groupBy('product_id');
 
-        // Calculate Good in Transit (Pending GRNs)
-        $goodInTransit = DB::table('grn_items')
-            ->join('grns', 'grn_items.grn_id', '=', 'grns.id')
-            ->where('grns.status', 'Pending')
-            ->select('product_id', DB::raw('SUM(qty) as total_qty'))
-            ->groupBy('product_id')
-            ->pluck('total_qty', 'product_id');
+        // Calculate Good in Transit (Pending Inventory Transfers)
+        $goodInTransit = DB::table('inventory_transfer_items')
+            ->join('inventory_transfers', 'inventory_transfers.id', '=', 'inventory_transfer_items.inventory_transfer_id')
+            ->where('inventory_transfers.status', 'Pending')
+            ->select('inventory_transfer_items.product_id', 'inventory_transfers.site_to', DB::raw('SUM(inventory_transfer_items.qty) as total_qty'))
+            ->groupBy('inventory_transfer_items.product_id', 'inventory_transfers.site_to')
+            ->get();
 
         $stockData = [];
         foreach ($products as $product) {
@@ -51,8 +51,11 @@ class ReportController extends Controller
                 'code' => $product->code,
                 'name' => $product->name,
                 'locations' => [],
-                'good_in_transit' => (float)($goodInTransit->get($product->id) ?? 0)
+                'good_in_transit' => 0 // Will be calculated per location if needed, or total
             ];
+
+            // Calculate total GIT for this product across all locations
+            $itemData['good_in_transit'] = (float)$goodInTransit->where('product_id', $product->id)->sum('total_qty');
 
             $mainStockTotal = 0;
             $allowedMainStockLocations = ['Main', 'Main Warehouse', 'Showroom', 'Testing', 'Transit'];
@@ -108,18 +111,18 @@ class ReportController extends Controller
         }
         $summaries = $summaryQuery->select('product_id', DB::raw('SUM(qty) as total'))->groupBy('product_id')->get()->pluck('total', 'product_id');
 
-        // Calculate Good in Transit (Pending GRNs)
-        $gitQuery = DB::table('grn_items')
-            ->join('grns', 'grn_items.grn_id', '=', 'grns.id')
-            ->where('grns.status', 'Pending');
+        // Calculate Good in Transit (Pending Inventory Transfers)
+        $gitQuery = DB::table('inventory_transfer_items')
+            ->join('inventory_transfers', 'inventory_transfers.id', '=', 'inventory_transfer_items.inventory_transfer_id')
+            ->where('inventory_transfers.status', 'Pending');
         
-        if ($locationId) {
-            $gitQuery->where('grns.location_id', $locationId);
+        if ($locationName) {
+            $gitQuery->where('inventory_transfers.site_to', $locationName);
         }
 
-        $goodInTransit = $gitQuery->select('product_id', DB::raw('SUM(qty) as total_qty'))
-            ->groupBy('product_id')
-            ->pluck('total_qty', 'product_id');
+        $goodInTransit = $gitQuery->select('inventory_transfer_items.product_id', DB::raw('SUM(inventory_transfer_items.qty) as total_qty'))
+            ->groupBy('inventory_transfer_items.product_id')
+            ->pluck('total_qty', 'inventory_transfer_items.product_id');
 
         $reportData = [];
         foreach ($products as $product) {
@@ -161,12 +164,12 @@ class ReportController extends Controller
         if ($productId) {
             $selectedProduct = Product::find($productId);
             
-            // Calculate Good in Transit (Pending GRNs)
-            $goodInTransit = DB::table('grn_items')
-                ->join('grns', 'grn_items.grn_id', '=', 'grns.id')
-                ->where('grns.status', 'Pending')
-                ->where('product_id', $productId)
-                ->sum('qty');
+            // Calculate Good in Transit (Pending Inventory Transfers)
+            $goodInTransit = DB::table('inventory_transfer_items')
+                ->join('inventory_transfers', 'inventory_transfers.id', '=', 'inventory_transfer_items.inventory_transfer_id')
+                ->where('inventory_transfers.status', 'Pending')
+                ->where('inventory_transfer_items.product_id', $productId)
+                ->sum('inventory_transfer_items.qty');
 
             // Fetch all transactions for this product
             $grns = DB::table('grn_items')

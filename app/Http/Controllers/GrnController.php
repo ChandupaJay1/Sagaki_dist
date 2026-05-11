@@ -123,7 +123,8 @@ class GrnController extends Controller
                     $discountVal = isset($item['discount']) && $item['discount'] !== '' ? (float)$item['discount'] : 0;
                     $amountVal = isset($item['amount']) && $item['amount'] !== '' ? (float)$item['amount'] : $amountCalc;
                     $totalVal = isset($item['total']) && $item['total'] !== '' ? (float)$item['total'] : ($amountVal - $discountVal);
-                    $grn->items()->create([
+                    
+                    $grnItem = $grn->items()->create([
                         'product_id' => $item['product_id'],
                         'description' => $item['description'] ?? '',
                         'qty' => (float)($item['qty'] ?? 0),
@@ -135,6 +136,17 @@ class GrnController extends Controller
                         'location' => $item['location'] ?? null,
                         'unit' => $item['unit'] ?? null,
                     ]);
+
+                    // Update Inventory Immediately (Even if Pending)
+                    InventoryService::updateStock(
+                        $grnItem->product_id,
+                        $grnItem->location ?? $grn->location_id,
+                        (float)$grnItem->qty,
+                        'In',
+                        'GRN',
+                        $grn->id,
+                        "Received via GRN (Pending): " . $grn->grn_no
+                    );
                 }
             }
         });
@@ -173,7 +185,7 @@ class GrnController extends Controller
 
     public function update(Request $request, $id)
     {
-        $grn = Grn::findOrFail($id);
+        $grn = Grn::with('items')->findOrFail($id);
 
         if ($grn->status === 'Approved') {
             return redirect()->route('grns.show', $id)->with('error', 'Approved GRNs cannot be updated.');
@@ -228,6 +240,19 @@ class GrnController extends Controller
             }
             $grn->update($data);
 
+            // Reverse old stock
+            foreach ($grn->items as $oldItem) {
+                InventoryService::reverseStock(
+                    $oldItem->product_id,
+                    $oldItem->location ?? $grn->location_id,
+                    (float)$oldItem->qty,
+                    'In Reverse',
+                    'GRN',
+                    $grn->id,
+                    "Reversed stock for GRN Update: " . $grn->grn_no
+                );
+            }
+
             $grn->items()->delete();
             foreach ($request->items as $item) {
                 if (!empty($item['product_id'])) {
@@ -236,7 +261,8 @@ class GrnController extends Controller
                     $discountVal = isset($item['discount']) && $item['discount'] !== '' ? (float)$item['discount'] : 0;
                     $amountVal = isset($item['amount']) && $item['amount'] !== '' ? (float)$item['amount'] : $amountCalc;
                     $totalVal = isset($item['total']) && $item['total'] !== '' ? (float)$item['total'] : ($amountVal - $discountVal);
-                    $grn->items()->create([
+                    
+                    $grnItem = $grn->items()->create([
                         'product_id' => $item['product_id'],
                         'description' => $item['description'] ?? '',
                         'qty' => (float)($item['qty'] ?? 0),
@@ -248,6 +274,17 @@ class GrnController extends Controller
                         'location' => $item['location'] ?? null,
                         'unit' => $item['unit'] ?? null,
                     ]);
+
+                    // Add new stock
+                    InventoryService::updateStock(
+                        $grnItem->product_id,
+                        $grnItem->location ?? $grn->location_id,
+                        (float)$grnItem->qty,
+                        'In',
+                        'GRN',
+                        $grn->id,
+                        "Updated via GRN: " . $grn->grn_no
+                    );
                 }
             }
         });
@@ -266,42 +303,27 @@ class GrnController extends Controller
         \DB::transaction(function () use ($grn) {
             $grn->status = 'Approved';
             $grn->save();
-
-            // Update Inventory
-            foreach ($grn->items as $item) {
-                InventoryService::updateStock(
-                    $item->product_id,
-                    $item->location ?? $grn->location_id,
-                    (float)$item->qty,
-                    'In',
-                    'GRN',
-                    $grn->id,
-                    "Received via GRN: " . $grn->grn_no
-                );
-            }
         });
 
-        return redirect()->route('grns.show', $id)->with('success', 'GRN approved and stock updated successfully.');
+        return redirect()->route('grns.show', $id)->with('success', 'GRN approved successfully.');
     }
 
     public function destroy($id)
     {
         \DB::transaction(function () use ($id) {
-            $grn = Grn::findOrFail($id);
+            $grn = Grn::with('items')->findOrFail($id);
             
-            // Reverse stock ONLY if it was Approved
-            if ($grn->status === 'Approved') {
-                foreach ($grn->items as $item) {
-                    InventoryService::reverseStock(
-                        $item->product_id,
-                        $item->location ?? $grn->location_id,
-                        (float)$item->qty,
-                        'In Reverse',
-                        'GRN',
-                        $grn->id,
-                        "Reversed stock due to GRN deletion: " . $grn->grn_no
-                    );
-                }
+            // Reverse stock for all GRNs (since stock is updated immediately on creation)
+            foreach ($grn->items as $item) {
+                InventoryService::reverseStock(
+                    $item->product_id,
+                    $item->location ?? $grn->location_id,
+                    (float)$item->qty,
+                    'In Reverse',
+                    'GRN',
+                    $grn->id,
+                    "Reversed stock due to GRN deletion: " . $grn->grn_no
+                );
             }
 
             $grn->items()->delete();
