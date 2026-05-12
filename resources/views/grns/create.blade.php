@@ -64,9 +64,9 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold mb-1">Load <span class="text-muted fw-normal">(prior GRN)</span></label>
+                            <label class="form-label small fw-bold mb-1">Load <span class="text-muted fw-normal">(Purchase Order)</span></label>
                             <select id="loadDropdown" class="form-select form-select-sm">
-                                <option value="">Select GRN to copy</option>
+                                <option value="">Select Purchase Order to load</option>
                             </select>
                             <input type="hidden" name="load" id="grnLoadSourceField" value="">
                         </div>
@@ -347,7 +347,7 @@
         const itemsTableBody = document.querySelector('#itemsTable tbody');
         const loadDropdown = document.getElementById('loadDropdown');
 
-        function fetchVendorGrns(vendorId) {
+        function fetchVendorPurchaseOrders(vendorId) {
             if (!loadDropdown) return;
 
             const loadHidden = document.getElementById('grnLoadSourceField');
@@ -357,23 +357,23 @@
             if (loadDropdown.tomselect) {
                 loadDropdown.tomselect.clear(true);
                 loadDropdown.tomselect.clearOptions();
-                loadDropdown.tomselect.addOption({ value: '', text: 'Select GRN to copy' });
+                loadDropdown.tomselect.addOption({ value: '', text: 'Select Purchase Order to load' });
             } else {
-                loadDropdown.innerHTML = '<option value="">Select GRN to copy</option>';
+                loadDropdown.innerHTML = '<option value="">Select Purchase Order to load</option>';
             }
 
             if (!vendorId) return;
 
-            fetch(`/ajax/vendors/${vendorId}/grns`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+            fetch(`/ajax/vendors/${vendorId}/purchase-orders`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
                 .then(response => {
-                    if (!response.ok) throw new Error('GRN list request failed: ' + response.status);
+                    if (!response.ok) throw new Error('Purchase Order list request failed: ' + response.status);
                     return response.json();
                 })
                 .then(data => {
                     const rows = Array.isArray(data) ? data : [];
-                    const options = rows.map(grn => ({
-                        value: String(grn.id),
-                        text: `${grn.grn_no || 'GRN'} - ${grn.date || ''} (Rs. ${parseFloat(grn.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })})`
+                    const options = rows.map(po => ({
+                        value: String(po.id),
+                        text: `${po.po_no || 'PO'} - ${po.date || ''} (Rs. ${parseFloat(po.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })})`
                     }));
 
                     if (loadDropdown.tomselect) {
@@ -387,11 +387,11 @@
                         });
                     }
                 })
-                .catch(error => console.error('Error fetching vendor GRNs:', error));
+                .catch(error => console.error('Error fetching vendor Purchase Orders:', error));
         }
 
-        function normalizeGrnItemsPayload(res) {
-            let items = res.items || res.grn_items || (res.data && res.data.items) || (res.grn && res.grn.items) || [];
+        function normalizePoItemsPayload(res) {
+            let items = res.items || res.po_items || (res.data && res.data.items) || (res.po && res.po.items) || [];
             if (!Array.isArray(items) && items && typeof items === 'object') {
                 items = Object.values(items);
             }
@@ -422,12 +422,12 @@
             }
         }
 
-        function applyLoadedGrnHeader(grn) {
-            if (!grn || typeof grn !== 'object') return;
+        function applyLoadedPoHeader(po) {
+            if (!po || typeof po !== 'object') return;
 
             const loadHidden = document.getElementById('grnLoadSourceField');
-            if (loadHidden && grn.grn_no) {
-                loadHidden.value = grn.grn_no;
+            if (loadHidden && po.po_no) {
+                loadHidden.value = po.po_no;
             }
 
             const setInput = (name, val) => {
@@ -437,39 +437,39 @@
                 el.value = val;
             };
 
-            setInput('reference_no', grn.reference_no);
-            setInput('date', grn.date);
-            setInput('invoice_date', grn.invoice_date);
-            setInput('expected_date', grn.expected_date);
-            setInput('due_date', grn.due_date);
-            setInput('attent', grn.attent);
-            setInput('manual_no', grn.manual_no);
-            setInput('memo', grn.memo);
+            setInput('reference_no', po.reference_no);
+            setInput('date', po.date);
+            // setInput('invoice_date', po.invoice_date); // PO might not have invoice_date
+            setInput('expected_date', po.expected_date);
+            setInput('due_date', po.due_date);
+            setInput('attent', po.attent);
+            // setInput('manual_no', po.manual_no); // PO might not have manual_no
+            setInput('memo', po.memo);
 
-            if (addressTextarea && grn.address !== undefined) {
-                addressTextarea.value = grn.address || '';
+            if (addressTextarea && po.address !== undefined) {
+                addressTextarea.value = po.address || '';
             }
-            if (deliveryDestinationTextarea && grn.delivery_destination !== undefined) {
-                deliveryDestinationTextarea.value = grn.delivery_destination || '';
+            if (deliveryDestinationTextarea && po.delivery_destination !== undefined) {
+                deliveryDestinationTextarea.value = po.delivery_destination || '';
             }
 
-            setSelectByValue(document.querySelector('select[name="location_id"]'), grn.location_id);
-            setSelectByValue(document.getElementById('termsSelect'), grn.payment_term_id);
-            setSelectByValue(document.querySelector('select[name="order_by"]'), grn.order_by);
-            setSelectByValue(document.querySelector('select[name="checked_by"]'), grn.checked_by);
-            setSelectByValue(document.querySelector('select[name="rep"]'), grn.rep);
-            setSelectByValue(document.querySelector('select[name="account_id"]'), grn.account_id);
+            setSelectByValue(document.querySelector('select[name="location_id"]'), po.location_id);
+            setSelectByValue(document.getElementById('termsSelect'), po.payment_term_id);
+            setSelectByValue(document.querySelector('select[name="order_by"]'), po.order_by);
+            setSelectByValue(document.querySelector('select[name="checked_by"]'), po.checked_by);
+            setSelectByValue(document.querySelector('select[name="rep"]'), po.rep);
+            setSelectByValue(document.querySelector('select[name="account_id"]'), po.account_id);
 
             const numericPairs = [
-                ['sscl_percent', grn.sscl_percent],
-                ['sscl_amount', grn.sscl_amount],
-                ['vat_percent', grn.vat_percent],
-                ['vat_amount', grn.vat_amount],
-                ['subtotal', grn.subtotal],
-                ['header_discount_percent', grn.header_discount_percent],
-                ['header_discount_amount', grn.header_discount_amount],
-                ['tax_amount', grn.tax_amount],
-                ['total_amount', grn.total_amount],
+                ['sscl_percent', po.sscl_percent],
+                ['sscl_amount', po.sscl_amount],
+                ['vat_percent', po.vat_percent],
+                ['vat_amount', po.vat_amount],
+                ['subtotal', po.subtotal],
+                ['header_discount_percent', po.header_discount_percent],
+                ['header_discount_amount', po.header_discount_amount],
+                ['tax_amount', po.tax_amount],
+                ['total_amount', po.total_amount],
             ];
             numericPairs.forEach(([name, val]) => {
                 if (val === undefined || val === null || val === '') return;
@@ -484,8 +484,8 @@
             }
         }
 
-        function loadGrnDetails(grnId) {
-            if (!grnId) return;
+        function loadPurchaseOrderDetails(poId) {
+            if (!poId) return;
 
             const loadContainer = loadDropdown && loadDropdown.closest('.col-md-4');
             const labelEl = loadContainer && loadContainer.querySelector('label');
@@ -495,10 +495,10 @@
                 labelEl.innerHTML = 'Load <span class="spinner-border spinner-border-sm text-primary" role="status"></span>';
             }
 
-            fetch(`/ajax/grns/${grnId}/details`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+            fetch(`/ajax/purchase-orders/${poId}/details`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('GRN details request failed: ' + response.status);
+                        throw new Error('Purchase Order details request failed: ' + response.status);
                     }
                     return response.json();
                 })
@@ -506,17 +506,17 @@
                     const selectedVendorId = vendorSelect && vendorSelect.tomselect
                         ? vendorSelect.tomselect.getValue()
                         : (vendorSelect ? vendorSelect.value : '');
-                    if (res.grn && res.grn.vendor_id != null && String(res.grn.vendor_id) !== String(selectedVendorId || '')) {
-                        alert('This GRN belongs to a different vendor. Select the correct vendor first.');
+                    if (res.po && res.po.vendor_id != null && String(res.po.vendor_id) !== String(selectedVendorId || '')) {
+                        alert('This Purchase Order belongs to a different vendor. Select the correct vendor first.');
                         if (labelEl) labelEl.innerHTML = originalLabel;
                         return;
                     }
-                    if (res.grn) {
-                        applyLoadedGrnHeader(res.grn);
+                    if (res.po) {
+                        applyLoadedPoHeader(res.po);
                     }
-                    const items = normalizeGrnItemsPayload(res);
+                    const items = normalizePoItemsPayload(res);
                     if (items.length === 0) {
-                        alert('No items found in this GRN.');
+                        alert('No items found in this Purchase Order.');
                         if (labelEl) labelEl.innerHTML = originalLabel;
                         return;
                     }
@@ -578,7 +578,7 @@
 
                     if (appended === 0) {
                         grnController._loadingGrn = false;
-                        alert('No valid line items (missing product) in this GRN.');
+                        alert('No valid line items (missing product) in this Purchase Order.');
                         grnController.appendRow();
                         grnController.appendRow();
                         if (labelEl) labelEl.innerHTML = originalLabel;
@@ -698,12 +698,12 @@
                             }
                         }
 
-                        // Fetch GRNs for Load dropdown
-                        fetchVendorGrns(vendorId);
+                        // Fetch Purchase Orders for Load dropdown
+                        fetchVendorPurchaseOrders(vendorId);
                     })
                     .catch(error => console.error('Error fetching vendor details:', error));
             } else {
-                fetchVendorGrns(null);
+                fetchVendorPurchaseOrders(null);
             }
         }
 
@@ -1218,16 +1218,31 @@
             } 
         }, 600);
 
+        setTimeout(function() { 
+            let locSelect = document.getElementById('location_id') || document.querySelector('select[name="location_id"]'); 
+            if (locSelect) { 
+                // Find the option where text includes "main" 
+                let mainOpt = Array.from(locSelect.options).find(opt => opt.text.toLowerCase().includes('main')); 
+                if (mainOpt) { 
+                    if (locSelect.tomselect) { 
+                        locSelect.tomselect.setValue(mainOpt.value); 
+                    } else { 
+                        $(locSelect).val(mainOpt.value).trigger('change'); 
+                    } 
+                } 
+            } 
+        }, 650);
+
         function initLoadDropdown() {
             if (!loadDropdown || !window.TomSelect) return;
-            if (loadDropdown.dataset.grnLoadDropdownInit === '1') return;
+            if (loadDropdown.dataset.poLoadDropdownInit === '1') return;
             if (loadDropdown.tomselect) {
                 loadDropdown.tomselect.destroy();
             }
 
             new TomSelect(loadDropdown, {
                 create: false,
-                placeholder: 'Select GRN to copy',
+                placeholder: 'Select Purchase Order to load',
                 allowEmptyOption: true,
                 plugins: ['clear_button'],
                 dropdownParent: 'body',
@@ -1242,10 +1257,10 @@
                         if (loadHidden) loadHidden.value = '';
                         return;
                     }
-                    loadGrnDetails(id);
+                    loadPurchaseOrderDetails(id);
                 }
             });
-            loadDropdown.dataset.grnLoadDropdownInit = '1';
+            loadDropdown.dataset.poLoadDropdownInit = '1';
         }
 
         // Initialize immediately if TomSelect is available, otherwise wait
