@@ -30,7 +30,17 @@ class SalesOrderController extends Controller
         $terms = PaymentTerm::orderBy('days')->get();
         $products = Product::where('is_main_product', false)->orderBy('name')->get();
         $accounts = Account::where('is_active', 1)->orderBy('name')->get();
-        return view('sales_orders.create', compact('customers', 'locations', 'reps', 'terms', 'products', 'accounts'));
+
+        // Generate next Order Number for display
+        $lastOrder = SalesOrder::latest()->first();
+        if (!$lastOrder || !$lastOrder->order_no) {
+            $nextOrderNo = 'SO00001';
+        } else {
+            $lastNo = (int)str_replace('SO', '', $lastOrder->order_no);
+            $nextOrderNo = 'SO' . str_pad($lastNo + 1, 5, '0', STR_PAD_LEFT);
+        }
+
+        return view('sales_orders.create', compact('customers', 'locations', 'reps', 'terms', 'products', 'accounts', 'nextOrderNo'));
     }
 
     public function store(Request $request)
@@ -82,6 +92,15 @@ class SalesOrderController extends Controller
                 }
             }
             $data['rep_id'] = $request->rep;
+
+            // Generate Order Number
+            $lastOrder = SalesOrder::latest()->first();
+            if (!$lastOrder || !$lastOrder->order_no) {
+                $data['order_no'] = 'SO00001';
+            } else {
+                $lastNo = (int)str_replace('SO', '', $lastOrder->order_no);
+                $data['order_no'] = 'SO' . str_pad($lastNo + 1, 5, '0', STR_PAD_LEFT);
+            }
             
             $salesOrder = SalesOrder::create($data);
 
@@ -218,5 +237,84 @@ class SalesOrderController extends Controller
         $salesOrder->items()->delete();
         $salesOrder->delete();
         return redirect()->route('sales-orders.index')->with('success', 'Sales Order deleted successfully.');
+    }
+
+    /**
+     * Prior Sales Orders for the customer (Load dropdown on Invoice create).
+     */
+    public function ajaxCustomerSalesOrders(string $customer)
+    {
+        $rows = SalesOrder::query()
+            ->where('customer_id', $customer)
+            ->orderByDesc('order_date')
+            ->orderByDesc('id')
+            ->get(['id', 'order_no', 'order_date', 'total_amount']);
+
+        return response()->json($rows->map(function (SalesOrder $s) {
+            return [
+                'id' => $s->id,
+                'order_no' => $s->order_no,
+                'date' => $s->order_date,
+                'total_amount' => (float) ($s->total_amount ?? 0),
+            ];
+        }));
+    }
+
+    /**
+     * Full Sales Order header + line items for copying into a new Invoice form.
+     */
+    public function ajaxSalesOrderDetails(string $so)
+    {
+        $model = SalesOrder::with(['items.product'])->findOrFail($so);
+
+        $items = $model->items->map(function ($item) {
+            return [
+                'product_id' => $item->product_id,
+                'description' => $item->description,
+                'qty' => (float) $item->qty,
+                'rate' => (float) $item->rate,
+                'amount' => (float) $item->amount,
+                'disc_percent' => (float) ($item->disc_percent ?? 0),
+                'discount' => (float) ($item->discount ?? 0),
+                'total' => (float) $item->total,
+                'location' => $item->location,
+                'unit' => $item->unit,
+                'product' => $item->relationLoaded('product') && $item->product ? [
+                    'id' => $item->product->id,
+                    'name' => $item->product->name,
+                    'cost' => $item->product->cost,
+                ] : null,
+            ];
+        })->values();
+
+        $header = [
+            'customer_id' => $model->customer_id,
+            'order_no' => $model->order_no,
+            'address' => $model->address,
+            'delivery_destination' => $model->delivery_destination,
+            'date' => $model->order_date,
+            'expected_date' => $model->expected_date,
+            'due_date' => $model->due_date,
+            'rep_id' => $model->rep_id,
+            'attent' => $model->attent,
+            'memo' => $model->memo,
+            'location_id' => $model->location_id,
+            'payment_term_id' => $model->payment_term_id,
+            'account_id' => $model->account_id,
+            'subtotal' => $model->subtotal,
+            'header_discount_percent' => $model->header_discount_percent,
+            'header_discount_amount' => $model->header_discount_amount,
+            'tax_amount' => $model->tax_amount,
+            'sscl_percent' => $model->sscl_percent,
+            'sscl_amount' => $model->sscl_amount,
+            'vat_percent' => $model->vat_percent,
+            'vat_amount' => $model->vat_amount,
+            'total_amount' => $model->total_amount,
+        ];
+
+        return response()->json([
+            'so' => $header,
+            'items' => $items,
+        ]);
     }
 }

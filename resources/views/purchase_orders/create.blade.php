@@ -58,15 +58,16 @@
                              <select name="location_id" class="form-select form-select-sm" required>
                                  <option value="">Select Location</option>
                                  @foreach($locations as $location)
-                                     <option value="{{ $location->id }}" data-name="{{ $location->name }}" {{ (old('location_id') == $location->id || $location->name == 'Main Stock') ? 'selected' : '' }}>{{ $location->name }}</option>
+                                     <option value="{{ $location->id }}" data-name="{{ $location->name }}" {{ old('location_id') == $location->id ? 'selected' : '' }}>{{ $location->name }}</option>
                                  @endforeach
                              </select>
                          </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold mb-1">Load</label>
-                            <select name="load" class="form-select form-select-sm">
-                                <option value="">Select Order</option>
+                            <label class="form-label small fw-bold mb-1">Load <span class="text-muted fw-normal">(prior PO)</span></label>
+                            <select id="loadDropdown" class="form-select form-select-sm">
+                                <option value="">Select PO to copy</option>
                             </select>
+                            <input type="hidden" name="load" id="poLoadSourceField" value="">
                         </div>
                     </div>
 
@@ -315,6 +316,322 @@
         const deliveryDestinationTextarea = document.querySelector('textarea[name="delivery_destination"]');
         const termsSelect = document.getElementById('termsSelect');
         const creditLimitSpan = document.getElementById('vendor-credit-limit');
+        const loadDropdown = document.getElementById('loadDropdown');
+
+        function fetchVendorPurchaseOrders(vendorId) {
+            if (!loadDropdown) return;
+
+            const loadHidden = document.getElementById('poLoadSourceField');
+            if (loadHidden) loadHidden.value = '';
+
+            // Clear current options
+            if (loadDropdown.tomselect) {
+                loadDropdown.tomselect.clear(true);
+                loadDropdown.tomselect.clearOptions();
+                loadDropdown.tomselect.addOption({ value: '', text: 'Select PO to copy' });
+            } else {
+                loadDropdown.innerHTML = '<option value="">Select PO to copy</option>';
+            }
+
+            if (!vendorId) return;
+
+            fetch(`/ajax/vendors/${vendorId}/purchase-orders`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+                .then(response => {
+                    if (!response.ok) throw new Error('PO list request failed: ' + response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    const rows = Array.isArray(data) ? data : [];
+                    const options = rows.map(po => ({
+                        value: String(po.id),
+                        text: `${po.po_no || 'PO'} - ${po.date || ''} (Rs. ${parseFloat(po.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })})`
+                    }));
+
+                    if (loadDropdown.tomselect) {
+                        loadDropdown.tomselect.addOptions(options);
+                    } else {
+                        options.forEach(opt => {
+                            const option = document.createElement('option');
+                            option.value = opt.value;
+                            option.textContent = opt.text;
+                            loadDropdown.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error fetching vendor POs:', error));
+        }
+
+        function normalizePoItemsPayload(res) {
+            let items = res.items || res.po_items || (res.data && res.data.items) || (res.po && res.po.items) || [];
+            if (!Array.isArray(items) && items && typeof items === 'object') {
+                items = Object.values(items);
+            }
+            return Array.isArray(items) ? items : [];
+        }
+
+        function parseLoadedUnit(item) {
+            if (item.unit != null && typeof item.unit === 'object') {
+                return item.unit.short_name || item.unit.name || 'PCS';
+            }
+            if (item.unit) return String(item.unit);
+            if (item.product && item.product.unit) {
+                const u = item.product.unit;
+                if (typeof u === 'object') return u.short_name || u.name || 'PCS';
+                return String(u);
+            }
+            return 'PCS';
+        }
+
+        function setSelectByValue(selectEl, value) {
+            if (!selectEl || value === undefined || value === null || value === '') return;
+            const strVal = String(value);
+            const hasOption = Array.from(selectEl.options).some(o => o.value === strVal);
+            if (!hasOption) return;
+            selectEl.value = strVal;
+            if (selectEl.tomselect) {
+                selectEl.tomselect.setValue(strVal, true);
+            }
+        }
+
+        function applyLoadedPurchaseOrderHeader(po) {
+            if (!po || typeof po !== 'object') return;
+
+            const loadHidden = document.getElementById('poLoadSourceField');
+            if (loadHidden && po.po_no) {
+                loadHidden.value = po.po_no;
+            }
+
+            const setInput = (name, val) => {
+                if (val === undefined || val === null) return;
+                const el = document.querySelector(`[name="${name}"]`);
+                if (!el || el.type === 'checkbox') return;
+                el.value = val;
+            };
+
+            setInput('reference_no', po.reference_no);
+            setInput('date', po.date);
+            setInput('expected_date', po.expected_date);
+            setInput('due_date', po.due_date);
+            setInput('attent', po.attent);
+            setInput('memo', po.memo);
+
+            if (addressTextarea && po.address !== undefined) {
+                addressTextarea.value = po.address || '';
+            }
+            if (deliveryDestinationTextarea && po.delivery_destination !== undefined) {
+                deliveryDestinationTextarea.value = po.delivery_destination || '';
+            }
+
+            setSelectByValue(document.querySelector('select[name="location_id"]'), po.location_id);
+            setSelectByValue(document.getElementById('termsSelect'), po.payment_term_id);
+            setSelectByValue(document.querySelector('select[name="order_by"]'), po.order_by);
+            setSelectByValue(document.querySelector('select[name="checked_by"]'), po.checked_by);
+            setSelectByValue(document.querySelector('select[name="rep"]'), po.rep);
+            setSelectByValue(document.querySelector('select[name="account_id"]'), po.account_id);
+
+            const numericPairs = [
+                ['sscl_percent', po.sscl_percent],
+                ['sscl_amount', po.sscl_amount],
+                ['vat_percent', po.vat_percent],
+                ['vat_amount', po.vat_amount],
+                ['subtotal', po.subtotal],
+                ['header_discount_percent', po.header_discount_percent],
+                ['header_discount_amount', po.header_discount_amount],
+                ['tax_amount', po.tax_amount],
+                ['total_amount', po.total_amount],
+            ];
+            numericPairs.forEach(([name, val]) => {
+                if (val === undefined || val === null || val === '') return;
+                const el = document.querySelector(`[name="${name}"]`);
+                if (!el) return;
+                const n = parseFloat(val);
+                el.value = Number.isFinite(n) ? n.toFixed(2) : String(val);
+            });
+
+            if (typeof purchaseOrderController !== 'undefined' && purchaseOrderController.calculateGrandTotal) {
+                setTimeout(() => purchaseOrderController.calculateGrandTotal(), 0);
+            }
+        }
+
+        function loadPurchaseOrderDetails(poId) {
+            if (!poId) return;
+
+            const loadContainer = loadDropdown && loadDropdown.closest('.col-md-4');
+            const labelEl = loadContainer && loadContainer.querySelector('label');
+            const originalLabel = labelEl ? labelEl.innerHTML : '';
+
+            if (labelEl) {
+                labelEl.innerHTML = 'Load <span class="spinner-border spinner-border-sm text-primary" role="status"></span>';
+            }
+
+            fetch(`/ajax/purchase-orders/${poId}/details`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('PO details request failed: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(res => {
+                    const selectedVendorId = vendorSelect && vendorSelect.tomselect
+                        ? vendorSelect.tomselect.getValue()
+                        : (vendorSelect ? vendorSelect.value : '');
+                    if (res.po && res.po.vendor_id != null && String(res.po.vendor_id) !== String(selectedVendorId || '')) {
+                        alert('This Purchase Order belongs to a different vendor. Select the correct vendor first.');
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+                        return;
+                    }
+                    if (res.po) {
+                        applyLoadedPurchaseOrderHeader(res.po);
+                    }
+                    const items = normalizePoItemsPayload(res);
+                    if (items.length === 0) {
+                        alert('No items found in this Purchase Order.');
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+                        return;
+                    }
+
+                    const tbody = document.querySelector('#itemsTable tbody');
+                    if (!tbody) {
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+                        return;
+                    }
+
+                    tbody.innerHTML = '';
+                    purchaseOrderController.data = [];
+                    purchaseOrderController.rowCount = 0;
+
+                    purchaseOrderController._loadingPo = true;
+
+                    const loadedRowsData = [];
+                    let appended = 0;
+
+                    items.forEach((item) => {
+                        const pId = item.product_id || item.item_id || (item.product && item.product.id) || null;
+                        if (!pId) return;
+
+                        const qty = parseFloat(item.qty || item.quantity || 0) || 0;
+                        const rate = parseFloat(item.rate || item.unit_price || (item.product && (item.product.cost != null ? item.product.cost : 0)) || 0) || 0;
+                        let amount = parseFloat(item.amount);
+                        if (isNaN(amount)) amount = qty * rate;
+                        let discount = parseFloat(item.discount);
+                        if (isNaN(discount)) discount = 0;
+                        const discPercent = parseFloat(item.disc_percent || item.discount_percent || 0) || 0;
+                        let total = parseFloat(item.total);
+                        if (isNaN(total)) total = amount - discount;
+
+                        const rowData = {
+                            product_id: pId,
+                            description: item.description || (item.product && item.product.name) || '',
+                            onhand: item.onhand != null && item.onhand !== '' ? item.onhand : '',
+                            qty: qty,
+                            rate: rate,
+                            amount: amount,
+                            disc_percent: discPercent,
+                            discount: discount,
+                            total: total,
+                            location: item.location || getDefaultLocation() || 'Main Stock',
+                            unit: parseLoadedUnit(item)
+                        };
+
+                        if (rowData.amount === 0 && rowData.qty > 0 && rowData.rate > 0) {
+                            rowData.amount = rowData.qty * rowData.rate;
+                        }
+                        if ((rowData.total === 0 || isNaN(rowData.total)) && rowData.amount > 0) {
+                            rowData.total = rowData.amount - rowData.discount;
+                        }
+
+                        loadedRowsData.push(rowData);
+                        purchaseOrderController.appendRow(rowData);
+                        appended++;
+                    });
+
+                    if (appended === 0) {
+                        purchaseOrderController._loadingPo = false;
+                        alert('No valid line items (missing product) in this Purchase Order.');
+                        purchaseOrderController.appendRow();
+                        purchaseOrderController.appendRow();
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+                        return;
+                    }
+
+                    setTimeout(() => {
+                        const allRows = tbody.querySelectorAll('tr.item-row');
+                        allRows.forEach((row, idx) => {
+                            if (idx >= loadedRowsData.length) return;
+
+                            const rd = loadedRowsData[idx];
+                            const dataIdx = parseInt(row.dataset.rowIndex, 10);
+                            if (isNaN(dataIdx) || !purchaseOrderController.data[dataIdx]) return;
+
+                            const d = purchaseOrderController.data[dataIdx];
+                            d.description = rd.description;
+                            d.onhand = rd.onhand;
+                            d.qty = rd.qty;
+                            d.rate = rd.rate;
+                            d.amount = rd.amount;
+                            d.disc_percent = rd.disc_percent;
+                            d.discount = rd.discount;
+                            d.total = rd.total;
+                            d.location = rd.location;
+                            d.unit = rd.unit;
+                            d.product_id = rd.product_id;
+
+                            const descInput = row.querySelector('.description-input');
+                            const qtyInput = row.querySelector('.qty-input');
+                            const rateInput = row.querySelector('.rate-input');
+                            const amountInput = row.querySelector('.amount-input');
+                            const discPercentInput = row.querySelector('.disc-percent-input');
+                            const discountInput = row.querySelector('.discount-input');
+                            const totalInput = row.querySelector('.total-input');
+                            const unitInput = row.querySelector('.unit-input');
+                            const locInput = row.querySelector('.location-input');
+                            const productSelect = row.querySelector('.product-select');
+
+                            if (descInput) descInput.value = rd.description;
+                            if (qtyInput) qtyInput.value = String(rd.qty);
+                            if (rateInput) rateInput.value = String(rd.rate);
+                            if (amountInput) amountInput.value = Number(rd.amount).toFixed(2);
+                            if (discPercentInput) discPercentInput.value = rd.disc_percent ? String(rd.disc_percent) : '';
+                            if (discountInput) discountInput.value = rd.discount > 0 ? Number(rd.discount).toFixed(2) : '';
+                            if (totalInput) totalInput.value = Number(rd.total).toFixed(2);
+                            if (unitInput) unitInput.value = rd.unit;
+                            if (locInput) locInput.value = rd.location;
+
+                            const pidStr = String(rd.product_id);
+                            if (productSelect) {
+                                if (productSelect.tomselect) {
+                                    productSelect.tomselect.setValue(pidStr, true);
+                                } else {
+                                    productSelect.value = pidStr;
+                                }
+                            }
+
+                            const rowCalcSource = parseFloat(rd.disc_percent) > 0 ? 'disc_percent' : 'discount';
+                            purchaseOrderController.calculateRow(dataIdx, row, rowCalcSource);
+
+                            if (productSelect && productSelect.value && rd.location) {
+                                fetchItemStock(productSelect.value, rd.location, dataIdx, row);
+                            }
+                        });
+
+                        purchaseOrderController.appendRow();
+                        purchaseOrderController.calculateGrandTotal();
+
+                        purchaseOrderController._loadingPo = false;
+
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+
+                        const itemsTable = document.getElementById('itemsTable');
+                        if (itemsTable) itemsTable.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 50);
+                })
+                .catch(error => {
+                    console.error('CRITICAL LOAD ERROR:', error);
+                    purchaseOrderController._loadingPo = false;
+                    if (labelEl) labelEl.innerHTML = originalLabel;
+                    alert('Error: Data could not be loaded. Check console for details.');
+                });
+        }
 
         function fetchVendorDetails(vendorId) {
             if (vendorId) {
@@ -349,8 +666,13 @@
                                 }
                             }
                         }
+
+                        // Fetch POs for Load dropdown
+                        fetchVendorPurchaseOrders(vendorId);
                     })
                     .catch(error => console.error('Error fetching vendor details:', error));
+            } else {
+                fetchVendorPurchaseOrders(null);
             }
         }
 
@@ -401,30 +723,31 @@
                 }
             },
 
-            appendRow() {
+            appendRow(itemData = null) {
                 const currentLoc = getDefaultLocation();
                 const newIdx = this.data.length;
                 
-                this.data.push({
+                const rowData = {
                     rowId: newIdx,
-                    product_id: '',
-                    description: '',
-                    onhand: '',
-                    qty: 1,
-                    rate: 0,
-                    amount: 0,
-                    disc_percent: 0,
-                    discount: 0,
-                    total: 0,
-                    location: currentLoc,
-                    unit: ''
-                });
+                    product_id: itemData ? itemData.product_id : '',
+                    description: itemData ? itemData.description : '',
+                    onhand: itemData ? itemData.onhand : '',
+                    qty: itemData ? itemData.qty : 1,
+                    rate: itemData ? itemData.rate : 0,
+                    amount: itemData ? itemData.amount : 0,
+                    disc_percent: itemData ? itemData.disc_percent : 0,
+                    discount: itemData ? itemData.discount : 0,
+                    total: itemData ? itemData.total : 0,
+                    location: itemData ? itemData.location : currentLoc,
+                    unit: itemData ? itemData.unit : ''
+                };
+                this.data.push(rowData);
                 
-                this.injectRowUI(currentLoc, newIdx);
+                this.injectRowUI(rowData, newIdx);
                 this.rowCount++;
             },
 
-            injectRowUI(currentLoc, index) {
+            injectRowUI(data, index) {
                 const newRow = document.createElement('tr');
                 newRow.className = 'item-row';
                 newRow.dataset.rowIndex = index;
@@ -436,16 +759,16 @@
                             <option value="">Select Item</option>
                         </select>
                     </td>
-                    <td><input type="text" class="form-control form-control-sm description-input bg-light" name="items[${index}][description]" readonly></td>
-                    <td><input type="text" class="form-control form-control-sm onhand-input text-center bg-light" name="items[${index}][onhand]" readonly></td>
-                    <td><input type="number" class="form-control form-control-sm text-center qty-input" name="items[${index}][qty]" step="any" value="1"></td>
-                    <td><input type="number" class="form-control form-control-sm text-end rate-input" name="items[${index}][rate]" step="any" value="0.00"></td>
-                    <td><input type="number" class="form-control form-control-sm text-end amount-input bg-light" name="items[${index}][amount]" value="0.00" readonly></td>
-                    <td><input type="number" class="form-control form-control-sm text-center disc-percent-input" name="items[${index}][disc_percent]" step="any" placeholder="0"></td>
-                    <td><input type="number" class="form-control form-control-sm text-end discount-input" name="items[${index}][discount]" step="any" placeholder="0.00"></td>
-                    <td><input type="number" class="form-control form-control-sm text-end total-input bg-light fw-bold" name="items[${index}][total]" value="0.00" readonly></td>
-                    <td><input type="text" class="form-control form-control-sm location-input text-center bg-light" name="items[${index}][location]" value="${currentLoc}" readonly></td>
-                    <td><input type="text" class="form-control form-control-sm unit-input bg-light text-center" name="items[${index}][unit]" readonly></td>
+                    <td><input type="text" class="form-control form-control-sm description-input bg-light" name="items[${index}][description]" value="${data.description}" readonly></td>
+                    <td><input type="text" class="form-control form-control-sm onhand-input text-center bg-light" name="items[${index}][onhand]" value="${data.onhand}" readonly></td>
+                    <td><input type="number" class="form-control form-control-sm text-center qty-input" name="items[${index}][qty]" step="any" value="${data.qty}"></td>
+                    <td><input type="number" class="form-control form-control-sm text-end rate-input" name="items[${index}][rate]" step="any" value="${data.rate.toFixed(2)}"></td>
+                    <td><input type="number" class="form-control form-control-sm text-end amount-input bg-light" name="items[${index}][amount]" value="${data.amount.toFixed(2)}" readonly></td>
+                    <td><input type="number" class="form-control form-control-sm text-center disc-percent-input" name="items[${index}][disc_percent]" step="any" value="${data.disc_percent || ''}" placeholder="0"></td>
+                    <td><input type="number" class="form-control form-control-sm text-end discount-input" name="items[${index}][discount]" step="any" value="${data.discount > 0 ? data.discount.toFixed(2) : ''}" placeholder="0.00"></td>
+                    <td><input type="number" class="form-control form-control-sm text-end total-input bg-light fw-bold" name="items[${index}][total]" value="${data.total.toFixed(2)}" readonly></td>
+                    <td><input type="text" class="form-control form-control-sm location-input text-center bg-light" name="items[${index}][location]" value="${data.location}" readonly></td>
+                    <td><input type="text" class="form-control form-control-sm unit-input bg-light text-center" name="items[${index}][unit]" value="${data.unit}" readonly></td>
                     <td class="text-center">
                         <button type="button" class="btn btn-link text-danger p-0 remove-row-btn"><i class="ri-delete-bin-line"></i></button>
                     </td>
@@ -656,6 +979,9 @@
 
             function handleProductChange(value) {
                 purchaseOrderController.updateRowData(rowIndex, 'product_id', value);
+
+                if (purchaseOrderController._loadingPo) return;
+                
                 if (value) {
                     const selectedObj = window.serverProductList && Array.isArray(window.serverProductList) ? window.serverProductList.find(opt => opt.id == value) : null;
                     if (selectedObj) {
@@ -811,10 +1137,48 @@
 
         setTimeout(attachVendorListener, 500);
 
+        setTimeout(function() { 
+            let accSelect = document.getElementById('account_id') || document.querySelector('select[name="account_id"]'); 
+            if (accSelect) { 
+                // More robust match for "Payable"
+                let accOpt = Array.from(accSelect.options).find(opt => opt.text.toLowerCase().includes('payab')); 
+                if (accOpt) { 
+                    if (accSelect.tomselect) { 
+                        accSelect.tomselect.setValue(accOpt.value); 
+                    } else { 
+                        $(accSelect).val(accOpt.value).trigger('change'); 
+                    } 
+                } 
+            } 
+        }, 600);
+
+        function initLoadDropdown() {
+            if (loadDropdown && window.TomSelect) {
+                if (loadDropdown.tomselect) return; // Already initialized
+
+                new TomSelect(loadDropdown, {
+                    create: false,
+                    placeholder: "Select PO to copy",
+                    allowEmptyOption: true,
+                    onChange: function(value) {
+                        if (value) {
+                            loadPurchaseOrderDetails(value);
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initialize immediately if TomSelect is available, otherwise wait
+        if (window.TomSelect) {
+            initLoadDropdown();
+        }
+
         setTimeout(() => {
             if (termsSelect && window.TomSelect && !termsSelect.tomselect) {
                 new TomSelect(termsSelect, { create: false });
             }
+            initLoadDropdown(); // Fallback initialization
         }, 600);
 
         // --- Form Submission Fix --- //

@@ -58,7 +58,7 @@
                             <select name="location_id" class="form-select form-select-sm" required>
                                 <option value="">Select Location</option>
                                 @foreach($locations as $location)
-                                    <option value="{{ $location->id }}" data-name="{{ $location->name }}" {{ (old('location_id') == $location->id || $location->name == 'Main Stock') ? 'selected' : '' }}>{{ $location->name }}</option>
+                                    <option value="{{ $location->id }}" data-name="{{ $location->name }}" {{ old('location_id') == $location->id ? 'selected' : '' }}>{{ $location->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -666,6 +666,22 @@
 
         // Initial State: The table must always start with 2 default empty rows when the page loads.
         salesOrderController.appendRow();
+
+        // Account dropdown default selection logic
+        setTimeout(function() { 
+            let accSelect = document.getElementById('account_id') || document.querySelector('select[name="account_id"]'); 
+            if (accSelect) { 
+                // More robust match for "Receivable" handling typos (ei/ie)
+                let accOpt = Array.from(accSelect.options).find(opt => opt.text.toLowerCase().includes('receiv')); 
+                if (accOpt) { 
+                    if (accSelect.tomselect) { 
+                        accSelect.tomselect.setValue(accOpt.value); 
+                    } else { 
+                        $(accSelect).val(accOpt.value).trigger('change'); 
+                    } 
+                } 
+            } 
+        }, 600);
 
         // Header events
         const mainLocationSelect = document.querySelector('select[name="location_id"]');

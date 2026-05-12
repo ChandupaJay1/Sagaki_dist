@@ -308,6 +308,104 @@ class GrnController extends Controller
         return redirect()->route('grns.show', $id)->with('success', 'GRN approved successfully.');
     }
 
+    /**
+     * Prior GRNs for the vendor (Load dropdown on GRN create).
+     */
+    public function ajaxVendorGrns(string $vendor)
+    {
+        $rows = Grn::query()
+            ->where('vendor_id', $vendor)
+            ->orderByDesc('date')
+            ->orderByDesc('id')
+            ->get(['id', 'grn_no', 'date', 'total_amount']);
+
+        return response()->json($rows->map(function (Grn $g) {
+            $dateRaw = $g->getRawOriginal('date') ?? $g->date;
+
+            return [
+                'id' => $g->id,
+                'grn_no' => $g->grn_no,
+                'date' => $dateRaw ? \Illuminate\Support\Carbon::parse($dateRaw)->format('Y-m-d') : null,
+                'total_amount' => (float) ($g->total_amount ?? 0),
+            ];
+        }));
+    }
+
+    /**
+     * Full GRN header + line items for copying into a new GRN form.
+     */
+    public function ajaxGrnDetails(string $grn)
+    {
+        $model = Grn::with(['items.product'])->findOrFail($grn);
+
+        $items = $model->items->map(function ($item) {
+            return [
+                'product_id' => $item->product_id,
+                'description' => $item->description,
+                'qty' => (float) $item->qty,
+                'rate' => (float) $item->rate,
+                'amount' => (float) $item->amount,
+                'disc_percent' => (float) ($item->disc_percent ?? 0),
+                'discount' => (float) ($item->discount ?? 0),
+                'total' => (float) $item->total,
+                'location' => $item->location,
+                'unit' => $item->unit,
+                'product' => $item->relationLoaded('product') && $item->product ? [
+                    'id' => $item->product->id,
+                    'name' => $item->product->name,
+                    'cost' => $item->product->cost,
+                ] : null,
+            ];
+        })->values();
+
+        $dateStr = static function ($value): ?string {
+            if ($value === null || $value === '') {
+                return null;
+            }
+            if ($value instanceof \Carbon\CarbonInterface) {
+                return $value->format('Y-m-d');
+            }
+
+            return (string) $value;
+        };
+
+        $header = [
+            'vendor_id' => $model->vendor_id,
+            'grn_no' => $model->grn_no,
+            'address' => $model->address,
+            'delivery_destination' => $model->delivery_destination,
+            'load' => $model->load,
+            'reference_no' => $model->reference_no,
+            'date' => $dateStr($model->date),
+            'invoice_date' => $dateStr($model->invoice_date),
+            'expected_date' => $dateStr($model->expected_date),
+            'due_date' => $dateStr($model->due_date),
+            'order_by' => $model->order_by,
+            'checked_by' => $model->checked_by,
+            'rep' => $model->rep,
+            'attent' => $model->attent,
+            'memo' => $model->memo,
+            'manual_no' => $model->manual_no,
+            'location_id' => $model->location_id,
+            'payment_term_id' => $model->payment_term_id,
+            'account_id' => $model->account_id,
+            'subtotal' => $model->subtotal,
+            'header_discount_percent' => $model->header_discount_percent,
+            'header_discount_amount' => $model->header_discount_amount,
+            'tax_amount' => $model->tax_amount,
+            'sscl_percent' => $model->sscl_percent,
+            'sscl_amount' => $model->sscl_amount,
+            'vat_percent' => $model->vat_percent,
+            'vat_amount' => $model->vat_amount,
+            'total_amount' => $model->total_amount,
+        ];
+
+        return response()->json([
+            'grn' => $header,
+            'items' => $items,
+        ]);
+    }
+
     public function destroy($id)
     {
         \DB::transaction(function () use ($id) {

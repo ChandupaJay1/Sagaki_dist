@@ -309,4 +309,81 @@ class InvoiceController extends Controller
 
         return redirect()->route('invoices.index')->with('success', 'Invoice deleted successfully.');
     }
+
+    /**
+     * Prior Invoices for the customer (Load dropdown on Sales Return create).
+     */
+    public function ajaxCustomerInvoices(string $customer)
+    {
+        $rows = Invoice::query()
+            ->where('customer_id', $customer)
+            ->orderByDesc('date')
+            ->orderByDesc('id')
+            ->get(['id', 'invoice_no', 'date', 'total_amount']);
+
+        return response()->json($rows->map(function (Invoice $i) {
+            return [
+                'id' => $i->id,
+                'invoice_no' => $i->invoice_no,
+                'date' => $i->date,
+                'total_amount' => (float) ($i->total_amount ?? 0),
+            ];
+        }));
+    }
+
+    /**
+     * Full Invoice header + line items for copying into a new Sales Return form.
+     */
+    public function ajaxInvoiceDetails(string $invoice)
+    {
+        $model = Invoice::with(['items.product'])->findOrFail($invoice);
+
+        $items = $model->items->map(function ($item) {
+            return [
+                'product_id' => $item->product_id,
+                'description' => $item->description,
+                'qty' => (float) $item->qty,
+                'rate' => (float) $item->rate,
+                'amount' => (float) $item->amount,
+                'disc_percent' => (float) ($item->disc_percent ?? 0),
+                'discount' => (float) ($item->discount ?? 0),
+                'total' => (float) $item->total,
+                'location' => $item->location,
+                'unit' => $item->unit,
+                'product' => $item->relationLoaded('product') && $item->product ? [
+                    'id' => $item->product->id,
+                    'name' => $item->product->name,
+                    'cost' => $item->product->cost,
+                ] : null,
+            ];
+        })->values();
+
+        $header = [
+            'customer_id' => $model->customer_id,
+            'invoice_no' => $model->invoice_no,
+            'address' => $model->address,
+            'delivery_destination' => $model->delivery_destination,
+            'date' => $model->date,
+            'rep_id' => $model->rep_id,
+            'attent' => $model->attent,
+            'memo' => $model->memo,
+            'location_id' => $model->location_id,
+            'payment_term_id' => $model->payment_term_id,
+            'account_id' => $model->account_id,
+            'subtotal' => $model->subtotal,
+            'header_discount_percent' => $model->header_discount_percent,
+            'header_discount_amount' => $model->header_discount_amount,
+            'tax_amount' => $model->tax_amount,
+            'sscl_percent' => $model->sscl_percent,
+            'sscl_amount' => $model->sscl_amount,
+            'vat_percent' => $model->vat_percent,
+            'vat_amount' => $model->vat_amount,
+            'total_amount' => $model->total_amount,
+        ];
+
+        return response()->json([
+            'invoice' => $header,
+            'items' => $items,
+        ]);
+    }
 }
