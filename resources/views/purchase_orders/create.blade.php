@@ -63,9 +63,9 @@
                              </select>
                          </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold mb-1">Load <span class="text-muted fw-normal">(prior PO)</span></label>
+                            <label class="form-label small fw-bold mb-1">Load <span class="text-muted fw-normal">(prior Purchase Order)</span></label>
                             <select id="loadDropdown" class="form-select form-select-sm">
-                                <option value="">Select PO to copy</option>
+                                <option value="">Select Purchase Order to copy</option>
                             </select>
                             <input type="hidden" name="load" id="poLoadSourceField" value="">
                         </div>

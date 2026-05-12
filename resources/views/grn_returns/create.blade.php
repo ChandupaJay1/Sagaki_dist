@@ -93,9 +93,9 @@
                             </div>
 
                             <div class="col-md-4">
-                                <label class="form-label small fw-bold mb-1">Load <span class="text-muted fw-normal">(prior Return)</span></label>
+                                <label class="form-label small fw-bold mb-1">Load <span class="text-muted fw-normal">(prior GRN)</span></label>
                                 <select id="loadDropdown" class="form-select form-select-sm">
-                                    <option value="">Select Return to copy</option>
+                                    <option value="">Select GRN to copy</option>
                                 </select>
                                 <input type="hidden" name="load" id="grnReturnLoadSourceField" value="">
                             </div>
@@ -387,7 +387,7 @@
         const itemsTableBody = document.querySelector('#itemsTable tbody');
         const loadDropdown = document.getElementById('loadDropdown');
 
-        function fetchVendorGrnReturns(vendorId) {
+        function fetchVendorGrns(vendorId) {
             if (!loadDropdown) return;
 
             const loadHidden = document.getElementById('grnReturnLoadSourceField');
@@ -397,23 +397,23 @@
             if (loadDropdown.tomselect) {
                 loadDropdown.tomselect.clear(true);
                 loadDropdown.tomselect.clearOptions();
-                loadDropdown.tomselect.addOption({ value: '', text: 'Select Return to copy' });
+                loadDropdown.tomselect.addOption({ value: '', text: 'Select GRN to copy' });
             } else {
-                loadDropdown.innerHTML = '<option value="">Select Return to copy</option>';
+                loadDropdown.innerHTML = '<option value="">Select GRN to copy</option>';
             }
 
             if (!vendorId) return;
 
-            fetch(`/ajax/vendors/${vendorId}/grn-returns`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+            fetch(`/ajax/vendors/${vendorId}/grns`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
                 .then(response => {
-                    if (!response.ok) throw new Error('Return list request failed: ' + response.status);
+                    if (!response.ok) throw new Error('GRN list request failed: ' + response.status);
                     return response.json();
                 })
                 .then(data => {
                     const rows = Array.isArray(data) ? data : [];
                     const options = rows.map(r => ({
                         value: String(r.id),
-                        text: `${r.return_no || 'RTN'} - ${r.date || ''} (Rs. ${parseFloat(r.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })})`
+                        text: `${r.grn_no || 'GRN'} - ${r.date || ''} (Rs. ${parseFloat(r.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })})`
                     }));
 
                     if (loadDropdown.tomselect) {
@@ -427,11 +427,11 @@
                         });
                     }
                 })
-                .catch(error => console.error('Error fetching vendor GRN Returns:', error));
+                .catch(error => console.error('Error fetching vendor GRNs:', error));
         }
 
-        function normalizeGrnReturnItemsPayload(res) {
-            let items = res.items || res.grn_return_items || (res.data && res.data.items) || (res.grn_return && res.grn_return.items) || [];
+        function normalizeGrnItemsPayload(res) {
+            let items = res.items || res.grn_items || (res.data && res.data.items) || (res.grn && res.grn.items) || [];
             if (!Array.isArray(items) && items && typeof items === 'object') {
                 items = Object.values(items);
             }
@@ -462,12 +462,12 @@
             }
         }
 
-        function applyLoadedGrnReturnHeader(r) {
+        function applyLoadedGrnHeader(r) {
             if (!r || typeof r !== 'object') return;
 
             const loadHidden = document.getElementById('grnReturnLoadSourceField');
-            if (loadHidden && r.return_no) {
-                loadHidden.value = r.return_no;
+            if (loadHidden && r.grn_no) {
+                loadHidden.value = r.grn_no;
             }
 
             const setInput = (name, val) => {
@@ -520,8 +520,8 @@
             }
         }
 
-        function loadGrnReturnDetails(returnId) {
-            if (!returnId) return;
+        function loadGrnDetails(grnId) {
+            if (!grnId) return;
 
             const loadContainer = loadDropdown && loadDropdown.closest('.col-md-4');
             const labelEl = loadContainer && loadContainer.querySelector('label');
@@ -531,10 +531,10 @@
                 labelEl.innerHTML = 'Load <span class="spinner-border spinner-border-sm text-primary" role="status"></span>';
             }
 
-            fetch(`/ajax/grn-returns/${returnId}/details`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+            fetch(`/ajax/grns/${grnId}/details`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('Return details request failed: ' + response.status);
+                        throw new Error('GRN details request failed: ' + response.status);
                     }
                     return response.json();
                 })
@@ -543,19 +543,19 @@
                         ? vendorSelect.tomselect.getValue()
                         : (vendorSelect ? vendorSelect.value : '');
                     
-                    if (res.grn_return && res.grn_return.vendor_id != null && String(res.grn_return.vendor_id) !== String(selectedVendorId || '')) {
-                        alert('This Return belongs to a different vendor. Select the correct vendor first.');
+                    if (res.grn && res.grn.vendor_id != null && String(res.grn.vendor_id) !== String(selectedVendorId || '')) {
+                        alert('This GRN belongs to a different vendor. Select the correct vendor first.');
                         if (labelEl) labelEl.innerHTML = originalLabel;
                         return;
                     }
 
-                    if (res.grn_return) {
-                        applyLoadedGrnReturnHeader(res.grn_return);
+                    if (res.grn) {
+                        applyLoadedGrnHeader(res.grn);
                     }
 
-                    const items = normalizeGrnReturnItemsPayload(res);
+                    const items = normalizeGrnItemsPayload(res);
                     if (items.length === 0) {
-                        alert('No items found in this Return.');
+                        alert('No items found in this GRN.');
                         if (labelEl) labelEl.innerHTML = originalLabel;
                         return;
                     }
@@ -684,12 +684,12 @@
                             }
                         }
 
-                        // Fetch Returns for Load dropdown
-                        fetchVendorGrnReturns(vendorId);
+                        // Fetch GRNs for Load dropdown
+                        fetchVendorGrns(vendorId);
                     })
                     .catch(error => console.error('Error fetching vendor details:', error));
             } else {
-                fetchVendorGrnReturns(null);
+                fetchVendorGrns(null);
             }
         }
 
@@ -734,11 +734,11 @@
 
                 new TomSelect(loadDropdown, {
                     create: false,
-                    placeholder: "Select Return to copy",
+                    placeholder: "Select GRN to copy",
                     allowEmptyOption: true,
                     onChange: function(value) {
                         if (value) {
-                            loadGrnReturnDetails(value);
+                            loadGrnDetails(value);
                         }
                     }
                 });
