@@ -30,20 +30,21 @@ class GrnReturnController extends Controller
         $products = Product::orderBy('name')->get();
         $units = Unit::orderBy('name')->get();
         $locations = Location::where('is_active', 1)->where('name', 'not like', '%Transit%')->orderBy('name')->get();
-        $reps = User::where('is_active', 1)->orderBy('name')->get();
-        $terms = PaymentTerm::orderBy('days')->get();
+        $users = User::where('is_active', 1)->orderBy('name')->get();
+        $reps = $users;
+        $paymentTerms = PaymentTerm::orderBy('days')->get();
         $accounts = Account::where('is_active', 1)->orderBy('name')->get();
 
         // Generate next Return Number for display
         $lastReturn = GrnReturn::latest()->first();
-        if (!$lastReturn) {
-            $nextReturnNo = 'GRNR00001';
+        if (!$lastReturn || !$lastReturn->return_no) {
+            $nextRtnNo = 'GRNR00001';
         } else {
             $lastNo = (int)str_replace('GRNR', '', $lastReturn->return_no);
-            $nextReturnNo = 'GRNR' . str_pad($lastNo + 1, 5, '0', STR_PAD_LEFT);
+            $nextRtnNo = 'GRNR' . str_pad($lastNo + 1, 5, '0', STR_PAD_LEFT);
         }
 
-        return view('grn_returns.create', compact('vendors', 'products', 'units', 'locations', 'reps', 'terms', 'accounts', 'nextReturnNo'));
+        return view('grn_returns.create', compact('vendors', 'products', 'units', 'locations', 'users', 'reps', 'paymentTerms', 'accounts', 'nextRtnNo'));
     }
 
     public function store(Request $request)
@@ -266,5 +267,102 @@ class GrnReturnController extends Controller
         $grnReturn->items()->delete();
         $grnReturn->delete();
         return redirect()->route('grn-returns.index')->with('success', 'GRN Return deleted successfully.');
+    }
+
+    /**
+     * Prior GRN Returns for the vendor (Load dropdown on GRN Return create).
+     */
+    public function ajaxVendorGrnReturns(string $vendor)
+    {
+        $rows = GrnReturn::query()
+            ->where('vendor_id', $vendor)
+            ->orderByDesc('date')
+            ->orderByDesc('id')
+            ->get(['id', 'return_no', 'date', 'total_amount']);
+
+        return response()->json($rows->map(function (GrnReturn $r) {
+            $dateRaw = $r->getRawOriginal('date') ?? $r->date;
+
+            return [
+                'id' => $r->id,
+                'return_no' => $r->return_no,
+                'date' => $dateRaw ? \Illuminate\Support\Carbon::parse($dateRaw)->format('Y-m-d') : null,
+                'total_amount' => (float) ($r->total_amount ?? 0),
+            ];
+        }));
+    }
+
+    /**
+     * Full GRN Return header + line items for copying into a new GRN Return form.
+     */
+    public function ajaxGrnReturnDetails(string $return)
+    {
+        $model = GrnReturn::with(['items.product'])->findOrFail($return);
+
+        $items = $model->items->map(function ($item) {
+            return [
+                'product_id' => $item->product_id,
+                'description' => $item->description,
+                'qty' => (float) $item->qty,
+                'rate' => (float) $item->rate,
+                'amount' => (float) $item->amount,
+                'disc_percent' => (float) ($item->disc_percent ?? 0),
+                'discount' => (float) ($item->discount ?? 0),
+                'total' => (float) $item->total,
+                'location' => $item->location,
+                'unit' => $item->unit,
+                'product' => $item->relationLoaded('product') && $item->product ? [
+                    'id' => $item->product->id,
+                    'name' => $item->product->name,
+                    'cost' => $item->product->cost,
+                ] : null,
+            ];
+        })->values();
+
+        $dateStr = static function ($value): ?string {
+            if ($value === null || $value === '') {
+                return null;
+            }
+            if ($value instanceof \Carbon\CarbonInterface) {
+                return $value->format('Y-m-d');
+            }
+
+            return (string) $value;
+        };
+
+        $header = [
+            'vendor_id' => $model->vendor_id,
+            'return_no' => $model->return_no,
+            'address' => $model->address,
+            'delivery_destination' => $model->delivery_destination,
+            'load' => $model->load,
+            'reference_no' => $model->reference_no,
+            'date' => $dateStr($model->date),
+            'invoice_date' => $dateStr($model->invoice_date),
+            'expected_date' => $dateStr($model->expected_date),
+            'due_date' => $dateStr($model->due_date),
+            'order_by' => $model->order_by,
+            'checked_by' => $model->checked_by,
+            'rep' => $model->rep,
+            'attent' => $model->attent,
+            'memo' => $model->memo,
+            'location_id' => $model->location_id,
+            'payment_term_id' => $model->payment_term_id,
+            'account_id' => $model->account_id,
+            'subtotal' => $model->subtotal,
+            'header_discount_percent' => $model->header_discount_percent,
+            'header_discount_amount' => $model->header_discount_amount,
+            'tax_amount' => $model->tax_amount,
+            'sscl_percent' => $model->sscl_percent,
+            'sscl_amount' => $model->sscl_amount,
+            'vat_percent' => $model->vat_percent,
+            'vat_amount' => $model->vat_amount,
+            'total_amount' => $model->total_amount,
+        ];
+
+        return response()->json([
+            'grn_return' => $header,
+            'items' => $items,
+        ]);
     }
 }

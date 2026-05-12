@@ -59,15 +59,16 @@
                             <select name="location_id" class="form-select form-select-sm" required>
                                 <option value="">Select Location</option>
                                 @foreach($locations as $location)
-                                    <option value="{{ $location->id }}" data-name="{{ $location->name }}" {{ (old('location_id') == $location->id || $location->name == 'Main Stock') ? 'selected' : '' }}>{{ $location->name }}</option>
+                                    <option value="{{ $location->id }}" data-name="{{ $location->name }}" {{ old('location_id') == $location->id ? 'selected' : '' }}>{{ $location->name }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold mb-1">Load</label>
-                            <select name="load" class="form-select form-select-sm">
-                                <option value="">Select Order</option>
+                            <label class="form-label small fw-bold mb-1">Load <span class="text-muted fw-normal">(prior GRN)</span></label>
+                            <select id="loadDropdown" class="form-select form-select-sm">
+                                <option value="">Select GRN to copy</option>
                             </select>
+                            <input type="hidden" name="load" id="grnLoadSourceField" value="">
                         </div>
                     </div>
 
@@ -344,11 +345,329 @@
         const termsSelect = document.getElementById('termsSelect');
         const creditLimitSpan = document.getElementById('vendor-credit-limit');
         const itemsTableBody = document.querySelector('#itemsTable tbody');
+        const loadDropdown = document.getElementById('loadDropdown');
+
+        function fetchVendorGrns(vendorId) {
+            if (!loadDropdown) return;
+
+            const loadHidden = document.getElementById('grnLoadSourceField');
+            if (loadHidden) loadHidden.value = '';
+
+            // Clear current options
+            if (loadDropdown.tomselect) {
+                loadDropdown.tomselect.clear(true);
+                loadDropdown.tomselect.clearOptions();
+                loadDropdown.tomselect.addOption({ value: '', text: 'Select GRN to copy' });
+            } else {
+                loadDropdown.innerHTML = '<option value="">Select GRN to copy</option>';
+            }
+
+            if (!vendorId) return;
+
+            fetch(`/ajax/vendors/${vendorId}/grns`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+                .then(response => {
+                    if (!response.ok) throw new Error('GRN list request failed: ' + response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    const rows = Array.isArray(data) ? data : [];
+                    const options = rows.map(grn => ({
+                        value: String(grn.id),
+                        text: `${grn.grn_no || 'GRN'} - ${grn.date || ''} (Rs. ${parseFloat(grn.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })})`
+                    }));
+
+                    if (loadDropdown.tomselect) {
+                        loadDropdown.tomselect.addOptions(options);
+                    } else {
+                        options.forEach(opt => {
+                            const option = document.createElement('option');
+                            option.value = opt.value;
+                            option.textContent = opt.text;
+                            loadDropdown.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error fetching vendor GRNs:', error));
+        }
+
+        function normalizeGrnItemsPayload(res) {
+            let items = res.items || res.grn_items || (res.data && res.data.items) || (res.grn && res.grn.items) || [];
+            if (!Array.isArray(items) && items && typeof items === 'object') {
+                items = Object.values(items);
+            }
+            return Array.isArray(items) ? items : [];
+        }
+
+        function parseLoadedUnit(item) {
+            if (item.unit != null && typeof item.unit === 'object') {
+                return item.unit.short_name || item.unit.name || 'PCS';
+            }
+            if (item.unit) return String(item.unit);
+            if (item.product && item.product.unit) {
+                const u = item.product.unit;
+                if (typeof u === 'object') return u.short_name || u.name || 'PCS';
+                return String(u);
+            }
+            return 'PCS';
+        }
+
+        function setSelectByValue(selectEl, value) {
+            if (!selectEl || value === undefined || value === null || value === '') return;
+            const strVal = String(value);
+            const hasOption = Array.from(selectEl.options).some(o => o.value === strVal);
+            if (!hasOption) return;
+            selectEl.value = strVal;
+            if (selectEl.tomselect) {
+                selectEl.tomselect.setValue(strVal, true);
+            }
+        }
+
+        function applyLoadedGrnHeader(grn) {
+            if (!grn || typeof grn !== 'object') return;
+
+            const loadHidden = document.getElementById('grnLoadSourceField');
+            if (loadHidden && grn.grn_no) {
+                loadHidden.value = grn.grn_no;
+            }
+
+            const setInput = (name, val) => {
+                if (val === undefined || val === null) return;
+                const el = document.querySelector(`[name="${name}"]`);
+                if (!el || el.type === 'checkbox') return;
+                el.value = val;
+            };
+
+            setInput('reference_no', grn.reference_no);
+            setInput('date', grn.date);
+            setInput('invoice_date', grn.invoice_date);
+            setInput('expected_date', grn.expected_date);
+            setInput('due_date', grn.due_date);
+            setInput('attent', grn.attent);
+            setInput('manual_no', grn.manual_no);
+            setInput('memo', grn.memo);
+
+            if (addressTextarea && grn.address !== undefined) {
+                addressTextarea.value = grn.address || '';
+            }
+            if (deliveryDestinationTextarea && grn.delivery_destination !== undefined) {
+                deliveryDestinationTextarea.value = grn.delivery_destination || '';
+            }
+
+            setSelectByValue(document.querySelector('select[name="location_id"]'), grn.location_id);
+            setSelectByValue(document.getElementById('termsSelect'), grn.payment_term_id);
+            setSelectByValue(document.querySelector('select[name="order_by"]'), grn.order_by);
+            setSelectByValue(document.querySelector('select[name="checked_by"]'), grn.checked_by);
+            setSelectByValue(document.querySelector('select[name="rep"]'), grn.rep);
+            setSelectByValue(document.querySelector('select[name="account_id"]'), grn.account_id);
+
+            const numericPairs = [
+                ['sscl_percent', grn.sscl_percent],
+                ['sscl_amount', grn.sscl_amount],
+                ['vat_percent', grn.vat_percent],
+                ['vat_amount', grn.vat_amount],
+                ['subtotal', grn.subtotal],
+                ['header_discount_percent', grn.header_discount_percent],
+                ['header_discount_amount', grn.header_discount_amount],
+                ['tax_amount', grn.tax_amount],
+                ['total_amount', grn.total_amount],
+            ];
+            numericPairs.forEach(([name, val]) => {
+                if (val === undefined || val === null || val === '') return;
+                const el = document.querySelector(`[name="${name}"]`);
+                if (!el) return;
+                const n = parseFloat(val);
+                el.value = Number.isFinite(n) ? n.toFixed(2) : String(val);
+            });
+
+            if (typeof grnController !== 'undefined' && grnController.calculateGrandTotal) {
+                setTimeout(() => grnController.calculateGrandTotal(), 0);
+            }
+        }
+
+        function loadGrnDetails(grnId) {
+            if (!grnId) return;
+
+            const loadContainer = loadDropdown && loadDropdown.closest('.col-md-4');
+            const labelEl = loadContainer && loadContainer.querySelector('label');
+            const originalLabel = labelEl ? labelEl.innerHTML : '';
+
+            if (labelEl) {
+                labelEl.innerHTML = 'Load <span class="spinner-border spinner-border-sm text-primary" role="status"></span>';
+            }
+
+            fetch(`/ajax/grns/${grnId}/details`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('GRN details request failed: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(res => {
+                    const selectedVendorId = vendorSelect && vendorSelect.tomselect
+                        ? vendorSelect.tomselect.getValue()
+                        : (vendorSelect ? vendorSelect.value : '');
+                    if (res.grn && res.grn.vendor_id != null && String(res.grn.vendor_id) !== String(selectedVendorId || '')) {
+                        alert('This GRN belongs to a different vendor. Select the correct vendor first.');
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+                        return;
+                    }
+                    if (res.grn) {
+                        applyLoadedGrnHeader(res.grn);
+                    }
+                    const items = normalizeGrnItemsPayload(res);
+                    if (items.length === 0) {
+                        alert('No items found in this GRN.');
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+                        return;
+                    }
+
+                    const tbody = document.querySelector('#itemsTable tbody');
+                    if (!tbody) {
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+                        return;
+                    }
+
+                    tbody.innerHTML = '';
+                    grnController.data = [];
+                    grnController.rowCount = 0;
+
+                    grnController._loadingGrn = true;
+
+                    const loadedRowsData = [];
+                    let appended = 0;
+
+                    items.forEach((item) => {
+                        const pId = item.product_id || item.item_id || (item.product && item.product.id) || null;
+                        if (!pId) return;
+
+                        const qty = parseFloat(item.qty || item.quantity || 0) || 0;
+                        const rate = parseFloat(item.rate || item.unit_price || (item.product && (item.product.cost != null ? item.product.cost : 0)) || 0) || 0;
+                        let amount = parseFloat(item.amount);
+                        if (isNaN(amount)) amount = qty * rate;
+                        let discount = parseFloat(item.discount);
+                        if (isNaN(discount)) discount = 0;
+                        const discPercent = parseFloat(item.disc_percent || item.discount_percent || 0) || 0;
+                        let total = parseFloat(item.total);
+                        if (isNaN(total)) total = amount - discount;
+
+                        const rowData = {
+                            product_id: pId,
+                            description: item.description || (item.product && item.product.name) || '',
+                            onhand: item.onhand != null && item.onhand !== '' ? item.onhand : '',
+                            qty: qty,
+                            rate: rate,
+                            amount: amount,
+                            disc_percent: discPercent,
+                            discount: discount,
+                            total: total,
+                            location: item.location || getDefaultLocation() || 'Main Stock',
+                            unit: parseLoadedUnit(item)
+                        };
+
+                        if (rowData.amount === 0 && rowData.qty > 0 && rowData.rate > 0) {
+                            rowData.amount = rowData.qty * rowData.rate;
+                        }
+                        if ((rowData.total === 0 || isNaN(rowData.total)) && rowData.amount > 0) {
+                            rowData.total = rowData.amount - rowData.discount;
+                        }
+
+                        loadedRowsData.push(rowData);
+                        grnController.appendRow(rowData);
+                        appended++;
+                    });
+
+                    if (appended === 0) {
+                        grnController._loadingGrn = false;
+                        alert('No valid line items (missing product) in this GRN.');
+                        grnController.appendRow();
+                        grnController.appendRow();
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+                        return;
+                    }
+
+                    setTimeout(() => {
+                        const allRows = tbody.querySelectorAll('tr.item-row');
+                        allRows.forEach((row, idx) => {
+                            if (idx >= loadedRowsData.length) return;
+
+                            const rd = loadedRowsData[idx];
+                            const dataIdx = parseInt(row.dataset.rowIndex, 10);
+                            if (isNaN(dataIdx) || !grnController.data[dataIdx]) return;
+
+                            const d = grnController.data[dataIdx];
+                            d.description = rd.description;
+                            d.onhand = rd.onhand;
+                            d.qty = rd.qty;
+                            d.rate = rd.rate;
+                            d.amount = rd.amount;
+                            d.disc_percent = rd.disc_percent;
+                            d.discount = rd.discount;
+                            d.total = rd.total;
+                            d.location = rd.location;
+                            d.unit = rd.unit;
+                            d.product_id = rd.product_id;
+
+                            const descInput = row.querySelector('.description-input');
+                            const qtyInput = row.querySelector('.qty-input');
+                            const rateInput = row.querySelector('.rate-input');
+                            const amountInput = row.querySelector('.amount-input');
+                            const discPercentInput = row.querySelector('.disc-percent-input');
+                            const discountInput = row.querySelector('.discount-input');
+                            const totalInput = row.querySelector('.total-input');
+                            const unitInput = row.querySelector('.unit-input');
+                            const locInput = row.querySelector('.location-input');
+                            const productSelect = row.querySelector('.product-select');
+
+                            if (descInput) descInput.value = rd.description;
+                            if (qtyInput) qtyInput.value = String(rd.qty);
+                            if (rateInput) rateInput.value = String(rd.rate);
+                            if (amountInput) amountInput.value = Number(rd.amount).toFixed(2);
+                            if (discPercentInput) discPercentInput.value = rd.disc_percent ? String(rd.disc_percent) : '';
+                            if (discountInput) discountInput.value = rd.discount > 0 ? Number(rd.discount).toFixed(2) : '';
+                            if (totalInput) totalInput.value = Number(rd.total).toFixed(2);
+                            if (unitInput) unitInput.value = rd.unit;
+                            if (locInput) locInput.value = rd.location;
+
+                            const pidStr = String(rd.product_id);
+                            if (productSelect) {
+                                if (productSelect.tomselect) {
+                                    productSelect.tomselect.setValue(pidStr, true);
+                                } else {
+                                    productSelect.value = pidStr;
+                                }
+                            }
+
+                            const rowCalcSource = parseFloat(rd.disc_percent) > 0 ? 'disc_percent' : 'discount';
+                            grnController.calculateRow(dataIdx, row, rowCalcSource);
+
+                            if (productSelect && productSelect.value && rd.location) {
+                                fetchItemStock(productSelect.value, rd.location, dataIdx, row);
+                            }
+                        });
+
+                        grnController.appendRow();
+                        grnController.calculateGrandTotal();
+
+                        grnController._loadingGrn = false;
+
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+
+                        const itemsTable = document.getElementById('itemsTable');
+                        if (itemsTable) itemsTable.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 50);
+                })
+                .catch(error => {
+                    console.error('CRITICAL LOAD ERROR:', error);
+                    grnController._loadingGrn = false;
+                    if (labelEl) labelEl.innerHTML = originalLabel;
+                    alert('Error: Data could not be loaded. Check console for details.');
+                });
+        }
 
         function fetchVendorDetails(vendorId) {
             if (vendorId) {
                 const url = "{{ url('api/vendors') }}/" + vendorId;
-                fetch(url)
+                fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
                     .then(response => response.json())
                     .then(data => {
                         if (addressTextarea) addressTextarea.value = data.address || '';
@@ -378,8 +697,13 @@
                                 }
                             }
                         }
+
+                        // Fetch GRNs for Load dropdown
+                        fetchVendorGrns(vendorId);
                     })
                     .catch(error => console.error('Error fetching vendor details:', error));
+            } else {
+                fetchVendorGrns(null);
             }
         }
 
@@ -708,6 +1032,11 @@
 
             function handleProductChange(selectedOption, value) {
                 grnController.updateRowData(rowIndex, 'product_id', value);
+
+                // During GRN loading, skip overwriting loaded values with
+                // product master data-attributes. The loaded GRN data takes
+                // priority. Also skip auto-appending rows and stock fetches.
+                if (grnController._loadingGrn) return;
                 
                 if (value && selectedOption) {
                     const desc = selectedOption.dataset.name || '';
@@ -754,7 +1083,7 @@
                     productSelect.tomselect.destroy();
                 }
 
-                new TomSelect(productSelect, {
+                const ts = new TomSelect(productSelect, {
                     create: false,
                     sortField: { field: "text", order: "asc" },
                     dropdownParent: 'body',
@@ -777,6 +1106,23 @@
                         handleProductChange(selectedOption, value);
                     }
                 });
+
+                // Get row data from controller to check if we need to pre-set value
+                const rowData = grnController.data[rowIndex];
+                if (rowData && rowData.product_id) {
+                    // Force populate fields immediately if loading from data
+                    if (rowData.description) row.querySelector('.description-input').value = rowData.description;
+                    if (rowData.unit) row.querySelector('.unit-input').value = rowData.unit;
+                    if (rowData.rate) row.querySelector('.rate-input').value = rowData.rate;
+                    if (rowData.qty) row.querySelector('.qty-input').value = rowData.qty;
+                    if (rowData.amount) row.querySelector('.amount-input').value = rowData.amount.toFixed(2);
+                    if (rowData.disc_percent) row.querySelector('.disc-percent-input').value = rowData.disc_percent;
+                    if (rowData.discount) row.querySelector('.discount-input').value = rowData.discount.toFixed(2);
+                    if (rowData.total) row.querySelector('.total-input').value = rowData.total.toFixed(2);
+                    if (rowData.location) row.querySelector('.location-input').value = rowData.location;
+
+                    ts.setValue(String(rowData.product_id), true);
+                }
             }
 
             [qtyInput, rateInput, discPercentInput, discountInput].forEach(input => {
@@ -838,8 +1184,9 @@
 
         function attachVendorListener() {
             if (vendorSelect.tomselect) {
-                vendorSelect.tomselect.on('change', function(value) {
-                    fetchVendorDetails(value);
+                vendorSelect.tomselect.on('change', function (value) {
+                    const v = (value != null && value !== '') ? value : vendorSelect.tomselect.getValue();
+                    fetchVendorDetails(v);
                 });
                 if (vendorSelect.tomselect.getValue()) {
                     fetchVendorDetails(vendorSelect.tomselect.getValue());
@@ -848,18 +1195,69 @@
                 vendorSelect.addEventListener('change', function () {
                     fetchVendorDetails(this.value);
                 });
-                if (this.value) {
-                    fetchVendorDetails(this.value);
+                if (vendorSelect.value) {
+                    fetchVendorDetails(vendorSelect.value);
                 }
             }
         }
 
         setTimeout(attachVendorListener, 500);
 
+        setTimeout(function() { 
+            let accSelect = document.getElementById('account_id') || document.querySelector('select[name="account_id"]'); 
+            if (accSelect) { 
+                // More robust match for "Payable"
+                let accOpt = Array.from(accSelect.options).find(opt => opt.text.toLowerCase().includes('payab')); 
+                if (accOpt) { 
+                    if (accSelect.tomselect) { 
+                        accSelect.tomselect.setValue(accOpt.value); 
+                    } else { 
+                        $(accSelect).val(accOpt.value).trigger('change'); 
+                    } 
+                } 
+            } 
+        }, 600);
+
+        function initLoadDropdown() {
+            if (!loadDropdown || !window.TomSelect) return;
+            if (loadDropdown.dataset.grnLoadDropdownInit === '1') return;
+            if (loadDropdown.tomselect) {
+                loadDropdown.tomselect.destroy();
+            }
+
+            new TomSelect(loadDropdown, {
+                create: false,
+                placeholder: 'Select GRN to copy',
+                allowEmptyOption: true,
+                plugins: ['clear_button'],
+                dropdownParent: 'body',
+                closeAfterSelect: true,
+                onChange: function (value) {
+                    const loadHidden = document.getElementById('grnLoadSourceField');
+                    const ts = loadDropdown.tomselect;
+                    const id = (value != null && value !== '')
+                        ? String(value)
+                        : (ts && ts.getValue ? String(ts.getValue() || '') : '');
+                    if (!id) {
+                        if (loadHidden) loadHidden.value = '';
+                        return;
+                    }
+                    loadGrnDetails(id);
+                }
+            });
+            loadDropdown.dataset.grnLoadDropdownInit = '1';
+        }
+
+        // Initialize immediately if TomSelect is available, otherwise wait
+        if (window.TomSelect) {
+            initLoadDropdown();
+        }
+
         setTimeout(() => {
             if (termsSelect && window.TomSelect && !termsSelect.tomselect) {
                 new TomSelect(termsSelect, { create: false });
             }
+            initLoadDropdown(); // Fallback initialization
         }, 600);
 
         // --- Form Submission Fix --- //

@@ -63,10 +63,11 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label small fw-bold mb-1">Load</label>
-                            <select name="load" class="form-select form-select-sm">
-                                <option value="">Select Order</option>
+                            <label class="form-label small fw-bold mb-1">Load <span class="text-muted fw-normal">(prior Invoice)</span></label>
+                            <select id="loadDropdown" class="form-select form-select-sm">
+                                <option value="">Select Invoice to copy</option>
                             </select>
+                            <input type="hidden" name="load" id="invoiceLoadSourceField" value="">
                         </div>
                     </div>
 
@@ -343,6 +344,311 @@
         const termsSelect = document.getElementById('termsSelect');
         const loadSelect = document.querySelector('select[name="load"]');
         const creditLimitSpan = document.getElementById('customer-credit-limit');
+        const loadDropdown = document.getElementById('loadDropdown');
+
+        function fetchCustomerInvoices(customerId) {
+            if (!loadDropdown) return;
+
+            const loadHidden = document.getElementById('invoiceLoadSourceField');
+            if (loadHidden) loadHidden.value = '';
+
+            // Clear current options
+            if (loadDropdown.tomselect) {
+                loadDropdown.tomselect.clear(true);
+                loadDropdown.tomselect.clearOptions();
+                loadDropdown.tomselect.addOption({ value: '', text: 'Select Invoice to copy' });
+            } else {
+                loadDropdown.innerHTML = '<option value="">Select Invoice to copy</option>';
+            }
+
+            if (!customerId) return;
+
+            fetch(`/ajax/customers/${customerId}/invoices`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+                .then(response => {
+                    if (!response.ok) throw new Error('Invoice list request failed: ' + response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    const rows = Array.isArray(data) ? data : [];
+                    const options = rows.map(inv => ({
+                        value: String(inv.id),
+                        text: `${inv.invoice_no || 'INV'} - ${inv.date || ''} (Rs. ${parseFloat(inv.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })})`
+                    }));
+
+                    if (loadDropdown.tomselect) {
+                        loadDropdown.tomselect.addOptions(options);
+                    } else {
+                        options.forEach(opt => {
+                            const option = document.createElement('option');
+                            option.value = opt.value;
+                            option.textContent = opt.text;
+                            loadDropdown.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error fetching customer Invoices:', error));
+        }
+
+        function normalizeInvoiceItemsPayload(res) {
+            let items = res.items || res.invoice_items || (res.data && res.data.items) || (res.invoice && res.invoice.items) || [];
+            if (!Array.isArray(items) && items && typeof items === 'object') {
+                items = Object.values(items);
+            }
+            return Array.isArray(items) ? items : [];
+        }
+
+        function parseLoadedUnit(item) {
+            if (item.unit != null && typeof item.unit === 'object') {
+                return item.unit.short_name || item.unit.name || 'PCS';
+            }
+            if (item.unit) return String(item.unit);
+            if (item.product && item.product.unit) {
+                const u = item.product.unit;
+                if (typeof u === 'object') return u.short_name || u.name || 'PCS';
+                return String(u);
+            }
+            return 'PCS';
+        }
+
+        function setSelectByValue(selectEl, value) {
+            if (!selectEl || value === undefined || value === null || value === '') return;
+            const strVal = String(value);
+            const hasOption = Array.from(selectEl.options).some(o => o.value === strVal);
+            if (!hasOption) return;
+            selectEl.value = strVal;
+            if (selectEl.tomselect) {
+                selectEl.tomselect.setValue(strVal, true);
+            }
+        }
+
+        function applyLoadedInvoiceHeader(invoice) {
+            if (!invoice || typeof invoice !== 'object') return;
+
+            const loadHidden = document.getElementById('invoiceLoadSourceField');
+            if (loadHidden && invoice.invoice_no) {
+                loadHidden.value = invoice.invoice_no;
+            }
+
+            const setInput = (name, val) => {
+                if (val === undefined || val === null) return;
+                const el = document.querySelector(`[name="${name}"]`);
+                if (!el || el.type === 'checkbox') return;
+                el.value = val;
+            };
+
+            setInput('address', invoice.address);
+            setInput('delivery_destination', invoice.delivery_destination);
+            setInput('date', invoice.date);
+            setInput('attent', invoice.attent);
+            setInput('memo', invoice.memo);
+
+            setSelectByValue(document.querySelector('select[name="location_id"]'), invoice.location_id);
+            setSelectByValue(document.querySelector('select[name="rep_id"]'), invoice.rep_id);
+            setSelectByValue(document.querySelector('select[name="account_id"]'), invoice.account_id);
+
+            const numericPairs = [
+                ['sscl_percent', invoice.sscl_percent],
+                ['sscl_amount', invoice.sscl_amount],
+                ['vat_percent', invoice.vat_percent],
+                ['vat_amount', invoice.vat_amount],
+                ['subtotal', invoice.subtotal],
+                ['header_discount_percent', invoice.header_discount_percent],
+                ['header_discount_amount', invoice.header_discount_amount],
+                ['tax_amount', invoice.tax_amount],
+                ['total_amount', invoice.total_amount],
+            ];
+            numericPairs.forEach(([name, val]) => {
+                if (val === undefined || val === null || val === '') return;
+                const el = document.querySelector(`[name="${name}"]`);
+                if (!el) return;
+                const n = parseFloat(val);
+                el.value = Number.isFinite(n) ? n.toFixed(2) : String(val);
+            });
+
+            if (typeof salesReturnController !== 'undefined' && salesReturnController.calculateGrandTotal) {
+                setTimeout(() => salesReturnController.calculateGrandTotal(), 0);
+            }
+        }
+
+        function loadInvoiceDetails(invoiceId) {
+            if (!invoiceId) return;
+
+            const loadContainer = loadDropdown && loadDropdown.closest('.col-md-4');
+            const labelEl = loadContainer && loadContainer.querySelector('label');
+            const originalLabel = labelEl ? labelEl.innerHTML : '';
+
+            if (labelEl) {
+                labelEl.innerHTML = 'Load <span class="spinner-border spinner-border-sm text-primary" role="status"></span>';
+            }
+
+            fetch(`/ajax/invoices/${invoiceId}/details`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Invoice details request failed: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(res => {
+                    const selectedCustomerId = customerSelect && customerSelect.tomselect
+                        ? customerSelect.tomselect.getValue()
+                        : (customerSelect ? customerSelect.value : '');
+                    if (res.invoice && res.invoice.customer_id != null && String(res.invoice.customer_id) !== String(selectedCustomerId || '')) {
+                        alert('This Invoice belongs to a different customer. Select the correct customer first.');
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+                        return;
+                    }
+                    if (res.invoice) {
+                        applyLoadedInvoiceHeader(res.invoice);
+                    }
+                    const items = normalizeInvoiceItemsPayload(res);
+                    if (items.length === 0) {
+                        alert('No items found in this Invoice.');
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+                        return;
+                    }
+
+                    const tbody = document.querySelector('#itemsTable tbody');
+                    if (!tbody) {
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+                        return;
+                    }
+
+                    tbody.innerHTML = '';
+                    salesReturnController.data = [];
+                    salesReturnController.rowCount = 0;
+
+                    salesReturnController._loadingInv = true;
+
+                    const loadedRowsData = [];
+                    let appended = 0;
+
+                    items.forEach((item) => {
+                        const pId = item.product_id || item.item_id || (item.product && item.product.id) || null;
+                        if (!pId) return;
+
+                        const qty = parseFloat(item.qty || item.quantity || 0) || 0;
+                        const rate = parseFloat(item.rate || item.unit_price || (item.product && (item.product.cost != null ? item.product.cost : 0)) || 0) || 0;
+                        let amount = parseFloat(item.amount);
+                        if (isNaN(amount)) amount = qty * rate;
+                        let discount = parseFloat(item.discount);
+                        if (isNaN(discount)) discount = 0;
+                        const discPercent = parseFloat(item.disc_percent || item.discount_percent || 0) || 0;
+                        let total = parseFloat(item.total);
+                        if (isNaN(total)) total = amount - discount;
+
+                        const rowData = {
+                            product_id: pId,
+                            description: item.description || (item.product && item.product.name) || '',
+                            onhand: item.onhand != null && item.onhand !== '' ? item.onhand : '',
+                            qty: qty,
+                            rate: rate,
+                            amount: amount,
+                            disc_percent: discPercent,
+                            discount: discount,
+                            total: total,
+                            location: item.location || getDefaultLocation() || 'Main Stock',
+                            unit: parseLoadedUnit(item)
+                        };
+
+                        if (rowData.amount === 0 && rowData.qty > 0 && rowData.rate > 0) {
+                            rowData.amount = rowData.qty * rowData.rate;
+                        }
+                        if ((rowData.total === 0 || isNaN(rowData.total)) && rowData.amount > 0) {
+                            rowData.total = rowData.amount - rowData.discount;
+                        }
+
+                        loadedRowsData.push(rowData);
+                        salesReturnController.appendRow(rowData);
+                        appended++;
+                    });
+
+                    if (appended === 0) {
+                        salesReturnController._loadingInv = false;
+                        alert('No valid line items (missing product) in this Invoice.');
+                        salesReturnController.appendRow();
+                        salesReturnController.appendRow();
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+                        return;
+                    }
+
+                    setTimeout(() => {
+                        const allRows = tbody.querySelectorAll('tr.item-row');
+                        allRows.forEach((row, idx) => {
+                            if (idx >= loadedRowsData.length) return;
+
+                            const rd = loadedRowsData[idx];
+                            const dataIdx = parseInt(row.dataset.rowIndex, 10);
+                            if (isNaN(dataIdx) || !salesReturnController.data[dataIdx]) return;
+
+                            const d = salesReturnController.data[dataIdx];
+                            d.description = rd.description;
+                            d.onhand = rd.onhand;
+                            d.qty = rd.qty;
+                            d.rate = rd.rate;
+                            d.amount = rd.amount;
+                            d.disc_percent = rd.disc_percent;
+                            d.discount = rd.discount;
+                            d.total = rd.total;
+                            d.location = rd.location;
+                            d.unit = rd.unit;
+                            d.product_id = rd.product_id;
+
+                            const descInput = row.querySelector('.description-input');
+                            const qtyInput = row.querySelector('.qty-input');
+                            const rateInput = row.querySelector('.rate-input');
+                            const amountInput = row.querySelector('.amount-input');
+                            const discPercentInput = row.querySelector('.disc-percent-input');
+                            const discountInput = row.querySelector('.discount-input');
+                            const totalInput = row.querySelector('.total-input');
+                            const unitInput = row.querySelector('.unit-input');
+                            const locInput = row.querySelector('.location-input');
+                            const productSelect = row.querySelector('.product-select');
+
+                            if (descInput) descInput.value = rd.description;
+                            if (qtyInput) qtyInput.value = String(rd.qty);
+                            if (rateInput) rateInput.value = String(rd.rate);
+                            if (amountInput) amountInput.value = Number(rd.amount).toFixed(2);
+                            if (discPercentInput) discPercentInput.value = rd.disc_percent ? String(rd.disc_percent) : '';
+                            if (discountInput) discountInput.value = rd.discount > 0 ? Number(rd.discount).toFixed(2) : '';
+                            if (totalInput) totalInput.value = Number(rd.total).toFixed(2);
+                            if (unitInput) unitInput.value = rd.unit;
+                            if (locInput) locInput.value = rd.location;
+
+                            const pidStr = String(rd.product_id);
+                            if (productSelect) {
+                                if (productSelect.tomselect) {
+                                    productSelect.tomselect.setValue(pidStr, true);
+                                } else {
+                                    productSelect.value = pidStr;
+                                }
+                            }
+
+                            const rowCalcSource = parseFloat(rd.disc_percent) > 0 ? 'disc_percent' : 'discount';
+                            salesReturnController.calculateRow(dataIdx, row, rowCalcSource);
+
+                            if (productSelect && productSelect.value && rd.location) {
+                                fetchItemStock(productSelect.value, rd.location, dataIdx, row);
+                            }
+                        });
+
+                        salesReturnController.appendRow();
+                        salesReturnController.calculateGrandTotal();
+
+                        salesReturnController._loadingInv = false;
+
+                        if (labelEl) labelEl.innerHTML = originalLabel;
+
+                        const itemsTable = document.getElementById('itemsTable');
+                        if (itemsTable) itemsTable.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }, 50);
+                })
+                .catch(error => {
+                    console.error('CRITICAL LOAD ERROR:', error);
+                    salesReturnController._loadingInv = false;
+                    if (labelEl) labelEl.innerHTML = originalLabel;
+                    alert('Error: Data could not be loaded. Check console for details.');
+                });
+        }
 
         function fetchCustomerDetails(customerId) {
             if (customerId) {
@@ -385,47 +691,13 @@
                             }
                         }
 
-                        // Fetch Outstanding Invoices for the Load dropdown
-                        fetchOutstandingInvoices(customerId);
+                        // Fetch Invoices for Load dropdown
+                        fetchCustomerInvoices(customerId);
                     })
                     .catch(error => console.error('Error fetching customer details:', error));
+            } else {
+                fetchCustomerInvoices(null);
             }
-        }
-
-        function fetchOutstandingInvoices(customerId) {
-            if (!loadSelect) return;
-            
-            const url = "{{ url('api/customers') }}/" + customerId + "/outstanding-invoices";
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    // Clear existing options
-                    loadSelect.innerHTML = '<option value="">-- Select Order --</option>';
-                    
-                    if (data.invoices && data.invoices.length > 0) {
-                        data.invoices.forEach(inv => {
-                            const option = document.createElement('option');
-                            option.value = inv.invoice_no;
-                            option.textContent = inv.invoice_no + ' (' + parseFloat(inv.total_amount).toLocaleString(undefined, {minimumFractionDigits: 2}) + ')';
-                            loadSelect.appendChild(option);
-                        });
-                    }
-
-                    // Re-initialize TomSelect if it exists
-                    if (loadSelect.tomselect) {
-                        loadSelect.tomselect.clearOptions();
-                        const options = [];
-                        data.invoices.forEach(inv => {
-                            options.push({
-                                value: inv.invoice_no,
-                                text: inv.invoice_no + ' (' + parseFloat(inv.total_amount).toLocaleString(undefined, {minimumFractionDigits: 2}) + ')'
-                            });
-                        });
-                        loadSelect.tomselect.addOptions(options);
-                        loadSelect.tomselect.refreshOptions(false);
-                    }
-                })
-                .catch(error => console.error('Error fetching outstanding invoices:', error));
         }
 
         // Standard change event
@@ -449,6 +721,44 @@
 
         setTimeout(attachCustomerListener, 500);
 
+        // Account dropdown default selection logic
+        setTimeout(function() { 
+            let accSelect = document.getElementById('account_id') || document.querySelector('select[name="account_id"]'); 
+            if (accSelect) { 
+                // More robust match for "Receivable" handling typos (ei/ie)
+                let accOpt = Array.from(accSelect.options).find(opt => opt.text.toLowerCase().includes('receiv')); 
+                if (accOpt) { 
+                    if (accSelect.tomselect) { 
+                        accSelect.tomselect.setValue(accOpt.value); 
+                    } else { 
+                        $(accSelect).val(accOpt.value).trigger('change'); 
+                    } 
+                } 
+            } 
+        }, 600);
+
+        function initLoadDropdown() {
+            if (loadDropdown && window.TomSelect) {
+                if (loadDropdown.tomselect) return; // Already initialized
+
+                new TomSelect(loadDropdown, {
+                    create: false,
+                    placeholder: "Select Invoice to copy",
+                    allowEmptyOption: true,
+                    onChange: function(value) {
+                        if (value) {
+                            loadInvoiceDetails(value);
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initialize immediately if TomSelect is available, otherwise wait
+        if (window.TomSelect) {
+            initLoadDropdown();
+        }
+
         setTimeout(() => {
             if (repSelect && window.TomSelect && !repSelect.tomselect) {
                 new TomSelect(repSelect, { create: false });
@@ -456,13 +766,7 @@
             if (termsSelect && window.TomSelect && !termsSelect.tomselect) {
                 new TomSelect(termsSelect, { create: false });
             }
-            if (loadSelect && window.TomSelect && !loadSelect.tomselect) {
-                new TomSelect(loadSelect, { 
-                    create: false,
-                    placeholder: "-- Select Order --",
-                    allowEmptyOption: true
-                });
-            }
+            initLoadDropdown(); // Fallback initialization
         }, 600);
 
         // --- Table Controller (Data Source Level) --- //
@@ -478,6 +782,7 @@
             data: [],
             rowCount: 0,
             rowTemplateHTML: '',
+            _loadingInv: false,
 
             init() {
                 const firstRow = document.querySelector('.item-row');
@@ -524,30 +829,31 @@
                 }
             },
 
-            appendRow() {
+            appendRow(itemData = null) {
                 const currentLoc = getDefaultLocation();
                 const newIdx = this.data.length;
                 
-                this.data.push({
+                const rowData = {
                     rowId: newIdx,
-                    product_id: '',
-                    description: '',
-                    onhand: '',
-                    qty: 1,
-                    rate: 0,
-                    amount: 0,
-                    disc_percent: 0,
-                    discount: 0,
-                    total: 0,
-                    location: currentLoc,
-                    unit: ''
-                });
+                    product_id: itemData ? itemData.product_id : '',
+                    description: itemData ? itemData.description : '',
+                    onhand: itemData ? itemData.onhand : '',
+                    qty: itemData ? itemData.qty : 1,
+                    rate: itemData ? itemData.rate : 0,
+                    amount: itemData ? itemData.amount : 0,
+                    disc_percent: itemData ? itemData.disc_percent : 0,
+                    discount: itemData ? itemData.discount : 0,
+                    total: itemData ? itemData.total : 0,
+                    location: itemData ? itemData.location : currentLoc,
+                    unit: itemData ? itemData.unit : ''
+                };
+                this.data.push(rowData);
                 
-                this.injectRowUI(currentLoc, newIdx);
+                this.injectRowUI(rowData, newIdx);
                 this.rowCount++;
             },
 
-            injectRowUI(currentLoc, index) {
+            injectRowUI(data, index) {
                 const newRow = document.createElement('tr');
                 newRow.className = 'item-row';
                 newRow.dataset.rowIndex = index;
@@ -555,8 +861,16 @@
                 
                 newRow.querySelectorAll('input').forEach(input => {
                     input.value = '';
-                    if (input.classList.contains('qty-input')) input.value = '1';
-                    if (input.classList.contains('location-input')) input.value = currentLoc;
+                    if (input.classList.contains('qty-input')) input.value = data.qty;
+                    if (input.classList.contains('location-input')) input.value = data.location;
+                    if (input.classList.contains('description-input')) input.value = data.description;
+                    if (input.classList.contains('onhand-input')) input.value = data.onhand;
+                    if (input.classList.contains('rate-input')) input.value = data.rate.toFixed(2);
+                    if (input.classList.contains('amount-input')) input.value = data.amount.toFixed(2);
+                    if (input.classList.contains('disc-percent-input')) input.value = data.disc_percent || '';
+                    if (input.classList.contains('discount-input')) input.value = data.discount > 0 ? data.discount.toFixed(2) : '';
+                    if (input.classList.contains('total-input')) input.value = data.total.toFixed(2);
+                    if (input.classList.contains('unit-input')) input.value = data.unit;
                 });
                 
                 newRow.querySelectorAll('.ts-wrapper').forEach(wrapper => wrapper.remove());
@@ -726,6 +1040,9 @@
 
             function handleProductChange(value) {
                 salesReturnController.updateRowData(rowIndex, 'product_id', value);
+
+                if (salesReturnController._loadingInv) return;
+                
                 if (value) {
                     const selectedObj = window.serverProductList && Array.isArray(window.serverProductList) ? window.serverProductList.find(opt => opt.id == value) : null;
                     if (selectedObj) {
@@ -806,6 +1123,39 @@
         }
 
         salesReturnController.init();
+
+        // Auto-select "Main Warehouse" on initial load
+        function autoSelectMainLocation() {
+            let locationSelect = document.querySelector('select[name="location_id"]');
+            if (locationSelect) {
+                let mainOption = Array.from(locationSelect.options).find(opt => opt.text.includes('Main'));
+                if (mainOption) {
+                    locationSelect.value = mainOption.value;
+                    if (locationSelect.tomselect) {
+                        locationSelect.tomselect.setValue(mainOption.value);
+                    }
+                    // Trigger change to sync with items
+                    locationSelect.dispatchEvent(new Event('change'));
+                }
+            }
+        }
+        autoSelectMainLocation();
+
+        // Auto-select "Accounts Receivable" on initial load
+        function autoSelectDefaultAccount() {
+            let accountSelect = document.getElementById('account_id') || document.querySelector('select[name="account_id"]');
+            if (accountSelect) {
+                if (accountSelect.tomselect) {
+                    let val = Array.from(accountSelect.options).find(opt => opt.text.includes('Accounts Receivable'))?.value;
+                    if (val) accountSelect.tomselect.setValue(val);
+                } else {
+                    let $acc = $('select[name="account_id"], #account_id');
+                    let val = $acc.find('option:contains("Accounts Receivable")').val();
+                    if (val) $acc.val(val).trigger('change');
+                }
+            }
+        }
+        autoSelectDefaultAccount();
 
         const mainLocationSelect = document.querySelector('select[name="location"]');
         if (mainLocationSelect) {

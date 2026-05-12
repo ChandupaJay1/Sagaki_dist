@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class SalesOrder extends Model
 {
     protected $fillable = [
+        'order_no',
         'customer_id',
         'rep_id',
         'location',

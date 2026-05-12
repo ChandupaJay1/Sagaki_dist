@@ -125,6 +125,22 @@ Route::middleware('auth')->group(function () {
     Route::get('api/customers/{id}', [\App\Http\Controllers\Api\CustomerController::class, 'show']);
     Route::get('api/vendors/{id}', [\App\Http\Controllers\Api\VendorController::class, 'show']);
 
+    // GRN create: Load prior GRNs by vendor and copy header/lines
+    Route::get('ajax/vendors/{vendor}/grn-returns', [GrnReturnController::class, 'ajaxVendorGrnReturns'])->name('ajax.vendors.grn-returns');
+    Route::get('ajax/grn-returns/{return}/details', [GrnReturnController::class, 'ajaxGrnReturnDetails'])->name('ajax.grn-returns.details');
+
+    Route::get('ajax/vendors/{vendor}/grns', [GrnController::class, 'ajaxVendorGrns'])->name('ajax.vendors.grns');
+    Route::get('ajax/grns/{grn}/details', [GrnController::class, 'ajaxGrnDetails'])->name('ajax.grns.details');
+
+    Route::get('ajax/vendors/{vendor}/purchase-orders', [PurchaseOrderController::class, 'ajaxVendorPurchaseOrders'])->name('ajax.vendors.purchase-orders');
+    Route::get('ajax/purchase-orders/{po}/details', [PurchaseOrderController::class, 'ajaxPurchaseOrderDetails'])->name('ajax.purchase-orders.details');
+
+    Route::get('ajax/customers/{customer}/sales-orders', [SalesOrderController::class, 'ajaxCustomerSalesOrders'])->name('ajax.customers.sales-orders');
+    Route::get('ajax/sales-orders/{so}/details', [SalesOrderController::class, 'ajaxSalesOrderDetails'])->name('ajax.sales-orders.details');
+
+    Route::get('ajax/customers/{customer}/invoices', [InvoiceController::class, 'ajaxCustomerInvoices'])->name('ajax.customers.invoices');
+    Route::get('ajax/invoices/{invoice}/details', [InvoiceController::class, 'ajaxInvoiceDetails'])->name('ajax.invoices.details');
+
     // Profile Routes
     Route::get('/profile', [App\Http\Controllers\ProfileController::class , 'show'])->name('profile.show');
     Route::put('/profile', [App\Http\Controllers\ProfileController::class , 'update'])->name('profile.update');
