@@ -1152,6 +1152,21 @@
             } 
         }, 600);
 
+        setTimeout(function() { 
+            let locSelect = document.getElementById('location_id') || document.querySelector('select[name="location_id"]'); 
+            if (locSelect) { 
+                // Find the valid element option index containing "main" 
+                let mainOpt = Array.from(locSelect.options).find(opt => opt.text.toLowerCase().includes('main')); 
+                if (mainOpt) { 
+                    if (locSelect.tomselect) { 
+                        locSelect.tomselect.setValue(mainOpt.value); 
+                    } else { 
+                        $(locSelect).val(mainOpt.value).trigger('change'); 
+                    } 
+                } 
+            } 
+        }, 650);
+
         function initLoadDropdown() {
             if (loadDropdown && window.TomSelect) {
                 if (loadDropdown.tomselect) return; // Already initialized
