@@ -683,6 +683,21 @@
             } 
         }, 600);
 
+        setTimeout(function() { 
+            let locSelect = document.getElementById('location_id') || document.querySelector('select[name="location_id"]'); 
+            if (locSelect) { 
+                // Find the valid option row where text contains "main" 
+                let mainOpt = Array.from(locSelect.options).find(opt => opt.text.toLowerCase().includes('main')); 
+                if (mainOpt) { 
+                    if (locSelect.tomselect) { 
+                        locSelect.tomselect.setValue(mainOpt.value); 
+                    } else { 
+                        $(locSelect).val(mainOpt.value).trigger('change'); 
+                    } 
+                } 
+            } 
+        }, 650);
+
         // Header events
         const mainLocationSelect = document.querySelector('select[name="location_id"]');
         
