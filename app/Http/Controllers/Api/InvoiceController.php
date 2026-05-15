@@ -71,7 +71,8 @@ class InvoiceController extends Controller
                 $salesReturn = null;
                 $totalPaid = 0;
                 $totalReturnAmount = 0;
-                $locationId = DB::table('locations')->where('is_active', 1)->value('id');
+                $locationId = DB::table('locations')->where('is_active', 1)->where('name', 'like', '%Main%')->value('id') 
+                              ?? DB::table('locations')->where('is_active', 1)->value('id');
                 $locationName = DB::table('locations')->where('id', $locationId)->value('name');
 
                 // 1. Process Sales (Invoice)
@@ -88,6 +89,13 @@ class InvoiceController extends Controller
                         'status' => 'Created',
                         'location_id' => $locationId,
                     ]);
+
+                    // Update Customer Balance for Invoice
+                    $customer = Customer::find($validated['customer_id']);
+                    if ($customer) {
+                        $customer->balance += (float)$validated['net_total'];
+                        $customer->save();
+                    }
 
                     foreach ($validated['items'] as $item) {
                         $qty = (float)$item['qty'];
@@ -107,12 +115,12 @@ class InvoiceController extends Controller
                             'location' => $locationName,
                         ]);
 
-                        // Update Stock (Decrement)
+                        // Update Stock (Decrement) - Changed type to 'Out' to match web
                         InventoryService::updateStock(
                             $item['product_id'],
                             $locationId,
                             -$qty,
-                            'Sale',
+                            'Out',
                             'Invoice',
                             $invoice->id,
                             "Invoice #{$invoice->invoice_no} Sale"
@@ -120,44 +128,86 @@ class InvoiceController extends Controller
                     }
 
                     // 2. Process Payments (Only if Invoice exists)
-                    // Cash Payment
-                    if (($validated['payment_cash'] ?? 0) > 0) {
-                        Payment::create([
-                            'invoice_id' => $invoice->id,
-                            'method' => 'Cash',
-                            'amount' => $validated['payment_cash'],
-                        ]);
-                        $totalPaid += $validated['payment_cash'];
-                    }
-
-                    // Bank Payment
-                    if (($validated['payment_bank'] ?? 0) > 0) {
-                        Payment::create([
-                            'invoice_id' => $invoice->id,
-                            'method' => 'Bank',
-                            'amount' => $validated['payment_bank'],
-                        ]);
-                        $totalPaid += $validated['payment_bank'];
-                    }
-
-                    // Cheque Payments
+                    $paymentTotal = 0;
+                    $paymentTotal += (float)($validated['payment_cash'] ?? 0);
+                    $paymentTotal += (float)($validated['payment_bank'] ?? 0);
                     if (!empty($validated['cheques'])) {
                         foreach ($validated['cheques'] as $chequeData) {
-                            $payment = Payment::create([
-                                'invoice_id' => $invoice->id,
-                                'method' => 'Cheque',
-                                'amount' => $chequeData['amount'],
-                            ]);
-
-                            Cheque::create([
-                                'payment_id' => $payment->id,
-                                'cheque_no' => $chequeData['cheque_no'],
-                                'date' => $chequeData['date'],
-                                'bank_name' => $chequeData['bank_name'],
-                            ]);
-
-                            $totalPaid += $chequeData['amount'];
+                            $paymentTotal += (float)$chequeData['amount'];
                         }
+                    }
+
+                    if ($paymentTotal > 0) {
+                        $method = 'Multiple';
+                        if ($paymentTotal == ($validated['payment_cash'] ?? 0)) $method = 'Cash';
+                        elseif ($paymentTotal == ($validated['payment_bank'] ?? 0)) $method = 'Bank Transfer';
+                        elseif (!empty($validated['cheques']) && $paymentTotal == array_sum(array_column($validated['cheques'], 'amount'))) $method = 'Cheque';
+
+                        $payBill = \App\Models\PayBill::create([
+                            'type' => 'Customer',
+                            'customer_id' => $validated['customer_id'],
+                            'voucher_no' => 'CRV/MOBILE/' . strtoupper(uniqid()),
+                            'date' => $validated['date'],
+                            'total_amount' => $paymentTotal,
+                            'payment_method' => $method,
+                            'memo' => "Mobile App Payment for Invoice #{$invoice->invoice_no}",
+                            'status' => 'Paid',
+                            'location_id' => $locationId,
+                        ]);
+
+                        \App\Models\PayBillItem::create([
+                            'pay_bill_id' => $payBill->id,
+                            'invoice_id' => $invoice->id,
+                            'bill_no' => $invoice->invoice_no,
+                            'bill_date' => $invoice->date,
+                            'bill_amount' => $invoice->total_amount,
+                            'amount_to_pay' => $paymentTotal,
+                        ]);
+
+                        // Record in Payments table too (for compatibility)
+                        if (($validated['payment_cash'] ?? 0) > 0) {
+                            Payment::create([
+                                'invoice_id' => $invoice->id,
+                                'method' => 'Cash',
+                                'amount' => $validated['payment_cash'],
+                            ]);
+                        }
+                        if (($validated['payment_bank'] ?? 0) > 0) {
+                            Payment::create([
+                                'invoice_id' => $invoice->id,
+                                'method' => 'Bank',
+                                'amount' => $validated['payment_bank'],
+                            ]);
+                        }
+                        if (!empty($validated['cheques'])) {
+                            foreach ($validated['cheques'] as $chequeData) {
+                                $payment = Payment::create([
+                                    'invoice_id' => $invoice->id,
+                                    'method' => 'Cheque',
+                                    'amount' => $chequeData['amount'],
+                                ]);
+                                Cheque::create([
+                                    'payment_id' => $payment->id,
+                                    'cheque_no' => $chequeData['cheque_no'],
+                                    'date' => $chequeData['date'],
+                                    'bank_name' => $chequeData['bank_name'],
+                                ]);
+                            }
+                        }
+
+                        // Update Customer Balance for Payment
+                        if ($customer) {
+                            $customer->balance -= $paymentTotal;
+                            $customer->save();
+                        }
+
+                        // Update Invoice Status
+                        if ($paymentTotal >= $invoice->total_amount) {
+                            $invoice->status = 'Paid';
+                        } else {
+                            $invoice->status = 'Partial';
+                        }
+                        $invoice->save();
                     }
                 }
 
@@ -185,6 +235,13 @@ class InvoiceController extends Controller
                         'reference_no' => $invoice ? $invoice->invoice_no : null,
                     ]);
 
+                    // Update Customer Balance for Return
+                    $customer = Customer::find($validated['customer_id']);
+                    if ($customer) {
+                        $customer->balance -= $totalReturnAmount;
+                        $customer->save();
+                    }
+
                     foreach ($validated['return_items'] as $return) {
                         $returnQty = (float)$return['qty'];
                         $returnRate = (float)$return['rate'];
@@ -203,12 +260,12 @@ class InvoiceController extends Controller
                             'location' => $locationName,
                         ]);
 
-                        // Update Stock (Increment)
+                        // Update Stock (Increment) - Changed type to 'In' to match web
                         InventoryService::updateStock(
                             $return['product_id'],
                             $locationId,
                             $returnQty,
-                            'Return',
+                            'In',
                             'Sales Return',
                             $salesReturn->id,
                             "Sales Return #{$salesReturn->return_no} Return"
@@ -216,12 +273,8 @@ class InvoiceController extends Controller
                     }
                 }
 
-                // 4. Update Customer Balance
-                $customer = Customer::lockForUpdate()->find($validated['customer_id']);
-                // Sale adds to balance, Payment subtracts, Return subtracts
-                $saleAmount = $invoice ? (float)$validated['net_total'] : 0;
-                $customer->balance += ($saleAmount - $totalPaid - $totalReturnAmount);
-                $customer->save();
+                // 4. Customer Balance already updated in steps 1, 2, 3
+                // (Removed the manual update here to avoid double-counting)
 
                 // 5. Return Response
                 $message = "";

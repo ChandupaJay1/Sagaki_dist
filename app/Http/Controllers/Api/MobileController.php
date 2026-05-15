@@ -674,8 +674,8 @@ class MobileController extends Controller
             $createdPayments = [];
 
             foreach ($validated['payments'] as $paymentData) {
-                // Generate a unique voucher number for each payment
-                $voucherNo = 'CP-' . strtoupper(\Illuminate\Support\Str::random(8));
+                // Generate a unique voucher number for each payment - matching web prefix
+                $voucherNo = 'CRV/MOBILE/' . strtoupper(\Illuminate\Support\Str::random(6));
 
                 $amountToSettle = $paymentData['amount'];
 
