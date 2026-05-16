@@ -62,13 +62,7 @@
                                  @endforeach
                              </select>
                          </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold mb-1">Load <span class="text-muted fw-normal">(prior Purchase Order)</span></label>
-                            <select id="loadDropdown" class="form-select form-select-sm">
-                                <option value="">Select Purchase Order to copy</option>
-                            </select>
-                            <input type="hidden" name="load" id="poLoadSourceField" value="">
-                        </div>
+
                     </div>
 
                     <!-- Header Row 2 -->
@@ -316,50 +310,7 @@
         const deliveryDestinationTextarea = document.querySelector('textarea[name="delivery_destination"]');
         const termsSelect = document.getElementById('termsSelect');
         const creditLimitSpan = document.getElementById('vendor-credit-limit');
-        const loadDropdown = document.getElementById('loadDropdown');
 
-        function fetchVendorPurchaseOrders(vendorId) {
-            if (!loadDropdown) return;
-
-            const loadHidden = document.getElementById('poLoadSourceField');
-            if (loadHidden) loadHidden.value = '';
-
-            // Clear current options
-            if (loadDropdown.tomselect) {
-                loadDropdown.tomselect.clear(true);
-                loadDropdown.tomselect.clearOptions();
-                loadDropdown.tomselect.addOption({ value: '', text: 'Select PO to copy' });
-            } else {
-                loadDropdown.innerHTML = '<option value="">Select PO to copy</option>';
-            }
-
-            if (!vendorId) return;
-
-            fetch(`/ajax/vendors/${vendorId}/purchase-orders`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
-                .then(response => {
-                    if (!response.ok) throw new Error('PO list request failed: ' + response.status);
-                    return response.json();
-                })
-                .then(data => {
-                    const rows = Array.isArray(data) ? data : [];
-                    const options = rows.map(po => ({
-                        value: String(po.id),
-                        text: `${po.po_no || 'PO'} - ${po.date || ''} (Rs. ${parseFloat(po.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })})`
-                    }));
-
-                    if (loadDropdown.tomselect) {
-                        loadDropdown.tomselect.addOptions(options);
-                    } else {
-                        options.forEach(opt => {
-                            const option = document.createElement('option');
-                            option.value = opt.value;
-                            option.textContent = opt.text;
-                            loadDropdown.appendChild(option);
-                        });
-                    }
-                })
-                .catch(error => console.error('Error fetching vendor POs:', error));
-        }
 
         function normalizePoItemsPayload(res) {
             let items = res.items || res.po_items || (res.data && res.data.items) || (res.po && res.po.items) || [];
@@ -395,11 +346,6 @@
 
         function applyLoadedPurchaseOrderHeader(po) {
             if (!po || typeof po !== 'object') return;
-
-            const loadHidden = document.getElementById('poLoadSourceField');
-            if (loadHidden && po.po_no) {
-                loadHidden.value = po.po_no;
-            }
 
             const setInput = (name, val) => {
                 if (val === undefined || val === null) return;
@@ -456,13 +402,8 @@
         function loadPurchaseOrderDetails(poId) {
             if (!poId) return;
 
-            const loadContainer = loadDropdown && loadDropdown.closest('.col-md-4');
-            const labelEl = loadContainer && loadContainer.querySelector('label');
-            const originalLabel = labelEl ? labelEl.innerHTML : '';
-
-            if (labelEl) {
-                labelEl.innerHTML = 'Load <span class="spinner-border spinner-border-sm text-primary" role="status"></span>';
-            }
+            const labelEl = null;
+            const originalLabel = '';
 
             fetch(`/ajax/purchase-orders/${poId}/details`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
                 .then(response => {
@@ -641,24 +582,24 @@
                     .then(data => {
                         if (addressTextarea) addressTextarea.value = data.address || '';
                         if (deliveryDestinationTextarea) deliveryDestinationTextarea.value = data.delivery_address || '';
-                        
+
                         if (creditLimitSpan) creditLimitSpan.innerText = parseFloat(data.credit_limit || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
 
                         if (termsSelect && data.terms) {
                             let matchedOption = Array.from(termsSelect.options).find(opt => opt.value == data.terms);
-                            
+
                             if (!matchedOption && data.terms) {
                                 let daysMatch = data.terms.match(/\d+/);
                                 if (daysMatch) {
                                     let days = parseInt(daysMatch[0]);
                                     matchedOption = Array.from(termsSelect.options).find(opt => opt.dataset.days == days);
                                 }
-                                
+
                                 if (!matchedOption) {
                                     matchedOption = Array.from(termsSelect.options).find(opt => opt.text && opt.text.toLowerCase().includes(data.terms.toLowerCase()));
                                 }
                             }
-                            
+
                             if (matchedOption) {
                                 termsSelect.value = matchedOption.value;
                                 if (termsSelect.tomselect) {
@@ -667,12 +608,9 @@
                             }
                         }
 
-                        // Fetch POs for Load dropdown
-                        fetchVendorPurchaseOrders(vendorId);
+
                     })
                     .catch(error => console.error('Error fetching vendor details:', error));
-            } else {
-                fetchVendorPurchaseOrders(null);
             }
         }
 
@@ -726,7 +664,7 @@
             appendRow(itemData = null) {
                 const currentLoc = getDefaultLocation();
                 const newIdx = this.data.length;
-                
+
                 const rowData = {
                     rowId: newIdx,
                     product_id: itemData ? itemData.product_id : '',
@@ -742,7 +680,7 @@
                     unit: itemData ? itemData.unit : ''
                 };
                 this.data.push(rowData);
-                
+
                 this.injectRowUI(rowData, newIdx);
                 this.rowCount++;
             },
@@ -751,7 +689,7 @@
                 const newRow = document.createElement('tr');
                 newRow.className = 'item-row';
                 newRow.dataset.rowIndex = index;
-                
+
                 // Construct clean HTML with unique IDs if needed, but classes are enough
                 newRow.innerHTML = `
                     <td>
@@ -775,13 +713,13 @@
                 `;
 
                 document.querySelector('#itemsTable tbody').appendChild(newRow);
-                
+
                 // Ensure no existing TomSelect instance on this new element (though it shouldn't exist)
                 const productSelect = newRow.querySelector('.product-select');
                 if (productSelect && productSelect.tomselect) {
                     productSelect.tomselect.destroy();
                 }
-                
+
                 initRowEvents(newRow);
             },
 
@@ -793,13 +731,13 @@
 
             calculateRow(rowIndex, rowElement, sourceField = 'disc_percent') {
                 if (!this.data[rowIndex]) return;
-                
+
                 const dataRow = this.data[rowIndex];
                 const qty = parseFloat(dataRow.qty) || 0;
                 const rate = parseFloat(dataRow.rate) || 0;
-                
+
                 dataRow.amount = qty * rate;
-                
+
                 if (sourceField === 'disc_percent') {
                     const discPercent = parseFloat(dataRow.disc_percent) || 0;
                     dataRow.discount = (dataRow.amount * discPercent) / 100;
@@ -831,7 +769,7 @@
                         grandTotal += parseFloat(row.total) || 0;
                     }
                 });
-    
+
                 document.querySelector('.footer-qty').value = grandQty.toFixed(2);
                 document.querySelector('.footer-amount').value = grandAmount.toFixed(2);
                 document.querySelector('.footer-discount').value = grandDiscount.toFixed(2);
@@ -840,10 +778,10 @@
                 const subTotal = grandTotal;
                 const headerDiscPercentInput = document.querySelector('.header-discount-percent');
                 const headerDiscAmountInput = document.querySelector('.header-discount-amount');
-                
+
                 let headerDiscPercent = parseFloat(headerDiscPercentInput.value) || 0;
                 let headerDiscAmount = parseFloat(headerDiscAmountInput.value) || 0;
-                
+
                 if (sourceField === 'header_percent') {
                     headerDiscAmount = (subTotal * headerDiscPercent) / 100;
                     headerDiscAmountInput.value = headerDiscAmount > 0 ? headerDiscAmount.toFixed(2) : '';
@@ -860,7 +798,7 @@
                 }
 
                 const finalTotal = subTotal - headerDiscAmount;
-                
+
                 // Update LKR Grand Total
                 const lkrSummary = document.querySelector('.footer-grand-total');
                 if(lkrSummary) lkrSummary.value = finalTotal.toFixed(2);
@@ -876,7 +814,7 @@
                 const vatAmountInput = document.querySelector('input[name="vat_amount"]');
 
                 let amountAfterHeaderDisc = subTotal - headerDiscAmount;
-                
+
                 let ssclPercent = parseFloat(ssclPercentInput ? ssclPercentInput.value : 0) || 0;
                 let ssclAmount = (amountAfterHeaderDisc * ssclPercent) / 100;
                 if(ssclAmountInput) ssclAmountInput.value = ssclAmount.toFixed(2);
@@ -896,12 +834,12 @@
             removeRow(rowIndex, rowElement) {
                 if (this.data.length > 2) {
                     this.data.splice(rowIndex, 1);
-                    
+
                     const select = rowElement.querySelector('.product-select');
                     if (select && select.tomselect) {
                         select.tomselect.destroy();
                     }
-                    
+
                     rowElement.remove();
                     this.reindexRows();
                     this.calculateGrandTotal();
@@ -910,7 +848,7 @@
                     if (productSelect && productSelect.tomselect) {
                         productSelect.tomselect.clear();
                     }
-                    
+
                     rowElement.querySelectorAll('input').forEach(input => {
                         input.value = '';
                         if (input.classList.contains('qty-input')) input.value = '1';
@@ -957,7 +895,7 @@
             fetch(`/api/products/${productId}/stock?location=${encodeURIComponent(location)}`)
                 .then(response => response.json())
                 .then(data => {
-                    const balance = data.stock || 0; 
+                    const balance = data.stock || 0;
                     onhandInput.value = balance;
                     purchaseOrderController.updateRowData(rowIndex, 'onhand', balance);
                 })
@@ -981,7 +919,7 @@
                 purchaseOrderController.updateRowData(rowIndex, 'product_id', value);
 
                 if (purchaseOrderController._loadingPo) return;
-                
+
                 if (value) {
                     const selectedObj = window.serverProductList && Array.isArray(window.serverProductList) ? window.serverProductList.find(opt => opt.id == value) : null;
                     if (selectedObj) {
@@ -996,7 +934,7 @@
                         row.querySelector('.description-input').value = desc;
                         row.querySelector('.unit-input').value = unit;
                         row.querySelector('.rate-input').value = rate;
-                        
+
                         const currentLoc = row.querySelector('.location-input') ? row.querySelector('.location-input').value : '';
                         fetchItemStock(value, currentLoc, rowIndex, row);
 
@@ -1078,14 +1016,14 @@
         const mainLocationSelect = document.querySelector('select[name="location_id"]');
         if (mainLocationSelect) {
             mainLocationSelect.addEventListener('change', function(e) {
-                if (e.detail && e.detail.isSyncTrigger) return; 
+                if (e.detail && e.detail.isSyncTrigger) return;
                 const selectedOption = this.options[this.selectedIndex];
                 const locationName = selectedOption ? selectedOption.dataset.name : '';
-                
+
                 document.querySelectorAll('#itemsTable tbody tr.item-row').forEach(row => {
                     const rowLocationInput = row.querySelector('.location-input');
                     const rowIndex = parseInt(row.dataset.rowIndex);
-                    
+
                     if (rowLocationInput && rowLocationInput.value !== locationName) {
                         rowLocationInput.value = locationName;
                         if (!isNaN(rowIndex)) {
@@ -1103,13 +1041,13 @@
         // Header Discount Events
         const headerDiscPercentInput = document.querySelector('.header-discount-percent');
         const headerDiscAmountInput = document.querySelector('.header-discount-amount');
-        
+
         if (headerDiscPercentInput) {
             headerDiscPercentInput.addEventListener('input', () => {
                 purchaseOrderController.calculateGrandTotal('header_percent');
             });
         }
-        
+
         if (headerDiscAmountInput) {
             headerDiscAmountInput.addEventListener('input', () => {
                 purchaseOrderController.calculateGrandTotal('header_amount');
@@ -1137,63 +1075,40 @@
 
         setTimeout(attachVendorListener, 500);
 
-        setTimeout(function() { 
-            let accSelect = document.getElementById('account_id') || document.querySelector('select[name="account_id"]'); 
-            if (accSelect) { 
+        setTimeout(function() {
+            let accSelect = document.getElementById('account_id') || document.querySelector('select[name="account_id"]');
+            if (accSelect) {
                 // More robust match for "Payable"
-                let accOpt = Array.from(accSelect.options).find(opt => opt.text.toLowerCase().includes('payab')); 
-                if (accOpt) { 
-                    if (accSelect.tomselect) { 
-                        accSelect.tomselect.setValue(accOpt.value); 
-                    } else { 
-                        $(accSelect).val(accOpt.value).trigger('change'); 
-                    } 
-                } 
-            } 
+                let accOpt = Array.from(accSelect.options).find(opt => opt.text.toLowerCase().includes('payab'));
+                if (accOpt) {
+                    if (accSelect.tomselect) {
+                        accSelect.tomselect.setValue(accOpt.value);
+                    } else {
+                        $(accSelect).val(accOpt.value).trigger('change');
+                    }
+                }
+            }
         }, 600);
 
-        setTimeout(function() { 
-            let locSelect = document.getElementById('location_id') || document.querySelector('select[name="location_id"]'); 
-            if (locSelect) { 
-                // Find the valid element option index containing "main" 
-                let mainOpt = Array.from(locSelect.options).find(opt => opt.text.toLowerCase().includes('main')); 
-                if (mainOpt) { 
-                    if (locSelect.tomselect) { 
-                        locSelect.tomselect.setValue(mainOpt.value); 
-                    } else { 
-                        $(locSelect).val(mainOpt.value).trigger('change'); 
-                    } 
-                } 
-            } 
-        }, 650);
-
-        function initLoadDropdown() {
-            if (loadDropdown && window.TomSelect) {
-                if (loadDropdown.tomselect) return; // Already initialized
-
-                new TomSelect(loadDropdown, {
-                    create: false,
-                    placeholder: "Select PO to copy",
-                    allowEmptyOption: true,
-                    onChange: function(value) {
-                        if (value) {
-                            loadPurchaseOrderDetails(value);
-                        }
+        setTimeout(function() {
+            let locSelect = document.getElementById('location_id') || document.querySelector('select[name="location_id"]');
+            if (locSelect) {
+                // Find the valid element option index containing "main"
+                let mainOpt = Array.from(locSelect.options).find(opt => opt.text.toLowerCase().includes('main'));
+                if (mainOpt) {
+                    if (locSelect.tomselect) {
+                        locSelect.tomselect.setValue(mainOpt.value);
+                    } else {
+                        $(locSelect).val(mainOpt.value).trigger('change');
                     }
-                });
+                }
             }
-        }
-
-        // Initialize immediately if TomSelect is available, otherwise wait
-        if (window.TomSelect) {
-            initLoadDropdown();
-        }
+        }, 650);
 
         setTimeout(() => {
             if (termsSelect && window.TomSelect && !termsSelect.tomselect) {
                 new TomSelect(termsSelect, { create: false });
             }
-            initLoadDropdown(); // Fallback initialization
         }, 600);
 
         // --- Form Submission Fix --- //

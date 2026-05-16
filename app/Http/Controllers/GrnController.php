@@ -15,6 +15,9 @@ use Illuminate\Support\Arr;
 
 use App\Models\Account;
 use App\Services\InventoryService;
+use App\Models\PurchaseOrder;
+use App\Models\PurchaseOrderItem;
+use App\Models\GrnReturnItem;
 
 class GrnController extends Controller
 {
@@ -96,6 +99,40 @@ class GrnController extends Controller
             'items.*.unit' => ['nullable', 'string'],
         ]);
 
+        // --- PO Quantity Upper-Limit Validation ---
+        if (!empty($validated['load'])) {
+            $sourcePo = PurchaseOrder::with('items')->where('po_no', $validated['load'])->first();
+            if ($sourcePo) {
+                $errors = [];
+                foreach ($request->items as $idx => $item) {
+                    if (empty($item['product_id'])) continue;
+                    $productId    = (int)$item['product_id'];
+                    $submittedQty = (float)($item['qty'] ?? 0);
+
+                    $poItem = $sourcePo->items->firstWhere('product_id', $productId);
+                    if (!$poItem) continue; // product not on PO — allow freely
+
+                    $poQty = (float)$poItem->qty;
+
+                    // Sum qty already received in OTHER GRNs that reference this same PO
+                    $alreadyReceived = \App\Models\GrnItem::whereHas('grn', function ($q) use ($sourcePo) {
+                            $q->where('load', $sourcePo->po_no);
+                        })
+                        ->where('product_id', $productId)
+                        ->sum('qty');
+
+                    $remaining = $poQty - (float)$alreadyReceived;
+                    if ($submittedQty > $remaining + 0.0001) { // tiny float tolerance
+                        $productName = \App\Models\Product::find($productId)?->name ?? 'Product #' . $productId;
+                        $errors['items.' . $idx . '.qty'] = "Qty for '{$productName}' exceeds remaining PO balance. PO Qty: {$poQty}, Already Received: {$alreadyReceived}, Remaining: " . round($remaining, 4) . ", You entered: {$submittedQty}.";
+                    }
+                }
+                if (!empty($errors)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages($errors);
+                }
+            }
+        }
+
         \DB::transaction(function () use ($request, $validated) {
             $data = Arr::except($validated, ['items']);
             foreach (['subtotal', 'header_discount_percent', 'header_discount_amount', 'tax_amount', 'sscl_percent', 'sscl_amount', 'vat_percent', 'vat_amount', 'total_amount'] as $field) {
@@ -123,7 +160,7 @@ class GrnController extends Controller
                     $discountVal = isset($item['discount']) && $item['discount'] !== '' ? (float)$item['discount'] : 0;
                     $amountVal = isset($item['amount']) && $item['amount'] !== '' ? (float)$item['amount'] : $amountCalc;
                     $totalVal = isset($item['total']) && $item['total'] !== '' ? (float)$item['total'] : ($amountVal - $discountVal);
-                    
+
                     $grnItem = $grn->items()->create([
                         'product_id' => $item['product_id'],
                         'description' => $item['description'] ?? '',
@@ -167,7 +204,7 @@ class GrnController extends Controller
     public function edit($id)
     {
         $grn = Grn::with('items')->findOrFail($id);
-        
+
         if ($grn->status === 'Approved') {
             return redirect()->route('grns.show', $id)->with('error', 'Approved GRNs cannot be edited.');
         }
@@ -179,7 +216,7 @@ class GrnController extends Controller
         $terms = PaymentTerm::orderBy('days')->get();
         $reps = User::where('is_active', 1)->orderBy('name')->get();
         $accounts = Account::where('is_active', 1)->orderBy('name')->get();
-        
+
         return view('grns.edit', compact('grn', 'vendors', 'products', 'units', 'locations', 'terms', 'reps', 'accounts'));
     }
 
@@ -261,7 +298,7 @@ class GrnController extends Controller
                     $discountVal = isset($item['discount']) && $item['discount'] !== '' ? (float)$item['discount'] : 0;
                     $amountVal = isset($item['amount']) && $item['amount'] !== '' ? (float)$item['amount'] : $amountCalc;
                     $totalVal = isset($item['total']) && $item['total'] !== '' ? (float)$item['total'] : ($amountVal - $discountVal);
-                    
+
                     $grnItem = $grn->items()->create([
                         'product_id' => $item['product_id'],
                         'description' => $item['description'] ?? '',
@@ -338,11 +375,22 @@ class GrnController extends Controller
     {
         $model = Grn::with(['items.product'])->findOrFail($grn);
 
-        $items = $model->items->map(function ($item) {
+        // Pre-calculate how much has already been returned against this GRN
+        $grnNo = $model->grn_no;
+        $returnedQtyByProduct = \App\Models\GrnReturnItem::whereHas('grnReturn', function ($q) use ($grnNo) {
+                $q->where('load', $grnNo);
+            })
+            ->select('product_id', \DB::raw('SUM(qty) as total_returned'))
+            ->groupBy('product_id')
+            ->pluck('total_returned', 'product_id');
+
+        $items = $model->items->map(function ($item) use ($returnedQtyByProduct) {
             return [
                 'product_id' => $item->product_id,
                 'description' => $item->description,
-                'qty' => (float) $item->qty,
+                'qty' => (float) max(0, $item->qty - ($returnedQtyByProduct[$item->product_id] ?? 0)),
+                'original_qty' => (float) $item->qty,
+                'returned_qty' => (float) ($returnedQtyByProduct[$item->product_id] ?? 0),
                 'rate' => (float) $item->rate,
                 'amount' => (float) $item->amount,
                 'disc_percent' => (float) ($item->disc_percent ?? 0),
@@ -410,7 +458,7 @@ class GrnController extends Controller
     {
         \DB::transaction(function () use ($id) {
             $grn = Grn::with('items')->findOrFail($id);
-            
+
             // Reverse stock for all GRNs (since stock is updated immediately on creation)
             foreach ($grn->items as $item) {
                 InventoryService::reverseStock(
@@ -427,7 +475,7 @@ class GrnController extends Controller
             $grn->items()->delete();
             $grn->delete();
         });
-        
+
         return redirect()->route('grns.index')->with('success', 'GRN deleted successfully.');
     }
 }

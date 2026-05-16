@@ -14,6 +14,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 
 use App\Models\Account;
+use App\Models\SalesOrder;
+use App\Models\SalesOrderItem;
+use App\Models\SalesReturn;
+use App\Models\SalesReturnItem;
+use App\Models\InvoiceItem;
 use App\Services\InventoryService;
 
 class InvoiceController extends Controller
@@ -78,6 +83,40 @@ class InvoiceController extends Controller
             'items.*.rate' => ['required', 'numeric'],
         ]);
 
+        // --- SO Quantity Upper-Limit Validation ---
+        if (!empty($validated['load'])) {
+            $sourceSo = \App\Models\SalesOrder::with('items')->where('order_no', $validated['load'])->first();
+            if ($sourceSo) {
+                $errors = [];
+                foreach ($request->items as $idx => $item) {
+                    if (empty($item['product_id'])) continue;
+                    $productId    = (int)$item['product_id'];
+                    $submittedQty = (float)($item['qty'] ?? 0);
+
+                    $soItem = $sourceSo->items->firstWhere('product_id', $productId);
+                    if (!$soItem) continue; // product not on SO — allow freely
+
+                    $soQty = (float)$soItem->qty;
+
+                    // Sum qty already invoiced in OTHER Invoices that reference this same SO
+                    $alreadyInvoiced = \App\Models\InvoiceItem::whereHas('invoice', function ($q) use ($sourceSo) {
+                            $q->where('load', $sourceSo->order_no);
+                        })
+                        ->where('product_id', $productId)
+                        ->sum('qty');
+
+                    $remaining = $soQty - (float)$alreadyInvoiced;
+                    if ($submittedQty > $remaining + 0.0001) {
+                        $productName = \App\Models\Product::find($productId)?->name ?? 'Product #' . $productId;
+                        $errors['items.' . $idx . '.qty'] = "Qty for '{$productName}' exceeds remaining SO balance. SO Qty: {$soQty}, Already Invoiced: {$alreadyInvoiced}, Remaining: " . round($remaining, 4) . ", You entered: {$submittedQty}.";
+                    }
+                }
+                if (!empty($errors)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages($errors);
+                }
+            }
+        }
+
         \DB::transaction(function () use ($request, $validated) {
             $data = Arr::except($validated, ['items']);
             foreach (['subtotal', 'header_discount_percent', 'header_discount_amount', 'tax_amount', 'sscl_percent', 'sscl_amount', 'vat_percent', 'vat_amount', 'total_amount'] as $field) {
@@ -134,14 +173,14 @@ class InvoiceController extends Controller
     public function show($id)
     {
         $invoice = Invoice::with(['customer', 'items.product', 'payments.cheques', 'payBillItems.payBill'])->findOrFail($id);
-        
+
         // Calculate Customer Outstanding
         $totalInvoices = Invoice::where('customer_id', $invoice->customer_id)->sum('total_amount');
         $totalPaid = \App\Models\PayBillItem::whereHas('payBill', function($q) use ($invoice) {
             $q->where('customer_id', $invoice->customer_id);
         })->sum('amount_to_pay');
         $totalReturns = \App\Models\SalesReturn::where('customer_id', $invoice->customer_id)->sum('total_amount');
-        
+
         $outstanding = ($totalInvoices - $totalPaid) - $totalReturns;
 
         return view('invoices.show', compact('invoice', 'outstanding'));
@@ -157,7 +196,7 @@ class InvoiceController extends Controller
         $terms = PaymentTerm::orderBy('days')->get();
         $reps = User::where('is_active', 1)->orderBy('name')->get();
         $accounts = Account::where('is_active', 1)->orderBy('name')->get();
-        
+
         return view('invoices.edit', compact('invoice', 'customers', 'products', 'locations', 'units', 'terms', 'reps', 'accounts'));
     }
 
@@ -294,7 +333,7 @@ class InvoiceController extends Controller
     public function destroy($id)
     {
         $invoice = Invoice::findOrFail($id);
-        
+
         \DB::transaction(function () use ($invoice) {
             // Update Customer Balance
             $customer = Customer::find($invoice->customer_id);
@@ -338,11 +377,22 @@ class InvoiceController extends Controller
     {
         $model = Invoice::with(['items.product'])->findOrFail($invoice);
 
-        $items = $model->items->map(function ($item) {
+        // Pre-calculate how much has already been returned against this Invoice
+        $invoiceNo = $model->invoice_no;
+        $returnedQtyByProduct = \App\Models\SalesReturnItem::whereHas('salesReturn', function ($q) use ($invoiceNo) {
+                $q->where('load', $invoiceNo);
+            })
+            ->select('product_id', \DB::raw('SUM(qty) as total_returned'))
+            ->groupBy('product_id')
+            ->pluck('total_returned', 'product_id');
+
+        $items = $model->items->map(function ($item) use ($returnedQtyByProduct) {
             return [
                 'product_id' => $item->product_id,
                 'description' => $item->description,
-                'qty' => (float) $item->qty,
+                'qty' => (float) max(0, $item->qty - ($returnedQtyByProduct[$item->product_id] ?? 0)),
+                'original_qty' => (float) $item->qty,
+                'returned_qty' => (float) ($returnedQtyByProduct[$item->product_id] ?? 0),
                 'rate' => (float) $item->rate,
                 'amount' => (float) $item->amount,
                 'disc_percent' => (float) ($item->disc_percent ?? 0),

@@ -17,7 +17,7 @@
     <link href="{{ asset('assets/css/app.min.css') }}" rel="stylesheet" type="text/css" />
     <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.min.css">
-    
+
     <style>
         :root {
             --sg-topbar-height: 72px;
@@ -34,21 +34,21 @@
         }
 
         /* Support for Dark Mode and Light Mode backgrounds */
-        [data-bs-theme="light"] body { 
+        [data-bs-theme="light"] body {
             background-color: #f8fafc !important; /* Soft Slate 50/100 mix */
             color: #1e293b !important; /* Slate 800 */
         }
-        [data-bs-theme="dark"] body { 
-            background-color: #0c111d !important; 
+        [data-bs-theme="dark"] body {
+            background-color: #0c111d !important;
         }
 
         /* Light Theme Typography & Readability */
-        [data-bs-theme="light"] .text-muted, 
+        [data-bs-theme="light"] .text-muted,
         [data-bs-theme="light"] .secondary-text {
             color: #64748b !important; /* Slate 500 */
         }
 
-        [data-bs-theme="light"] h1, [data-bs-theme="light"] h2, [data-bs-theme="light"] h3, 
+        [data-bs-theme="light"] h1, [data-bs-theme="light"] h2, [data-bs-theme="light"] h3,
         [data-bs-theme="light"] h4, [data-bs-theme="light"] h5, [data-bs-theme="light"] h6 {
             color: #0f172a !important; /* Slate 900 */
             letter-spacing: -0.025em;
@@ -91,7 +91,7 @@
         }
 
         .main-nav {
-            background: #0f172a !important; 
+            background: #0f172a !important;
             box-shadow: 12px 0 50px rgba(0,0,0,0.15);
             z-index: 1050;
         }
@@ -328,7 +328,7 @@
         @media (max-width: 767px) {
             .search-wrap.search-open .app-search { max-width: 160px; width: 160px; }
         }
-        
+
         .navbar-header { position: relative; }
         @media (max-width: 576px) {
             .navbar-header.searching #search-wrap {
@@ -360,11 +360,11 @@
             align-items: center;
         }
 
-        .topbar > .logo-box .brand-name { 
+        .topbar > .logo-box .brand-name {
             display: inline-block !important;
             color: #1e293b !important;
         }
-        [data-bs-theme="dark"] .topbar > .logo-box .brand-name { 
+        [data-bs-theme="dark"] .topbar > .logo-box .brand-name {
             color: #f1f5f9 !important;
         }
         /* Ensure only one brand text on desktop: hide short label on md+ */
@@ -376,7 +376,7 @@
             padding: 0 28px;
             height: 100%;
         }
-        
+
         /* Global form controls dark theme */
         [data-bs-theme="dark"] .form-control,
         [data-bs-theme="dark"] .form-select {
@@ -775,8 +775,8 @@
         }
 
         /* Hide vertical line in sidebar - Comprehensive Fix */
-        .main-nav::before, .main-nav::after, .navbar-nav::before, .navbar-nav::after, 
-        #navbar-nav::before, #navbar-nav::after, .menu-item::after, .menu-item::before, 
+        .main-nav::before, .main-nav::after, .navbar-nav::before, .navbar-nav::after,
+        #navbar-nav::before, #navbar-nav::after, .menu-item::after, .menu-item::before,
         .menu-link::after, .menu-link::before, .nav-icon::after, .nav-icon::before {
             display: none !important;
             content: none !important;
@@ -790,7 +790,7 @@
         [data-simplebar] .simplebar-scrollbar:before {
             background: rgba(255,255,255,0.1) !important;
         }
-        
+
         /* Toast & Notification */
         #toast-container {
             position: fixed;
@@ -1446,7 +1446,7 @@
                 }
             }
             function poll() {
-                fetch(url, { 
+                fetch(url, {
                     credentials: 'same-origin',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -1474,7 +1474,7 @@
         (function() {
             const preloader = document.getElementById('global-preloader');
             let activeRequests = 0;
-            
+
             window.showPreloader = function() {
                 activeRequests++;
                 if (preloader) {
@@ -1505,12 +1505,12 @@
             const originalFetch = window.fetch;
             window.fetch = async (...args) => {
                 const url = typeof args[0] === 'string' ? args[0] : (args[0] instanceof Request ? args[0].url : '');
-                
+
                 // Exclude background polling tasks (like approval counts or specific stock checks)
                 const isBackground = url.includes('approvals/count') || url.includes('stock?location');
-                
+
                 if (!isBackground) window.showPreloader();
-                
+
                 try {
                     const response = await originalFetch(...args);
                     if (!isBackground) window.hidePreloader();
@@ -1532,9 +1532,177 @@
             }
         })();
     </script>
+
+    <script>
+        /**
+         * window.showAppToast(message, type)
+         * Globally accessible toast helper that reuses the existing
+         * #toast-container / .toast-item infrastructure defined in this layout.
+         *
+         * @param {string} message  - Text to display
+         * @param {string} [type]   - 'error' (default) | 'success' | 'warning' | 'info'
+         */
+        (function () {
+            var ICON_MAP = {
+                error:   { cls: 'ri-error-warning-line',      color: '#ef4444' },
+                success: { cls: 'ri-checkbox-circle-line',    color: '#22c55e' },
+                warning: { cls: 'ri-alert-line',              color: '#f59e0b' },
+                info:    { cls: 'ri-information-line',        color: '#3b82f6' },
+            };
+
+            window.showAppToast = function (message, type) {
+                type = type || 'error';
+                var iconCfg = ICON_MAP[type] || ICON_MAP.error;
+
+                var container = document.getElementById('toast-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'toast-container';
+                    document.body.appendChild(container);
+                }
+
+                var t = document.createElement('div');
+                t.className = 'toast-item';
+                // Override icon colour per type
+                t.style.borderLeftColor = iconCfg.color;
+                t.style.borderLeft = '3px solid ' + iconCfg.color;
+
+                var icon = document.createElement('i');
+                icon.className = iconCfg.cls + ' toast-icon';
+                icon.style.color = iconCfg.color;
+
+                var text = document.createElement('div');
+                text.className = 'toast-text';
+                text.textContent = message;
+
+                var close = document.createElement('button');
+                close.type = 'button';
+                close.className = 'btn-close btn-close-sm ms-auto';
+                close.style.cssText = 'width:0.65em;height:0.65em;opacity:0.5;';
+                close.setAttribute('aria-label', 'Close');
+                close.addEventListener('click', function () {
+                    if (t.parentNode) t.parentNode.removeChild(t);
+                });
+
+                t.appendChild(icon);
+                t.appendChild(text);
+                t.appendChild(close);
+                container.appendChild(t);
+
+                // Auto-dismiss after 8 s for errors, 4 s otherwise
+                var ttl = (type === 'error') ? 8000 : 4000;
+                setTimeout(function () {
+                    if (t.parentNode) t.parentNode.removeChild(t);
+                }, ttl);
+            };
+
+            /**
+             * window.showValidationErrors(errors)
+             * Accepts the `errors` object from a Laravel 422 JSON response
+             * (shape: { "field": ["message 1", ...], ... }) and fires one
+             * toast per unique message, plus injects a dismissible Bootstrap
+             * alert panel at the top of the nearest .card-body on the page.
+             *
+             * @param {Object} errors
+             * @param {string} [alertAnchorSelector]  CSS selector for the
+             *   element BEFORE which the alert panel is inserted.
+             *   Defaults to the first .card-body on the page.
+             */
+            window.showValidationErrors = function (errors, alertAnchorSelector) {
+                // Collect unique messages (preserving order)
+                var seen = {};
+                var messages = [];
+                Object.values(errors).forEach(function (msgs) {
+                    (Array.isArray(msgs) ? msgs : [msgs]).forEach(function (m) {
+                        if (!seen[m]) { seen[m] = true; messages.push(m); }
+                    });
+                });
+
+                if (messages.length === 0) return;
+
+                // ── Inline alert panel ───────────────────────────────────────
+                var anchor = alertAnchorSelector
+                    ? document.querySelector(alertAnchorSelector)
+                    : null;
+                if (!anchor) {
+                    // Fall back: first .card-body, then first .card, then body
+                    anchor = document.querySelector('.card-body')
+                          || document.querySelector('.card')
+                          || document.body;
+                }
+
+                // Remove any previously injected alert from this function
+                var old = anchor.querySelector('.js-validation-alert');
+                if (old) old.parentNode.removeChild(old);
+
+                var panel = document.createElement('div');
+                panel.className = 'alert alert-danger alert-dismissible fade show js-validation-alert';
+                panel.setAttribute('role', 'alert');
+
+                var heading = document.createElement('strong');
+                heading.textContent = 'Please fix the following errors:';
+                panel.appendChild(heading);
+
+                var ul = document.createElement('ul');
+                ul.className = 'mb-0 mt-1';
+                messages.forEach(function (m) {
+                    var li = document.createElement('li');
+                    li.textContent = m;
+                    ul.appendChild(li);
+                });
+                panel.appendChild(ul);
+
+                var btnClose = document.createElement('button');
+                btnClose.type = 'button';
+                btnClose.className = 'btn-close';
+                btnClose.setAttribute('data-bs-dismiss', 'alert');
+                btnClose.setAttribute('aria-label', 'Close');
+                panel.appendChild(btnClose);
+
+                // Insert as the very FIRST child of the anchor element
+                anchor.insertBefore(panel, anchor.firstChild);
+
+                // Scroll so the user sees the panel
+                panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                // ── Individual toasts (one per message, capped at 5) ────────
+                messages.slice(0, 5).forEach(function (m) {
+                    window.showAppToast(m, 'error');
+                });
+
+                // ── Highlight offending qty inputs ───────────────────────────
+                // Error keys from Laravel look like "items.0.qty", "items.2.qty"
+                // Map them back onto the rendered table rows.
+                Object.keys(errors).forEach(function (key) {
+                    var match = key.match(/^items\.([0-9]+)\.(\w+)$/);
+                    if (!match) return;
+                    var rowIdx  = parseInt(match[1], 10);
+                    var field   = match[2]; // e.g. "qty"
+                    var rows    = document.querySelectorAll('#itemsTable tbody tr.item-row');
+                    // rowIdx corresponds to the 0-based valid-row index after re-indexing
+                    var validRows = Array.from(rows).filter(function (r) {
+                        return r.querySelector('.product-select') &&
+                               r.querySelector('.product-select').value !== '';
+                    });
+                    var targetRow = validRows[rowIdx];
+                    if (!targetRow) return;
+                    var input = targetRow.querySelector('.' + field + '-input');
+                    if (input) {
+                        input.classList.add('is-invalid');
+                        input.style.borderColor = '#ef4444';
+                        // Remove highlight on next user interaction
+                        input.addEventListener('input', function clearHighlight() {
+                            input.classList.remove('is-invalid');
+                            input.style.borderColor = '';
+                            input.removeEventListener('input', clearHighlight);
+                        }, { once: true });
+                    }
+                });
+            };
+        }());
+    </script>
     @stack('scripts')
 
 </body>
 
 </html>
- 

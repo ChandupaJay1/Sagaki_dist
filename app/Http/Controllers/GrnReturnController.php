@@ -97,6 +97,40 @@ class GrnReturnController extends Controller
             'items.*.unit' => ['nullable', 'string'],
         ]);
 
+        // --- GRN Quantity Upper-Limit Validation for GRN Return ---
+        if (!empty($validated['load'])) {
+            $sourceGrn = \App\Models\Grn::with('items')->where('grn_no', $validated['load'])->first();
+            if ($sourceGrn) {
+                $errors = [];
+                foreach ($request->items as $idx => $item) {
+                    if (empty($item['product_id'])) continue;
+                    $productId    = (int)$item['product_id'];
+                    $submittedQty = (float)($item['qty'] ?? 0);
+
+                    $grnItem = $sourceGrn->items->firstWhere('product_id', $productId);
+                    if (!$grnItem) continue; // product not on source GRN — allow freely
+
+                    $grnQty = (float)$grnItem->qty;
+
+                    // Sum qty already returned in OTHER GRN Returns that reference this same GRN
+                    $alreadyReturned = \App\Models\GrnReturnItem::whereHas('grnReturn', function ($q) use ($sourceGrn) {
+                            $q->where('load', $sourceGrn->grn_no);
+                        })
+                        ->where('product_id', $productId)
+                        ->sum('qty');
+
+                    $remaining = $grnQty - (float)$alreadyReturned;
+                    if ($submittedQty > $remaining + 0.0001) {
+                        $productName = \App\Models\Product::find($productId)?->name ?? 'Product #' . $productId;
+                        $errors['items.' . $idx . '.qty'] = "Qty for '{$productName}' exceeds returnable GRN balance. GRN Qty: {$grnQty}, Already Returned: {$alreadyReturned}, Remaining: " . round($remaining, 4) . ", You entered: {$submittedQty}.";
+                    }
+                }
+                if (!empty($errors)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages($errors);
+                }
+            }
+        }
+
         \DB::transaction(function () use ($request, $validated) {
             $data = Arr::except($validated, ['items']);
             foreach (['subtotal', 'header_discount_percent', 'header_discount_amount', 'tax_amount', 'sscl_percent', 'sscl_amount', 'vat_percent', 'vat_amount', 'total_amount'] as $field) {
@@ -113,7 +147,7 @@ class GrnReturnController extends Controller
                 $lastNo = (int)str_replace('GRNR', '', $lastReturn->return_no);
                 $data['return_no'] = 'GRNR' . str_pad($lastNo + 1, 5, '0', STR_PAD_LEFT);
             }
-            
+
             $grnReturn = GrnReturn::create($data);
 
             foreach ($request->items as $item) {
@@ -173,7 +207,7 @@ class GrnReturnController extends Controller
         $reps = User::where('is_active', 1)->orderBy('name')->get();
         $terms = PaymentTerm::orderBy('days')->get();
         $accounts = Account::where('is_active', 1)->orderBy('name')->get();
-        
+
         return view('grn_returns.edit', compact('return', 'vendors', 'products', 'units', 'locations', 'reps', 'terms', 'accounts'));
     }
 
@@ -231,7 +265,7 @@ class GrnReturnController extends Controller
                     $data[$field] = $data[$field] ?: 0;
                 }
             }
-            
+
             $grnReturn->update($data);
 
             $grnReturn->items()->delete();

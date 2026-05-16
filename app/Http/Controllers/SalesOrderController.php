@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 
 use App\Models\Account;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
 
 class SalesOrderController extends Controller
 {
@@ -101,7 +103,7 @@ class SalesOrderController extends Controller
                 $lastNo = (int)str_replace('SO', '', $lastOrder->order_no);
                 $data['order_no'] = 'SO' . str_pad($lastNo + 1, 5, '0', STR_PAD_LEFT);
             }
-            
+
             $salesOrder = SalesOrder::create($data);
 
             foreach ($request->items as $item) {
@@ -145,7 +147,7 @@ class SalesOrderController extends Controller
         $terms = PaymentTerm::orderBy('days')->get();
         $products = Product::where('is_main_product', false)->orderBy('name')->get();
         $accounts = Account::where('is_active', 1)->orderBy('name')->get();
-        
+
         return view('sales_orders.edit', compact('order', 'customers', 'locations', 'reps', 'terms', 'products', 'accounts'));
     }
 
@@ -200,7 +202,7 @@ class SalesOrderController extends Controller
                 }
             }
             $data['rep_id'] = $request->rep;
-            
+
             $salesOrder->update($data);
 
             // Sync items: delete existing and recreate
@@ -267,11 +269,22 @@ class SalesOrderController extends Controller
     {
         $model = SalesOrder::with(['items.product'])->findOrFail($so);
 
-        $items = $model->items->map(function ($item) {
+        // Pre-calculate how much has already been invoiced against this Sales Order
+        $orderNo = $model->order_no;
+        $invoicedQtyByProduct = \App\Models\InvoiceItem::whereHas('invoice', function ($q) use ($orderNo) {
+                $q->where('load', $orderNo);
+            })
+            ->select('product_id', \DB::raw('SUM(qty) as total_invoiced'))
+            ->groupBy('product_id')
+            ->pluck('total_invoiced', 'product_id');
+
+        $items = $model->items->map(function ($item) use ($invoicedQtyByProduct) {
             return [
                 'product_id' => $item->product_id,
                 'description' => $item->description,
-                'qty' => (float) $item->qty,
+                'qty' => (float) max(0, $item->qty - ($invoicedQtyByProduct[$item->product_id] ?? 0)),
+                'original_qty' => (float) $item->qty,
+                'invoiced_qty' => (float) ($invoicedQtyByProduct[$item->product_id] ?? 0),
                 'rate' => (float) $item->rate,
                 'amount' => (float) $item->amount,
                 'disc_percent' => (float) ($item->disc_percent ?? 0),

@@ -71,6 +71,17 @@
                     </div>
 
                     <div class="card-body bg-light-subtle">
+                        @if ($errors->any())
+                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <strong>Please fix the following errors:</strong>
+                                <ul class="mb-0 mt-1">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        @endif
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <label class="form-label small fw-bold mb-1">Vendor Name <span class="text-danger">*</span></label>
@@ -542,7 +553,7 @@
                     const selectedVendorId = vendorSelect && vendorSelect.tomselect
                         ? vendorSelect.tomselect.getValue()
                         : (vendorSelect ? vendorSelect.value : '');
-                    
+
                     if (res.grn && res.grn.vendor_id != null && String(res.grn.vendor_id) !== String(selectedVendorId || '')) {
                         alert('This GRN belongs to a different vendor. Select the correct vendor first.');
                         if (labelEl) labelEl.innerHTML = originalLabel;
@@ -637,7 +648,7 @@
                         grnReturnController._loadingGrn = false;
 
                         if (labelEl) labelEl.innerHTML = originalLabel;
-                        
+
                         const itemsTable = document.getElementById('itemsTable');
                         if (itemsTable) itemsTable.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     }, 300);
@@ -658,19 +669,19 @@
                     .then(data => {
                         if (addressTextarea) addressTextarea.value = data.address || '';
                         if (deliveryDestinationTextarea) deliveryDestinationTextarea.value = data.delivery_address || '';
-                        
+
                         if (creditLimitSpan) creditLimitSpan.innerText = parseFloat(data.credit_limit || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
-                        
+
                         if (termsSelect && data.terms) {
                             // Try to match by days first
                             let daysMatch = data.terms.match(/\d+/);
                             let matchedOption = null;
-                            
+
                             if (daysMatch) {
                                 let days = parseInt(daysMatch[0]);
                                 matchedOption = Array.from(termsSelect.options).find(opt => opt.dataset.days == days);
                             }
-                            
+
                             if (!matchedOption) {
                                 // Try to match by text
                                 matchedOption = Array.from(termsSelect.options).find(opt => opt.text.toLowerCase().includes(data.terms.toLowerCase()));
@@ -713,19 +724,19 @@
 
         setTimeout(attachVendorListener, 500);
 
-        setTimeout(function() { 
-            let accSelect = document.getElementById('account_id') || document.querySelector('select[name="account_id"]'); 
-            if (accSelect) { 
+        setTimeout(function() {
+            let accSelect = document.getElementById('account_id') || document.querySelector('select[name="account_id"]');
+            if (accSelect) {
                 // More robust match for "Payable"
-                let accOpt = Array.from(accSelect.options).find(opt => opt.text.toLowerCase().includes('payab')); 
-                if (accOpt) { 
-                    if (accSelect.tomselect) { 
-                        accSelect.tomselect.setValue(accOpt.value); 
-                    } else { 
-                        $(accSelect).val(accOpt.value).trigger('change'); 
-                    } 
-                } 
-            } 
+                let accOpt = Array.from(accSelect.options).find(opt => opt.text.toLowerCase().includes('payab'));
+                if (accOpt) {
+                    if (accSelect.tomselect) {
+                        accSelect.tomselect.setValue(accOpt.value);
+                    } else {
+                        $(accSelect).val(accOpt.value).trigger('change');
+                    }
+                }
+            }
         }, 600);
 
         function initLoadDropdown() {
@@ -757,6 +768,57 @@
             initLoadDropdown(); // Fallback initialization
         }, 600);
 
+        // Default the Location dropdown to "Main Warehouse" on page load.
+        // IMPORTANT: the global layout script has already wrapped every select.form-select
+        // with TomSelect before DOMContentLoaded fires, so the raw <select>.value setter
+        // is silently ignored. We must go through the TomSelect instance instead.
+        // We also cannot rely on a fixed timeout because TomSelect initialisation in the
+        // layout runs synchronously during HTML parse, meaning it is always ready by the
+        // time DOMContentLoaded fires — no retry loop is needed, only the correct API.
+        (function defaultLocationToMainWarehouse() {
+            var locSelect = document.querySelector('select[name="location_id"]');
+            if (!locSelect) return;
+
+            // Skip if a value was already restored by old() (validation re-flash)
+            var alreadySelected = locSelect.tomselect
+                ? locSelect.tomselect.getValue() !== ''
+                : locSelect.value !== '';
+            if (alreadySelected) return;
+
+            // Find the option whose visible text contains "main" (case-insensitive).
+            // This matches "Main Warehouse", "Main Stock", etc. without hardcoding an ID.
+            var mainOpt = Array.from(locSelect.options).find(function (opt) {
+                return opt.value !== '' && opt.text.toLowerCase().includes('main');
+            });
+            if (!mainOpt) return;
+
+            if (locSelect.tomselect) {
+                // TomSelect owns this element — use its API so the UI, internal
+                // state, and the underlying <select> value all stay in sync.
+                locSelect.tomselect.setValue(mainOpt.value, /* silent= */ false);
+            } else {
+                // Fallback: TomSelect not yet attached (should not happen, but safe).
+                locSelect.value = mainOpt.value;
+                locSelect.dispatchEvent(new Event('change'));
+            }
+        }());
+
+        // Sync row location-inputs AFTER grnReturnController.init() has built the rows.
+        // grnReturnController.init() is called synchronously at the very bottom of this
+        // DOMContentLoaded handler, so by the time the 0ms task queue flush runs the
+        // rows are guaranteed to exist and the mainLocationSelect change listener will
+        // propagate the selected location name into every row's location-input.
+        setTimeout(function () {
+            var locSelect = document.querySelector('select[name="location_id"]');
+            if (!locSelect) return;
+            var currentVal = locSelect.tomselect
+                ? locSelect.tomselect.getValue()
+                : locSelect.value;
+            if (!currentVal) return;
+            // Re-fire change so mainLocationSelect handler syncs all row location-inputs.
+            locSelect.dispatchEvent(new Event('change'));
+        }, 0);
+
         function getDefaultLocation() {
             const locNode = document.querySelector('select[name="location_id"]');
             if (locNode && locNode.selectedIndex >= 0) {
@@ -781,9 +843,9 @@
 
                 const firstRow = tbody.querySelector('.item-row');
                 if (!firstRow) return;
-                
+
                 this.rowTemplateHTML = firstRow.innerHTML;
-                
+
                 // Clear items
                 tbody.innerHTML = '';
                 this.data = [];
@@ -837,7 +899,7 @@
                 const newRow = document.createElement('tr');
                 newRow.className = 'item-row';
                 newRow.innerHTML = this.rowTemplateHTML;
-                
+
                 newRow.querySelectorAll('input').forEach(input => {
                     input.value = '';
                     if (input.classList.contains('qty-input')) input.value = data.qty;
@@ -851,7 +913,7 @@
                     if (input.classList.contains('total-input')) input.value = data.total.toFixed(2);
                     if (input.classList.contains('unit-input')) input.value = data.unit;
                 });
-                
+
                 newRow.querySelectorAll('.ts-wrapper').forEach(wrapper => wrapper.remove());
                 newRow.querySelectorAll('select').forEach(select => {
                     select.classList.remove('tomselected', 'ts-hidden-accessible');
@@ -883,13 +945,13 @@
 
             calculateRow(rowIndex, rowElement, sourceField = 'disc_percent') {
                 if (!this.data[rowIndex]) return;
-                
+
                 const dataRow = this.data[rowIndex];
                 const qty = parseFloat(dataRow.qty) || 0;
                 const rate = parseFloat(dataRow.rate) || 0;
-                
+
                 dataRow.amount = qty * rate;
-                
+
                 if (sourceField === 'disc_percent') {
                     const discPercent = parseFloat(dataRow.disc_percent) || 0;
                     dataRow.discount = (dataRow.amount * discPercent) / 100;
@@ -911,7 +973,7 @@
                 let grandQty = 0;
                 let grandGrossAmount = 0;
                 let grandRowDiscount = 0;
-                let grandNetTotal = 0; 
+                let grandNetTotal = 0;
 
                 this.data.forEach(row => {
                     if (row.product_id) {
@@ -921,22 +983,22 @@
                         grandNetTotal += parseFloat(row.total) || 0;
                     }
                 });
-    
+
                 document.querySelector('.footer-qty').value = grandQty.toFixed(2);
                 document.querySelector('.footer-amount').value = grandGrossAmount.toFixed(2);
                 document.querySelector('.footer-discount').value = grandRowDiscount.toFixed(2);
                 document.querySelector('.footer-total').value = grandNetTotal.toFixed(2);
-                
+
                 // Summary calculation
-                const subTotal = grandNetTotal; 
+                const subTotal = grandNetTotal;
                 document.querySelector('.summary-subtotal').value = subTotal.toFixed(2);
-                
+
                 const headerDiscPercentInput = document.querySelector('.header-discount-percent');
                 const headerDiscAmountInput = document.querySelector('.header-discount-amount');
-                
+
                 let headerDiscPercent = parseFloat(headerDiscPercentInput.value) || 0;
                 let headerDiscAmount = parseFloat(headerDiscAmountInput.value) || 0;
-                
+
                 if (sourceField === 'header_percent') {
                     headerDiscAmount = (subTotal * headerDiscPercent) / 100;
                     headerDiscAmountInput.value = headerDiscAmount > 0 ? headerDiscAmount.toFixed(2) : '';
@@ -951,7 +1013,7 @@
                     headerDiscAmount = (subTotal * headerDiscPercent) / 100;
                     headerDiscAmountInput.value = headerDiscAmount > 0 ? headerDiscAmount.toFixed(2) : '';
                 }
-                
+
                 // SSCL and VAT
                 const ssclPercentInput = document.querySelector('input[name="sscl_percent"]');
                 const ssclAmountInput = document.querySelector('input[name="sscl_amount"]');
@@ -960,7 +1022,7 @@
                 const svatSwitch = document.getElementById('svatSwitch');
 
                 let amountAfterHeaderDisc = subTotal - headerDiscAmount;
-                
+
                 let ssclPercent = parseFloat(ssclPercentInput.value) || 0;
                 let ssclAmount = (amountAfterHeaderDisc * ssclPercent) / 100;
                 ssclAmountInput.value = ssclAmount.toFixed(2);
@@ -968,7 +1030,7 @@
                 let amountAfterSSCL = amountAfterHeaderDisc + ssclAmount;
                 let vatPercent = parseFloat(vatPercentInput.value) || 0;
                 let vatAmount = 0;
-                
+
                 if (svatSwitch && !svatSwitch.checked) {
                     vatAmount = (amountAfterSSCL * vatPercent) / 100;
                 }
@@ -976,7 +1038,7 @@
 
                 const finalTotal = amountAfterSSCL + vatAmount;
                 const taxTotal = ssclAmount + vatAmount;
-                
+
                 document.querySelector('.summary-tax-total').value = taxTotal.toFixed(2);
                 document.querySelector('.summary-total').value = finalTotal.toFixed(2);
                 document.querySelector('.footer-grand-total').value = finalTotal.toFixed(2);
@@ -994,7 +1056,7 @@
             fetch(`/api/products/${productId}/stock?location=${encodeURIComponent(location)}`)
                 .then(response => response.json())
                 .then(data => {
-                    const balance = data.stock || 0; 
+                    const balance = data.stock || 0;
                     onhandInput.value = balance;
                     grnReturnController.updateRowData(rowIndex, 'onhand', balance);
                 })
@@ -1016,7 +1078,7 @@
 
             function handleProductChange(selectedOption, value) {
                 grnReturnController.updateRowData(rowIndex, 'product_id', value);
-                
+
                 if (grnReturnController._loadingGrn) return;
 
                 if (value && selectedOption) {
@@ -1031,7 +1093,7 @@
                     row.querySelector('.description-input').value = desc;
                     row.querySelector('.unit-input').value = unit;
                     row.querySelector('.rate-input').value = rate;
-                    
+
                     const currentLoc = row.querySelector('.location-input') ? row.querySelector('.location-input').value : '';
                     fetchItemStock(value, currentLoc, rowIndex, row);
 
@@ -1117,7 +1179,7 @@
                         fieldName = 'discount';
                         sourceField = 'discount';
                     }
-                    
+
                     grnReturnController.updateRowData(rowIndex, fieldName, parseFloat(this.value) || 0);
                     grnReturnController.calculateRow(rowIndex, row, sourceField);
                 });
@@ -1173,10 +1235,13 @@
             }
         }, 500);
 
-        // --- Form Submission Fix --- //
+        // --- Form Submission (fetch-based for proper 422 validation feedback) --- //
         const form = document.getElementById('createGrnReturnForm');
         if (form) {
             form.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                // ── Step 1: client-side re-index & basic guard ────────────────
                 const rows = document.querySelectorAll('#itemsTable tbody tr.item-row');
                 let validRowIndex = 0;
                 let hasValidRow = false;
@@ -1187,7 +1252,6 @@
 
                     if (productId) {
                         hasValidRow = true;
-                        // Re-index the names to be sequential
                         row.querySelectorAll('input, select').forEach(el => {
                             if (el.classList.contains('product-select')) el.name = `items[${validRowIndex}][product_id]`;
                             if (el.classList.contains('description-input')) el.name = `items[${validRowIndex}][description]`;
@@ -1212,7 +1276,6 @@
                         });
                         validRowIndex++;
                     } else {
-                        // Remove names from empty rows so they are not submitted
                         row.querySelectorAll('input, select').forEach(el => {
                             if (el.name) el.removeAttribute('name');
                         });
@@ -1220,9 +1283,75 @@
                 });
 
                 if (!hasValidRow) {
-                    e.preventDefault();
-                    alert('Please add at least one valid item to the GRN return.');
+                    window.showAppToast('Please add at least one valid item to the GRN return.', 'warning');
+                    return;
                 }
+
+                // ── Step 2: capture which submit button was clicked ───────────
+                const actionValue = (document.activeElement && document.activeElement.name === 'action')
+                    ? document.activeElement.value
+                    : null;
+
+                // ── Step 3: serialise form to FormData, inject action ─────────
+                const formData = new FormData(form);
+                if (actionValue) formData.set('action', actionValue);
+
+                // ── Step 4: disable submit buttons to prevent double-submit ──
+                const submitBtns = form.querySelectorAll('[type="submit"]');
+                submitBtns.forEach(btn => { btn.disabled = true; });
+
+                // ── Step 5: POST via fetch ────────────────────────────────────
+                // redirect:'manual' stops fetch from auto-following Laravel's 302.
+                // The 302 itself becomes an opaque response (type='opaqueredirect',
+                // status=0). We detect that as "store succeeded" and perform the
+                // browser navigation ourselves — to /create for Save & New or to
+                // the resource index for Save & Close. This is the only reliable
+                // way to avoid a 405 caused by fetch re-POSTing to a GET-only URL
+                // when auto-following certain redirect chains.
+                // getAttribute('action') returns the raw Blade-rendered route string
+                // (e.g. "/grn-returns") exactly as written in the HTML — avoiding
+                // the browser DOM property form.action which resolves to a fully-
+                // qualified absolute URL and can be affected by base-URL normalisation.
+                var storeBase = form.getAttribute('action'); // e.g. /grn-returns
+                var createUrl = storeBase + '/create';
+                var indexUrl  = storeBase;   // POST /grn-returns == GET /grn-returns (index)
+                fetch(storeBase, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData,
+                    credentials: 'same-origin',
+                    redirect: 'manual',
+                })
+                .then(function (response) {
+                    // Opaque redirect — Laravel issued 302 — store() succeeded.
+                    if (response.type === 'opaqueredirect' || response.status === 0) {
+                        window.location.href = (actionValue === 'save_new') ? createUrl : indexUrl;
+                        return;
+                    }
+
+                    if (response.status === 422) {
+                        // Validation error — parse JSON and display inline
+                        return response.json().then(function (data) {
+                            submitBtns.forEach(btn => { btn.disabled = false; });
+                            const errors = data.errors || {};
+                            if (typeof window.showValidationErrors === 'function') {
+                                window.showValidationErrors(errors, '.card-body.bg-light-subtle');
+                            } else {
+                                const msgs = Object.values(errors).flat().join('\n');
+                                alert('Validation errors:\n' + msgs);
+                            }
+                        });
+                    }
+
+                    // Other server error (500, 403, …)
+                    submitBtns.forEach(btn => { btn.disabled = false; });
+                    window.showAppToast('An unexpected server error occurred (HTTP ' + response.status + '). Please try again.', 'error');
+                })
+                .catch(function (err) {
+                    submitBtns.forEach(btn => { btn.disabled = false; });
+                    window.showAppToast('Network error — could not reach the server. Please check your connection.', 'error');
+                    console.error('Form submit fetch error:', err);
+                });
             });
         }
 
