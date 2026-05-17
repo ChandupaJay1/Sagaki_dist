@@ -220,7 +220,7 @@
                                     <td><input type="number" name="items[0][discount]" class="form-control form-control-sm text-end discount-input" step="any" placeholder="0.00"></td>
                                     <td><input type="number" name="items[0][total]" class="form-control form-control-sm text-end fw-bold total-input bg-light" readonly></td>
                                     <td>
-                                        <input type="text" name="items[0][location]" class="form-control form-control-sm text-center location-input bg-light" value="Main Stock" readonly>
+                                        <input type="text" name="items[0][location]" class="form-control form-control-sm text-center location-input bg-light" value="Main Warehouse" readonly>
                                     </td>
                                     <td><input type="text" name="items[0][unit]" class="form-control form-control-sm unit-input bg-light" readonly></td>
                                     <td>
@@ -269,7 +269,10 @@
                                     <select name="account_id" class="form-select form-select-sm border-danger" required>
                                         <option value="">Select Account</option>
                                         @foreach($accounts as $account)
-                                            <option value="{{ $account->id }}" {{ old('account_id') == $account->id ? 'selected' : '' }}>{{ $account->name }}</option>
+                                            <option value="{{ $account->id }}" 
+                                                {{ (old('account_id') == $account->id || $account->name === 'Accounts Payable') ? 'selected' : '' }}>
+                                                {{ $account->name }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -560,7 +563,7 @@
                             disc_percent: discPercent,
                             discount: discount,
                             total: total,
-                            location: item.location || getDefaultLocation() || 'Main Stock',
+                            location: item.location || getDefaultLocation() || 'Main Warehouse',
                             unit: parseLoadedUnit(item)
                         };
 
@@ -672,19 +675,19 @@
                     .then(data => {
                         if (addressTextarea) addressTextarea.value = data.address || '';
                         if (deliveryDestinationTextarea) deliveryDestinationTextarea.value = data.delivery_address || '';
-                        
+
                         if (creditLimitSpan) creditLimitSpan.innerText = parseFloat(data.credit_limit || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
-                        
+
                         if (termsSelect && data.terms) {
                             // Try to match by days first
                             let daysMatch = data.terms.match(/\d+/);
                             let matchedOption = null;
-                            
+
                             if (daysMatch) {
                                 let days = parseInt(daysMatch[0]);
                                 matchedOption = Array.from(termsSelect.options).find(opt => opt.dataset.days == days);
                             }
-                            
+
                             if (!matchedOption) {
                                 // Try to match by text
                                 matchedOption = Array.from(termsSelect.options).find(opt => opt.text.toLowerCase().includes(data.terms.toLowerCase()));
@@ -772,7 +775,7 @@
                 const newRow = document.createElement('tr');
                 newRow.className = 'item-row';
                 newRow.innerHTML = this.rowTemplateHTML;
-                
+
                 newRow.querySelectorAll('input').forEach(input => {
                     input.value = '';
                 });
@@ -854,7 +857,7 @@
 
                 newRow.dataset.rowIndex = this.data.length - 1;
                 document.querySelector('#itemsTable tbody').appendChild(newRow);
-                
+
                 initRowEvents(newRow);
             },
 
@@ -892,13 +895,13 @@
 
             calculateRow(rowIndex, rowElement, sourceField = 'disc_percent') {
                 if (!this.data[rowIndex]) return;
-                
+
                 const dataRow = this.data[rowIndex];
                 const qty = parseFloat(dataRow.qty) || 0;
                 const rate = parseFloat(dataRow.rate) || 0;
-                
+
                 dataRow.amount = qty * rate;
-                
+
                 if (sourceField === 'disc_percent') {
                     const discPercent = parseFloat(dataRow.disc_percent) || 0;
                     dataRow.discount = (dataRow.amount * discPercent) / 100;
@@ -920,7 +923,7 @@
                 let grandQty = 0;
                 let grandGrossAmount = 0;
                 let grandRowDiscount = 0;
-                let grandNetTotal = 0; 
+                let grandNetTotal = 0;
 
                 this.data.forEach(row => {
                     if (row.product_id) {
@@ -930,22 +933,22 @@
                         grandNetTotal += parseFloat(row.total) || 0;
                     }
                 });
-    
+
                 document.querySelector('.footer-qty').value = grandQty.toFixed(2);
                 document.querySelector('.footer-amount').value = grandGrossAmount.toFixed(2);
                 document.querySelector('.footer-discount').value = grandRowDiscount.toFixed(2);
                 document.querySelector('.footer-total').value = grandNetTotal.toFixed(2);
-                
+
                 // Summary calculation
-                const subTotal = grandNetTotal; 
+                const subTotal = grandNetTotal;
                 document.querySelector('.summary-subtotal').value = subTotal.toFixed(2);
-                
+
                 const headerDiscPercentInput = document.querySelector('.header-discount-percent');
                 const headerDiscAmountInput = document.querySelector('.header-discount-amount');
-                
+
                 let headerDiscPercent = parseFloat(headerDiscPercentInput.value) || 0;
                 let headerDiscAmount = parseFloat(headerDiscAmountInput.value) || 0;
-                
+
                 if (sourceField === 'header_percent') {
                     headerDiscAmount = (subTotal * headerDiscPercent) / 100;
                     headerDiscAmountInput.value = headerDiscAmount > 0 ? headerDiscAmount.toFixed(2) : '';
@@ -960,7 +963,7 @@
                     headerDiscAmount = (subTotal * headerDiscPercent) / 100;
                     headerDiscAmountInput.value = headerDiscAmount > 0 ? headerDiscAmount.toFixed(2) : '';
                 }
-                
+
                 // SSCL and VAT
                 const ssclPercentInput = document.querySelector('input[name="sscl_percent"]');
                 const ssclAmountInput = document.querySelector('input[name="sscl_amount"]');
@@ -969,7 +972,7 @@
                 const svatSwitch = document.getElementById('svatSwitch');
 
                 let amountAfterHeaderDisc = subTotal - headerDiscAmount;
-                
+
                 let ssclPercent = parseFloat(ssclPercentInput.value) || 0;
                 let ssclAmount = (amountAfterHeaderDisc * ssclPercent) / 100;
                 ssclAmountInput.value = ssclAmount.toFixed(2);
@@ -977,7 +980,7 @@
                 let amountAfterSSCL = amountAfterHeaderDisc + ssclAmount;
                 let vatPercent = parseFloat(vatPercentInput.value) || 0;
                 let vatAmount = 0;
-                
+
                 if (svatSwitch && !svatSwitch.checked) {
                     vatAmount = (amountAfterSSCL * vatPercent) / 100;
                 }
@@ -985,7 +988,7 @@
 
                 const finalTotal = amountAfterSSCL + vatAmount;
                 const taxTotal = ssclAmount + vatAmount;
-                
+
                 document.querySelector('.summary-tax-total').value = taxTotal.toFixed(2);
                 document.querySelector('.summary-total').value = finalTotal.toFixed(2);
                 document.querySelector('.footer-grand-total').value = finalTotal.toFixed(2);
@@ -1003,7 +1006,7 @@
             fetch(`/api/products/${productId}/stock?location=${encodeURIComponent(location)}`)
                 .then(response => response.json())
                 .then(data => {
-                    const balance = data.stock || 0; 
+                    const balance = data.stock || 0;
                     onhandInput.value = balance;
                     grnController.updateRowData(rowIndex, 'onhand', balance);
                 })
@@ -1037,7 +1040,7 @@
                 // product master data-attributes. The loaded GRN data takes
                 // priority. Also skip auto-appending rows and stock fetches.
                 if (grnController._loadingGrn) return;
-                
+
                 if (value && selectedOption) {
                     const desc = selectedOption.dataset.name || '';
                     const unit = selectedOption.dataset.unit || '';
@@ -1050,7 +1053,7 @@
                     row.querySelector('.description-input').value = desc;
                     row.querySelector('.unit-input').value = unit;
                     row.querySelector('.rate-input').value = rate;
-                    
+
                     const currentLoc = row.querySelector('.location-input') ? row.querySelector('.location-input').value : '';
                     fetchItemStock(value, currentLoc, rowIndex, row);
 
@@ -1139,7 +1142,7 @@
                         fieldName = 'discount';
                         sourceField = 'discount';
                     }
-                    
+
                     grnController.updateRowData(rowIndex, fieldName, parseFloat(this.value) || 0);
                     grnController.calculateRow(rowIndex, row, sourceField);
                 });
@@ -1203,34 +1206,34 @@
 
         setTimeout(attachVendorListener, 500);
 
-        setTimeout(function() { 
-            let accSelect = document.getElementById('account_id') || document.querySelector('select[name="account_id"]'); 
-            if (accSelect) { 
+        setTimeout(function() {
+            let accSelect = document.getElementById('account_id') || document.querySelector('select[name="account_id"]');
+            if (accSelect) {
                 // More robust match for "Payable"
-                let accOpt = Array.from(accSelect.options).find(opt => opt.text.toLowerCase().includes('payab')); 
-                if (accOpt) { 
-                    if (accSelect.tomselect) { 
-                        accSelect.tomselect.setValue(accOpt.value); 
-                    } else { 
-                        $(accSelect).val(accOpt.value).trigger('change'); 
-                    } 
-                } 
-            } 
+                let accOpt = Array.from(accSelect.options).find(opt => opt.text.toLowerCase().includes('payab'));
+                if (accOpt) {
+                    if (accSelect.tomselect) {
+                        accSelect.tomselect.setValue(accOpt.value);
+                    } else {
+                        $(accSelect).val(accOpt.value).trigger('change');
+                    }
+                }
+            }
         }, 600);
 
-        setTimeout(function() { 
-            let locSelect = document.getElementById('location_id') || document.querySelector('select[name="location_id"]'); 
-            if (locSelect) { 
-                // Find the option where text includes "main" 
-                let mainOpt = Array.from(locSelect.options).find(opt => opt.text.toLowerCase().includes('main')); 
-                if (mainOpt) { 
-                    if (locSelect.tomselect) { 
-                        locSelect.tomselect.setValue(mainOpt.value); 
-                    } else { 
-                        $(locSelect).val(mainOpt.value).trigger('change'); 
-                    } 
-                } 
-            } 
+        setTimeout(function() {
+            let locSelect = document.getElementById('location_id') || document.querySelector('select[name="location_id"]');
+            if (locSelect) {
+                // Find the option where text includes "main"
+                let mainOpt = Array.from(locSelect.options).find(opt => opt.text.toLowerCase().includes('main'));
+                if (mainOpt) {
+                    if (locSelect.tomselect) {
+                        locSelect.tomselect.setValue(mainOpt.value);
+                    } else {
+                        $(locSelect).val(mainOpt.value).trigger('change');
+                    }
+                }
+            }
         }, 650);
 
         function initLoadDropdown() {
@@ -1275,10 +1278,13 @@
             initLoadDropdown(); // Fallback initialization
         }, 600);
 
-        // --- Form Submission Fix --- //
+        // --- Form Submission (fetch-based for proper 422 validation feedback) --- //
         const form = document.getElementById('createGrnForm');
         if (form) {
             form.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                // ── Step 1: client-side re-index & basic guard ────────────────
                 const rows = document.querySelectorAll('#itemsTable tbody tr.item-row');
                 let validRowIndex = 0;
                 let hasValidRow = false;
@@ -1289,7 +1295,6 @@
 
                     if (productId) {
                         hasValidRow = true;
-                        // Re-index the names to be sequential
                         row.querySelectorAll('input, select').forEach(el => {
                             if (el.classList.contains('product-select')) el.name = `items[${validRowIndex}][product_id]`;
                             if (el.classList.contains('description-input')) el.name = `items[${validRowIndex}][description]`;
@@ -1314,7 +1319,6 @@
                         });
                         validRowIndex++;
                     } else {
-                        // Remove names from empty rows so they are not submitted
                         row.querySelectorAll('input, select').forEach(el => {
                             if (el.name) el.removeAttribute('name');
                         });
@@ -1322,9 +1326,71 @@
                 });
 
                 if (!hasValidRow) {
-                    e.preventDefault();
-                    alert('Please add at least one valid item to the GRN.');
+                    window.showAppToast('Please add at least one valid item to the GRN.', 'warning');
+                    return;
                 }
+
+                // ── Step 2: capture which submit button was clicked ───────────
+                const actionValue = (document.activeElement && document.activeElement.name === 'action')
+                    ? document.activeElement.value
+                    : null;
+
+                // ── Step 3: serialise form to FormData, inject action ─────────
+                const formData = new FormData(form);
+                if (actionValue) formData.set('action', actionValue);
+
+                // ── Step 4: disable submit buttons to prevent double-submit ──
+                const submitBtns = form.querySelectorAll('[type="submit"]');
+                submitBtns.forEach(btn => { btn.disabled = true; });
+
+                // ── Step 5: POST via fetch ────────────────────────────────────
+                // redirect:'manual' stops fetch from auto-following Laravel's 302.
+                // The 302 itself becomes an opaque response (type='opaqueredirect',
+                // status=0). We detect that as "store succeeded" and perform the
+                // browser navigation ourselves — to /create for Save & New or to
+                // the resource index for Save & Close.
+                // getAttribute('action') returns the raw Blade-rendered route string
+                // (e.g. "/grns") exactly as written in the HTML — avoiding
+                // the browser DOM property form.action which resolves to a fully-
+                // qualified absolute URL and can be affected by base-URL normalisation.
+                var storeBase = form.getAttribute('action'); // e.g. /grns
+                var createUrl = storeBase + '/create';
+                var indexUrl  = storeBase;   // POST /grns == GET /grns (index)
+                fetch(storeBase, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData,
+                    credentials: 'same-origin',
+                    redirect: 'manual',
+                })
+                .then(function (response) {
+                    // Opaque redirect — Laravel issued 302 — store() succeeded.
+                    if (response.type === 'opaqueredirect' || response.status === 0) {
+                        window.location.href = (actionValue === 'save_and_new') ? createUrl : indexUrl;
+                        return;
+                    }
+
+                    if (response.status === 422) {
+                        return response.json().then(function (data) {
+                            submitBtns.forEach(btn => { btn.disabled = false; });
+                            const errors = data.errors || {};
+                            if (typeof window.showValidationErrors === 'function') {
+                                window.showValidationErrors(errors, '.card-body.p-3');
+                            } else {
+                                const msgs = Object.values(errors).flat().join('\n');
+                                alert('Validation errors:\n' + msgs);
+                            }
+                        });
+                    }
+
+                    submitBtns.forEach(btn => { btn.disabled = false; });
+                    window.showAppToast('An unexpected server error occurred (HTTP ' + response.status + '). Please try again.', 'error');
+                })
+                .catch(function (err) {
+                    submitBtns.forEach(btn => { btn.disabled = false; });
+                    window.showAppToast('Network error — could not reach the server. Please check your connection.', 'error');
+                    console.error('Form submit fetch error:', err);
+                });
             });
         }
     });

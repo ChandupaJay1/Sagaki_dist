@@ -13,6 +13,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 
 use App\Models\Account;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
+use App\Models\SalesReturnItem;
 use App\Services\InventoryService;
 
 class SalesReturnController extends Controller
@@ -79,6 +82,39 @@ class SalesReturnController extends Controller
             'items.*.rate' => ['required', 'numeric'],
         ]);
 
+        // --- Invoice Quantity Upper-Limit Validation for Sales Return ---
+        if (!empty($validated['load'])) {
+            $sourceInvoice = \App\Models\Invoice::with('items')->where('invoice_no', $validated['load'])->first();
+            if ($sourceInvoice) {
+                $errors = [];
+                foreach ($request->items as $idx => $item) {
+                    if (empty($item['product_id'])) continue;
+                    $productId    = (int)$item['product_id'];
+                    $submittedQty = (float)($item['qty'] ?? 0);
+
+                    $invoiceItem = $sourceInvoice->items->firstWhere('product_id', $productId);
+                    if (!$invoiceItem) continue;
+
+                    $invoiceQty = (float)$invoiceItem->qty;
+
+                    $alreadyReturned = \App\Models\SalesReturnItem::whereHas('salesReturn', function ($q) use ($sourceInvoice) {
+                            $q->where('load', $sourceInvoice->invoice_no);
+                        })
+                        ->where('product_id', $productId)
+                        ->sum('qty');
+
+                    $remaining = $invoiceQty - (float)$alreadyReturned;
+                    if ($submittedQty > $remaining + 0.0001) {
+                        $productName = \App\Models\Product::find($productId)?->name ?? 'Product #' . $productId;
+                        $errors['items.' . $idx . '.qty'] = "Qty for '{$productName}' exceeds returnable Invoice balance. Invoice Qty: {$invoiceQty}, Already Returned: {$alreadyReturned}, Remaining: " . round($remaining, 4) . ", You entered: {$submittedQty}.";
+                    }
+                }
+                if (!empty($errors)) {
+                    throw \Illuminate\Validation\ValidationException::withMessages($errors);
+                }
+            }
+        }
+
         \DB::transaction(function () use ($request, $validated) {
             $data = Arr::except($validated, ['items']);
             foreach (['subtotal', 'header_discount_percent', 'header_discount_amount', 'tax_amount', 'sscl_percent', 'sscl_amount', 'vat_percent', 'vat_amount', 'total_amount'] as $field) {
@@ -87,7 +123,7 @@ class SalesReturnController extends Controller
                 }
             }
             $data['return_no'] = $validated['reference_no'] ?? null;
-            
+
             $salesReturn = SalesReturn::create($data);
 
             // Update Customer Balance (Sales Return decreases balance)
@@ -211,7 +247,7 @@ class SalesReturnController extends Controller
                 }
             }
             $data['return_no'] = $validated['reference_no'] ?? null;
-            
+
             $salesReturn->update($data);
             $newTotalAmount = (float)($salesReturn->total_amount ?? 0);
             $newCustomerId = $salesReturn->customer_id;
@@ -291,7 +327,7 @@ class SalesReturnController extends Controller
     public function destroy($id)
     {
         $salesReturn = SalesReturn::findOrFail($id);
-        
+
         \DB::transaction(function () use ($salesReturn) {
             // Update Customer Balance (Reverse Sales Return)
             $customer = Customer::find($salesReturn->customer_id);

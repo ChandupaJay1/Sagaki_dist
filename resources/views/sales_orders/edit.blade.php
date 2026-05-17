@@ -184,7 +184,7 @@
                                     <td><input type="number" name="items[idx][discount]" class="form-control form-control-sm text-end discount-input" step="any" placeholder="0.00"></td>
                                     <td><input type="number" name="items[idx][total]" class="form-control form-control-sm text-end fw-bold total-input bg-light" readonly></td>
                                     <td>
-                                        <input type="text" name="items[idx][location]" class="form-control form-control-sm text-center location-input bg-light" value="Main Stock" readonly>
+                                        <input type="text" name="items[idx][location]" class="form-control form-control-sm text-center location-input bg-light" value="Main Warehouse" readonly>
                                     </td>
                                     <td><input type="text" name="items[idx][unit]" class="form-control form-control-sm unit-input bg-light" readonly></td>
                                 </tr>

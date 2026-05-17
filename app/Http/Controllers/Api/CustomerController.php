@@ -148,14 +148,53 @@ class CustomerController extends Controller
         $salesReturns = \App\Models\SalesReturn::where('customer_id', $id)
             ->where('status', 'Approved') // Requirement: Only Approved Sales Returns
             ->where('total_amount', '>', 0.01) // Only show credits with balance
-            ->select('id', 'date', 'return_no', 'total_amount')
             ->orderBy('date', 'desc')
-            ->get();
+            ->get()
+            ->map(function($return) {
+                return [
+                    'id' => $return->id,
+                    'date' => $return->date,
+                    'ref_no' => $return->return_no,
+                    'type' => 'Sales Return',
+                    'total_amount' => round((float)$return->total_amount, 2)
+                ];
+            })
+            ->toBase();
+
+        // 2. Past Payments — overpayments or direct payments never fully set off
+        $pastPayments = \App\Models\PayBill::where('customer_id', $id)
+            ->where('type', 'Customer')
+            ->with('items')
+            ->orderBy('date', 'desc')
+            ->get()
+            ->map(function($payment) {
+                $totalPaid = (float)($payment->total_amount ?? 0);
+                $allocated = (float)($payment->items ? $payment->items->sum('amount_to_pay') : 0);
+                $unallocated = round($totalPaid - $allocated, 2);
+
+                if ($unallocated > 0.01) {
+                    $methodLabel = $payment->payment_method ?? 'Cash';
+                    return [
+                        'id' => $payment->id,
+                        'date' => $payment->date,
+                        'ref_no' => $payment->voucher_no ?? ('PAY-' . $payment->id),
+                        'type' => 'Payment (' . trim($methodLabel) . ')',
+                        'total_amount' => $unallocated,
+                    ];
+                }
+                return null;
+            })
+            ->filter()
+            ->values()
+            ->toBase();
+
+        // Merge returns and payments
+        $credits = $salesReturns->merge($pastPayments)->values();
 
         return response()->json([
             'customer' => $customer,
             'invoices' => $invoices,
-            'credits' => $salesReturns
+            'credits' => $credits
         ]);
     }
 }

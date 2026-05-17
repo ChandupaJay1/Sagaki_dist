@@ -56,7 +56,7 @@
                             <select name="location" class="form-select form-select-sm">
                                 <option value="">Select Location</option>
                                 @foreach($locations as $loc)
-                                    <option value="{{ $loc->name }}" {{ (old('location') == $loc->name || $loc->name == 'Main Stock') ? 'selected' : '' }}>{{ $loc->name }}</option>
+                                    <option value="{{ $loc->name }}" {{ (old('location') == $loc->name || $loc->name == 'Main Warehouse') ? 'selected' : '' }}>{{ $loc->name }}</option>
                                 @endforeach
                             </select>
                         </div>
