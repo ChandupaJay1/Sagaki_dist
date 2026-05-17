@@ -1701,6 +1701,83 @@
             };
         }());
     </script>
+    <script>
+        /**
+         * Global Dropdown Enforcement Engine (Bulletproof Strategy)
+         * Targets Site/Location and Account fields across all modules with timing immunity.
+         */
+        (function() {
+            function enforceDropdownDefaults() {
+                const path = window.location.pathname;
+                const search = window.location.search;
+                
+                let isSales = /sales|invoice|customer/i.test(path) || (path.includes('pay-bills') && search.includes('type=Customer'));
+                let isPurchasing = /purchasing|supplier|pay-bills|grn|purchase-orders|grn-returns/i.test(path) || (path.includes('pay-bills') && search.includes('type=Supplier'));
+                let targetAccountText = isSales ? "Accounts Receivable" : (isPurchasing ? "Accounts Payable" : null);
+
+                // Iterate through ALL select elements on the page
+                document.querySelectorAll('select').forEach(selectEl => {
+                    // Avoid overwriting if a value is already explicitly set (non-empty)
+                    // unless it's currently at the default "Select..." placeholder.
+                    if (selectEl.value && selectEl.value !== "" && selectEl.value !== "0") {
+                         // Optional: If we want to be truly aggressive, we could check if it's the right default.
+                         // But usually, if it has a value, it's either from 'old()' or an 'edit' route.
+                         // However, TomSelect sometimes initializes with a value of 'null' or empty string.
+                    }
+
+                    // 1. Enforce Location/Site Default: "Main Warehouse"
+                    const isSiteField = /site|location/i.test(selectEl.name) || 
+                                        selectEl.classList.contains('location-dropdown') || 
+                                        selectEl.classList.contains('site-select') || 
+                                        selectEl.classList.contains('site-dropdown');
+
+                    if (isSiteField) {
+                        let mainWarehouseOpt = [...selectEl.options].find(opt => opt.text.trim().includes("Main Warehouse"));
+                        if (mainWarehouseOpt && (!selectEl.value || selectEl.value === "")) {
+                            selectEl.value = mainWarehouseOpt.value;
+                            selectEl.dispatchEvent(new Event('change'));
+                            if (selectEl.tomselect) {
+                                selectEl.tomselect.setValue(mainWarehouseOpt.value, true);
+                            }
+                        }
+                    }
+                });
+            }
+
+            // --- Execution Hooks ---
+
+            // 1. Standard DOM Ready
+            $(document).ready(function() {
+                enforceDropdownDefaults();
+                
+                // 2. Timing Fallbacks (Aggressive)
+                setTimeout(enforceDropdownDefaults, 500);
+                setTimeout(enforceDropdownDefaults, 1500);
+                setTimeout(enforceDropdownDefaults, 3000); // Extreme fallback for slow AJAX
+            });
+
+            // 3. MutationObserver to catch dynamically injected HTML (AJAX/Modals)
+            const observer = new MutationObserver((mutations) => {
+                let shouldRun = false;
+                mutations.forEach(mutation => {
+                    if (mutation.addedNodes.length) {
+                        mutation.addedNodes.forEach(node => {
+                            if (node.nodeType === 1 && (node.tagName === 'SELECT' || node.querySelector('select'))) {
+                                shouldRun = true;
+                            }
+                        });
+                    }
+                });
+                if (shouldRun) enforceDropdownDefaults();
+            });
+
+            observer.observe(document.body, { childList: true, subtree: true });
+
+            // 4. Global Hook for TomSelect initialization if possible
+            // Note: We already check for .tomselect in the loop, but this catches them early.
+            window.enforceDropdownDefaults = enforceDropdownDefaults;
+        })();
+    </script>
     @stack('scripts')
 
 </body>

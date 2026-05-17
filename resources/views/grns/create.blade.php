@@ -220,7 +220,7 @@
                                     <td><input type="number" name="items[0][discount]" class="form-control form-control-sm text-end discount-input" step="any" placeholder="0.00"></td>
                                     <td><input type="number" name="items[0][total]" class="form-control form-control-sm text-end fw-bold total-input bg-light" readonly></td>
                                     <td>
-                                        <input type="text" name="items[0][location]" class="form-control form-control-sm text-center location-input bg-light" value="Main Stock" readonly>
+                                        <input type="text" name="items[0][location]" class="form-control form-control-sm text-center location-input bg-light" value="Main Warehouse" readonly>
                                     </td>
                                     <td><input type="text" name="items[0][unit]" class="form-control form-control-sm unit-input bg-light" readonly></td>
                                     <td>
@@ -269,7 +269,10 @@
                                     <select name="account_id" class="form-select form-select-sm border-danger" required>
                                         <option value="">Select Account</option>
                                         @foreach($accounts as $account)
-                                            <option value="{{ $account->id }}" {{ old('account_id') == $account->id ? 'selected' : '' }}>{{ $account->name }}</option>
+                                            <option value="{{ $account->id }}" 
+                                                {{ (old('account_id') == $account->id || $account->name === 'Accounts Payable') ? 'selected' : '' }}>
+                                                {{ $account->name }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -560,7 +563,7 @@
                             disc_percent: discPercent,
                             discount: discount,
                             total: total,
-                            location: item.location || getDefaultLocation() || 'Main Stock',
+                            location: item.location || getDefaultLocation() || 'Main Warehouse',
                             unit: parseLoadedUnit(item)
                         };
 

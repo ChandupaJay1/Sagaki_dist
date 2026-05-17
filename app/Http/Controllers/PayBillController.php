@@ -92,27 +92,28 @@ class PayBillController extends Controller
     {
         $validated = $request->validate([
             "type" => "required|in:Supplier,Customer",
-            "vendor_id" =>
-                "required_if:type,Supplier|exists:vendors,id|nullable",
+            "vendor_id" => "required_if:type,Supplier|exists:vendors,id|nullable",
             "customer_id" =>
                 "required_if:type,Customer|exists:customers,id|nullable",
             "location_id" => "required|exists:locations,id",
+            "voucher_no" => "required|string|max:255",
             "date" => "required|date",
-            "voucher_no" => "required|unique:pay_bills,voucher_no",
+            "total_amount" => "required|numeric|min:0",
             "payment_method" => "required|string",
             "cheque_no" => "nullable|string",
             "pd_cheque_date" => "nullable|date",
             "memo" => "nullable|string",
-            "total_amount" => "required|numeric|min:0",
             "items" => "required|array",
             "items.*.grn_id" =>
                 "required_if:type,Supplier|exists:grns,id|nullable",
             "items.*.invoice_id" =>
                 "required_if:type,Customer|exists:invoices,id|nullable",
             "items.*.amount_to_pay" => "required|numeric|min:0",
-            "used_credits" => "nullable|array",
-            "used_credits.*.id" => "required|numeric",
-            "used_credits.*.amount" => "required|numeric|min:0",
+            "items.*.credit_used" => "nullable|numeric|min:0",
+            "applied_credits" => "nullable|array",
+            "applied_credits.*.id" => "nullable|numeric",
+            "applied_credits.*.type" => "nullable|string",
+            "applied_credits.*.amount_to_use" => "required|numeric|min:0",
         ]);
 
         $payBill = DB::transaction(function () use ($validated, $request) {
@@ -145,6 +146,7 @@ class PayBillController extends Controller
             }
 
             $totalCashAllocated = 0;
+            $itemsUsingCredit = [];
 
             // 2. Process Bill Items
             foreach ($request->items as $item) {
@@ -166,7 +168,7 @@ class PayBillController extends Controller
                         $dueDate = $grn->due_date;
                         $billAmount = $grn->total_amount;
 
-                        // Check cumulative payment to update status
+                        // Check cumulative payment to update status (using totalApplied)
                         $alreadyPaid = PayBillItem::where(
                             "grn_id",
                             $grn->id,
@@ -185,7 +187,7 @@ class PayBillController extends Controller
                         $dueDate = $invoice->due_date;
                         $billAmount = $invoice->total_amount;
 
-                        // Check cumulative payment to update status
+                        // Check cumulative payment to update status (using totalApplied)
                         $alreadyPaid = PayBillItem::where(
                             "invoice_id",
                             $invoice->id,
@@ -199,31 +201,77 @@ class PayBillController extends Controller
                         }
                     }
 
-                    PayBillItem::create([
-                        "pay_bill_id" => $payBill->id,
-                        "grn_id" => $item["grn_id"] ?? null,
-                        "invoice_id" => $item["invoice_id"] ?? null,
-                        "bill_no" => $billNo,
-                        "bill_date" => $billDate,
-                        "due_date" => $dueDate,
-                        "bill_amount" => $billAmount,
-                        "amount_to_pay" => $totalApplied,
-                    ]);
+                    // Only create item for the CURRENT PayBill if cash was used
+                    if ($cashUsed > 0) {
+                        PayBillItem::create([
+                            "pay_bill_id" => $payBill->id,
+                            "grn_id" => $item["grn_id"] ?? null,
+                            "invoice_id" => $item["invoice_id"] ?? null,
+                            "bill_no" => $billNo,
+                            "bill_date" => $billDate,
+                            "due_date" => $dueDate,
+                            "bill_amount" => $billAmount,
+                            "amount_to_pay" => $cashUsed,
+                        ]);
+                    }
+
+                    // Collect credit info for source attribution
+                    if ($creditUsed > 0) {
+                        $itemsUsingCredit[] = [
+                            "grn_id" => $item["grn_id"] ?? null,
+                            "invoice_id" => $item["invoice_id"] ?? null,
+                            "bill_no" => $billNo,
+                            "bill_date" => $billDate,
+                            "due_date" => $dueDate,
+                            "bill_amount" => $billAmount,
+                            "amount" => $creditUsed,
+                        ];
+                    }
                 }
             }
 
-            // 3. Process Used Credits (Returns)
+            // 3. Process Used Credits (Returns & Payments)
             if (
-                isset($request->used_credits) &&
-                is_array($request->used_credits)
+                isset($request->applied_credits) &&
+                is_array($request->applied_credits)
             ) {
-                foreach ($request->used_credits as $creditData) {
-                    $amountUsed = (float) $creditData["amount"];
-                    if ($amountUsed > 0) {
+                foreach ($request->applied_credits as $creditData) {
+                    $amountUsed = (float) ($creditData["amount_to_use"] ?? 0);
+                    $creditId = $creditData["id"] ?? null;
+                    
+                    if ($amountUsed <= 0 || !$creditId) continue;
+
+                    $typeLabel = $creditData["type"] ?? "Return";
+
+                    if (str_starts_with($typeLabel, "Payment")) {
+                        // Logic for consuming PayBill surplus
+                        $sourcePayment = PayBill::find($creditId);
+                        if ($sourcePayment) {
+                            $pool = $amountUsed;
+                            foreach ($itemsUsingCredit as &$target) {
+                                if ($pool <= 0) break;
+                                
+                                $canTake = min($pool, $target["amount"]);
+                                if ($canTake > 0) {
+                                    PayBillItem::create([
+                                        "pay_bill_id" => $sourcePayment->id,
+                                        "grn_id" => $target["grn_id"],
+                                        "invoice_id" => $target["invoice_id"],
+                                        "bill_no" => $target["bill_no"],
+                                        "bill_date" => $target["bill_date"],
+                                        "due_date" => $target["due_date"],
+                                        "bill_amount" => $target["bill_amount"],
+                                        "amount_to_pay" => $canTake,
+                                    ]);
+                                    $target["amount"] -= $canTake;
+                                    $pool -= $canTake;
+                                }
+                            }
+                        }
+                    } else {
+                        // Logic for consuming Returns
                         if ($validated["type"] === "Supplier") {
-                            $return = \App\Models\GrnReturn::find(
-                                $creditData["id"],
-                            );
+                            $return = \App\Models\GrnReturn::find($creditId);
                             if ($return) {
                                 $return->total_amount -= $amountUsed;
                                 $return->subtotal -= $amountUsed;
@@ -233,9 +281,7 @@ class PayBillController extends Controller
                                 $return->save();
                             }
                         } else {
-                            $return = \App\Models\SalesReturn::find(
-                                $creditData["id"],
-                            );
+                            $return = \App\Models\SalesReturn::find($creditId);
                             if ($return) {
                                 $return->total_amount -= $amountUsed;
                                 $return->subtotal -= $amountUsed;
@@ -249,25 +295,43 @@ class PayBillController extends Controller
                 }
             }
 
-            // 4. Overpayment handling.
+            // 4. Surplus / Overpayment handling.
             //
-            // REMOVED: The previous implementation created a phantom GrnReturn
-            // (Supplier) or SalesReturn (Customer) header record whenever the
-            // paid total exceeded the allocated bill total. This caused spurious
-            // return records to appear in the GRN Returns / Sales Returns modules
-            // without any user action in those modules — violating the principle
-            // that return records must only originate from their dedicated
-            // controllers (GrnReturnController / SalesReturnController).
+            // The PayBill.total_amount stores the user's full payment amount
+            // (e.g., 16,000). The PayBillItem records only cover the portion
+            // explicitly allocated to specific GRNs/invoices (e.g., 14,000).
             //
-            // The overpayment amount is already captured on the PayBill.memo and
-            // the PayBill.total_amount field, which is sufficient for reporting.
-            // No phantom return record is created here.
+            // The unallocated surplus (e.g., 2,000) is persisted as the natural
+            // difference between PayBill.total_amount and sum(PayBillItem.amount_to_pay).
             //
-            // If a vendor/customer credit needs to be formally recorded, the user
-            // must create a GRN Return or Sales Return through the dedicated form.
-            $overpayment =
-                (float) $validated["total_amount"] - $totalCashAllocated;
-            // (overpayment value retained for potential future use; no action taken)
+            // VendorController::getOutstandingBills() detects this difference and
+            // returns it as a "Payment" type credit row in the bottom credits table,
+            // making it available for set-off against future GRN payments.
+            //
+            // No separate phantom GrnReturn or SalesReturn record is created here,
+            // keeping the ledger clean and preventing duplicate records in the
+            // Returns modules.
+
+            $totalItemsAllocated = $payBill
+                ->items()
+                ->sum("amount_to_pay");
+            $surplus = round(
+                (float) $payBill->total_amount - $totalItemsAllocated,
+                2,
+            );
+
+            // If there is a surplus, annotate the PayBill memo for audit visibility
+            if ($surplus > 0.01) {
+                $surplusFormatted = number_format($surplus, 2);
+                $existingMemo = $payBill->memo ?? "";
+                $surplusNote =
+                    "[Unallocated surplus: LKR {$surplusFormatted} — available as vendor credit]";
+
+                $payBill->memo = $existingMemo
+                    ? "{$existingMemo} | {$surplusNote}"
+                    : $surplusNote;
+                $payBill->save();
+            }
 
             return $payBill;
         });

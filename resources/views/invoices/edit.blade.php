@@ -142,7 +142,7 @@
                                     <td><input type="number" name="items[idx][disc_percent]" class="form-control form-control-sm text-center disc-percent-input" step="any"></td>
                                     <td><input type="number" name="items[idx][discount]" class="form-control form-control-sm text-end discount-input" step="any"></td>
                                     <td><input type="number" name="items[idx][total]" class="form-control form-control-sm text-end fw-bold total-input bg-light" readonly></td>
-                                    <td><input type="text" name="items[idx][location]" class="form-control form-control-sm location-input bg-light" value="Main Stock" readonly></td>
+                                    <td><input type="text" name="items[idx][location]" class="form-control form-control-sm location-input bg-light" value="Main Warehouse" readonly></td>
                                 </tr>
                             </tbody>
                             <tfoot class="bg-light fw-bold">
@@ -232,7 +232,7 @@
                             disc_percent: parseFloat(item.disc_percent) || 0,
                             discount: parseFloat(item.discount) || 0,
                             total: parseFloat(item.total) || 0,
-                            location: item.location || 'Main Stock',
+                            location: item.location || 'Main Warehouse',
                             unit: item.unit || ''
                         });
                         this.injectRowUI(idx);
@@ -265,7 +265,7 @@
                     disc_percent: 0,
                     discount: 0,
                     total: 0,
-                    location: getDefaultLocation() || 'Main Stock',
+                    location: getDefaultLocation() || 'Main Warehouse',
                     unit: ''
                 });
                 this.injectRowUI(idx);

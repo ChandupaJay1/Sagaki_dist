@@ -37,6 +37,10 @@ class AccountController extends Controller
 
     public function update(Request $request, Account $account)
     {
+        if (in_array(trim($account->name), ['Accounts Payable', 'Accounts Receivable'])) {
+            return redirect()->back()->with('error', 'Action Denied: This system master account is locked.');
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:accounts,name,' . $account->id],
             'type' => ['nullable', 'string', 'max:100'],
@@ -49,6 +53,10 @@ class AccountController extends Controller
 
     public function destroy(Account $account)
     {
+        if (in_array(trim($account->name), ['Accounts Payable', 'Accounts Receivable'])) {
+            return redirect()->back()->with('error', 'Action Denied: This system master account is locked.');
+        }
+
         $account->delete();
         return redirect()->route('accounts.index')->with('success', 'Account deleted successfully.');
     }

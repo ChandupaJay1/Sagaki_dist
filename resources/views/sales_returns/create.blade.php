@@ -58,7 +58,7 @@
                             <select name="location_id" class="form-select form-select-sm" required>
                                 <option value="">Select Location</option>
                                 @foreach($locations as $location)
-                                    <option value="{{ $location->id }}" data-name="{{ $location->name }}" {{ (old('location_id') == $location->id || $location->name == 'Main Stock') ? 'selected' : '' }}>{{ $location->name }}</option>
+                                    <option value="{{ $location->id }}" data-name="{{ $location->name }}" {{ (old('location_id') == $location->id || $location->name == 'Main Warehouse') ? 'selected' : '' }}>{{ $location->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -203,7 +203,7 @@
                                     <td><input type="number" class="form-control form-control-sm text-center disc-percent-input" step="any" placeholder="0"></td>
                                     <td><input type="number" class="form-control form-control-sm text-end discount-input" step="any" placeholder="0.00"></td>
                                     <td><input type="number" class="form-control form-control-sm text-end total-input bg-light fw-bold" readonly></td>
-                                    <td><input type="text" class="form-control form-control-sm location-input text-center bg-light" value="Main Stock" readonly></td>
+                                    <td><input type="text" class="form-control form-control-sm location-input text-center bg-light" value="Main Warehouse" readonly></td>
                                     <td><input type="text" class="form-control form-control-sm unit-input bg-light text-center" readonly></td>
                                     <td>
                                         <i class="ri-delete-bin-line text-slate-400 delete-row-btn" style="cursor: pointer; transition: color 0.2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#94a3b8'"></i>
@@ -269,10 +269,13 @@
                                 </div>
                                 <div class="col-md-5">
                                     <label class="form-label small fw-bold mb-1">Account <span class="text-danger">*</span></label>
-                                    <select name="account_id" class="form-select form-select-sm border-danger" required>
+                                    <select name="account_id" id="account_id" class="form-select form-select-sm border-danger" required>
                                         <option value="">Select Account</option>
                                         @foreach($accounts as $account)
-                                            <option value="{{ $account->id }}" {{ old('account_id') == $account->id ? 'selected' : '' }}>{{ $account->name }}</option>
+                                            <option value="{{ $account->id }}" 
+                                                {{ trim($account->name) === 'Accounts Receivable' ? 'selected' : '' }}>
+                                                {{ $account->name }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -546,7 +549,7 @@
                             disc_percent: discPercent,
                             discount: discount,
                             total: total,
-                            location: item.location || getDefaultLocation() || 'Main Stock',
+                            location: item.location || getDefaultLocation() || 'Main Warehouse',
                             unit: parseLoadedUnit(item)
                         };
 
@@ -720,22 +723,6 @@
         }
 
         setTimeout(attachCustomerListener, 500);
-
-        // Account dropdown default selection logic
-        setTimeout(function() {
-            let accSelect = document.getElementById('account_id') || document.querySelector('select[name="account_id"]');
-            if (accSelect) {
-                // More robust match for "Receivable" handling typos (ei/ie)
-                let accOpt = Array.from(accSelect.options).find(opt => opt.text.toLowerCase().includes('receiv'));
-                if (accOpt) {
-                    if (accSelect.tomselect) {
-                        accSelect.tomselect.setValue(accOpt.value);
-                    } else {
-                        $(accSelect).val(accOpt.value).trigger('change');
-                    }
-                }
-            }
-        }, 600);
 
         function initLoadDropdown() {
             if (loadDropdown && window.TomSelect) {
@@ -1141,21 +1128,7 @@
         }
         autoSelectMainLocation();
 
-        // Auto-select "Accounts Receivable" on initial load
-        function autoSelectDefaultAccount() {
-            let accountSelect = document.getElementById('account_id') || document.querySelector('select[name="account_id"]');
-            if (accountSelect) {
-                if (accountSelect.tomselect) {
-                    let val = Array.from(accountSelect.options).find(opt => opt.text.includes('Accounts Receivable'))?.value;
-                    if (val) accountSelect.tomselect.setValue(val);
-                } else {
-                    let $acc = $('select[name="account_id"], #account_id');
-                    let val = $acc.find('option:contains("Accounts Receivable")').val();
-                    if (val) $acc.val(val).trigger('change');
-                }
-            }
-        }
-        autoSelectDefaultAccount();
+        // JavaScript account default selection removed as per structural immutability directive
 
         const mainLocationSelect = document.querySelector('select[name="location"]');
         if (mainLocationSelect) {

@@ -264,7 +264,7 @@
                                             <input type="number" name="items[0][total]" class="form-control form-control-sm text-end total-input bg-light fw-bold" readonly>
                                         </td>
                                         <td>
-                                            <input type="text" name="items[0][location]" class="form-control form-control-sm text-center location-input bg-light" value="Main Stock" readonly>
+                                            <input type="text" name="items[0][location]" class="form-control form-control-sm text-center location-input bg-light" value="Main Warehouse" readonly>
                                         </td>
                                         <td>
                                             <input type="text" name="items[0][unit]" class="form-control form-control-sm bg-light text-center unit-input" readonly>
@@ -310,7 +310,10 @@
                                     <select name="account_id" class="form-select form-select-sm" required>
                                         <option value="">-- Select Account --</option>
                                         @foreach($accounts as $acc)
-                                            <option value="{{ $acc->id }}" {{ old('account_id') == $acc->id ? 'selected' : '' }}>{{ $acc->name }}</option>
+                                            <option value="{{ $acc->id }}" 
+                                                {{ (old('account_id') == $acc->id || $acc->name === 'Accounts Payable') ? 'selected' : '' }}>
+                                                {{ $acc->name }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -603,7 +606,7 @@
                             disc_percent: discPercent,
                             discount: discount,
                             total: total,
-                            location: item.location || getDefaultLocation() || 'Main Stock',
+                            location: item.location || getDefaultLocation() || 'Main Warehouse',
                             unit: parseLoadedUnit(item)
                         };
 
@@ -724,21 +727,6 @@
 
         setTimeout(attachVendorListener, 500);
 
-        setTimeout(function() {
-            let accSelect = document.getElementById('account_id') || document.querySelector('select[name="account_id"]');
-            if (accSelect) {
-                // More robust match for "Payable"
-                let accOpt = Array.from(accSelect.options).find(opt => opt.text.toLowerCase().includes('payab'));
-                if (accOpt) {
-                    if (accSelect.tomselect) {
-                        accSelect.tomselect.setValue(accOpt.value);
-                    } else {
-                        $(accSelect).val(accOpt.value).trigger('change');
-                    }
-                }
-            }
-        }, 600);
-
         function initLoadDropdown() {
             if (loadDropdown && window.TomSelect) {
                 if (loadDropdown.tomselect) return; // Already initialized
@@ -786,7 +774,7 @@
             if (alreadySelected) return;
 
             // Find the option whose visible text contains "main" (case-insensitive).
-            // This matches "Main Warehouse", "Main Stock", etc. without hardcoding an ID.
+            // This matches "Main Warehouse", "Main Warehouse", etc. without hardcoding an ID.
             var mainOpt = Array.from(locSelect.options).find(function (opt) {
                 return opt.value !== '' && opt.text.toLowerCase().includes('main');
             });
