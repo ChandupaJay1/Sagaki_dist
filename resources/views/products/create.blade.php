@@ -199,7 +199,7 @@
                                     <select class="form-select" id="location" name="location">
                                         <option value="">-- Select --</option>
                                         @foreach($locations ?? [] as $loc)
-                                            <option value="{{ $loc->name }}" data-code="{{ $loc->code }}" {{ (old('location') == $loc->name || $loc->name == 'Main Stock') ? 'selected' : '' }}>
+                                            <option value="{{ $loc->name }}" data-code="{{ $loc->code }}" {{ (old('location') == $loc->name || $loc->name == 'Main Warehouse') ? 'selected' : '' }}>
                                                 {{ $loc->name }}{{ $loc->code ? ' (' . $loc->code . ')' : '' }}
                                             </option>
                                         @endforeach

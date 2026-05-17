@@ -83,10 +83,16 @@
                         </div>
                         <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Account <span class="text-danger">*</span></label>
-                            <select name="account_id" class="form-select form-select-sm" required>
+                            <select name="account_id" id="account_id" class="form-select form-select-sm" required>
                                 <option value="">Select Account</option>
                                 @foreach($accounts as $acc)
-                                    <option value="{{ $acc->id }}">{{ $acc->name }}</option>
+                                    <option value="{{ $acc->id }}" 
+                                        {{ (
+                                            ($type === 'Supplier' && trim($acc->name) === 'Accounts Payable') || 
+                                            ($type === 'Customer' && trim($acc->name) === 'Accounts Receivable')
+                                        ) ? 'selected' : '' }}>
+                                        {{ $acc->name }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
@@ -527,32 +533,105 @@
 
         let cachedCredits = [];
 
-        // Handle Set Credit button
-        setCreditBtn.addEventListener('click', function() {
-            // Check if at least one credit and one bill is selected
-            const selectedBills = document.querySelectorAll('.bill-checkbox:checked');
-            const selectedCredits = document.querySelectorAll('.credit-checkbox:checked');
+        // ── Debounce utility ──────────────────────────────────────────────────
+        function debounce(fn, delay) {
+            let timer;
+            return function(...args) {
+                clearTimeout(timer);
+                timer = setTimeout(() => fn.apply(this, args), delay);
+            };
+        }
 
-            if (selectedBills.length === 0) {
+        // ── Handle Set Credit Button (Matching Algorithm) ──────────────────────
+        setCreditBtn.addEventListener('click', function() {
+            // 1. Identify Credit Sources & Initial States
+            let creditSources = [];
+            document.querySelectorAll('.credit-row').forEach(row => {
+                const cb = row.querySelector('.credit-checkbox');
+                const useInput = row.querySelector('.credit-use-input');
+                const balanceCell = row.querySelector('.remaining-balance-cell');
+                const amountUsedHidden = row.querySelector('.credit-amount-used-hidden');
+                const initialBalance = parseFloat(balanceCell.dataset.initial) || 0;
+
+                if (cb.checked) {
+                    creditSources.push({
+                        row: row,
+                        input: useInput,
+                        hidden: amountUsedHidden,
+                        cell: balanceCell,
+                        initial: initialBalance,
+                        available: initialBalance,
+                        used: 0
+                    });
+                } else {
+                    // Reset UI for unchecked rows
+                    useInput.value = '0.00';
+                    if (amountUsedHidden) amountUsedHidden.value = '0.00';
+                    balanceCell.textContent = initialBalance.toLocaleString(undefined, {minimumFractionDigits: 2});
+                }
+            });
+
+            if (creditSources.length === 0) {
+                alert('Please select at least one credit record with a balance first.');
+                return;
+            }
+
+            // 2. Identify Targets & Allocate sequentially
+            const checkedBills = document.querySelectorAll('.bill-checkbox:checked');
+            if (checkedBills.length === 0) {
                 alert('Please select at least one bill first.');
                 return;
             }
 
-            if (selectedCredits.length === 0) {
-                alert('Please select at least one credit record first.');
-                return;
-            }
+            let creditIdx = 0;
+            checkedBills.forEach(cb => {
+                const row = cb.closest('tr');
+                const payInput = row.querySelector('.pay-input');
+                const creditHidden = row.querySelector('.credit-used-hidden');
+                const amtDue = parseFloat(payInput.dataset.due) || 0;
+                let billAllocatedFromCredit = 0;
 
-            // Perform credit allocation
-            updateTotals(false, true); // Pass true for isSetCreditAction
+                // Sequentially consume from credit pool
+                while (billAllocatedFromCredit < amtDue && creditIdx < creditSources.length) {
+                    let source = creditSources[creditIdx];
+                    let needed = amtDue - billAllocatedFromCredit;
+                    let take = Math.min(needed, source.available);
+                    
+                    billAllocatedFromCredit += take;
+                    source.available -= take;
+                    source.used += take;
+
+                    if (source.available <= 0.005) creditIdx++;
+                }
+
+                // Update bill fields
+                creditHidden.value = billAllocatedFromCredit.toFixed(2);
+                const currentVal = parseFloat(payInput.value) || 0;
+                payInput.value = Math.max(currentVal, billAllocatedFromCredit).toFixed(2);
+            });
+
+            // 3. Update Credit Row UI (Dynamic Balance Deduction)
+            creditSources.forEach(source => {
+                // Update inputs
+                source.input.value = source.used.toFixed(2);
+                if (source.hidden) source.hidden.value = source.used.toFixed(2);
+                
+                // DYNAMIC SUBTRACTION: Update the "Credit Balance" text node
+                const remaining = source.initial - source.used;
+                source.cell.textContent = remaining.toLocaleString(undefined, {minimumFractionDigits: 2});
+            });
+
+            // 4. Trigger Recalculation (Sync summary boxes & header)
+            updateTotals(false, false);
             
-            // Provide visual feedback
+            // Visual feedback
+            const originalHtml = this.innerHTML;
             this.innerHTML = '<i class="ri-check-line me-1"></i>Credit Applied';
             this.classList.remove('btn-primary');
             this.classList.add('btn-success');
             
             setTimeout(() => {
-                this.innerHTML = '<i class="ri-settings-3-line me-1"></i>Set Credit';
+                this.innerHTML = originalHtml;
                 this.classList.remove('btn-success');
                 this.classList.add('btn-primary');
             }, 2000);
@@ -585,10 +664,13 @@
             creditsTableBody.closest('.table-responsive').scrollIntoView({ behavior: 'smooth' });
         });
 
-        // Handle main Amount input
-        displayAmountInput.addEventListener('input', function() {
-            updateTotals();
-        });
+        // Handle main Amount input — debounced waterfall distribution
+        // When the user changes the global amount, redistribute across all checked rows.
+        const debouncedDistribute = debounce(function() {
+            distributeWaterfall();
+        }, 200);
+        displayAmountInput.addEventListener('input', debouncedDistribute);
+        displayAmountInput.addEventListener('change', debouncedDistribute);
 
         // Handle Payment Method change
         paymentMethodSelect.addEventListener('change', function() {
@@ -678,19 +760,25 @@
             let html = '';
             credits.forEach((credit, index) => {
                 const amount = parseFloat(credit.total_amount) || 0;
-                const isAdvance = credit.return_no && credit.return_no.startsWith('ADV-');
-                const typeLabel = isAdvance ? 'Previous Advance' : 'Return';
+                // Use the explicit type label from API: "Return" or "Payment"
+                const typeLabel = credit.type || 'Return';
+                // Use ref_no (unified field from API) with fallback to return_no for legacy data
+                const refNo = credit.ref_no || credit.return_no || '—';
+                // Style badge based on type
+                const badgeClass = typeLabel === 'Payment'
+                    ? 'bg-warning-subtle text-warning'
+                    : 'bg-success-subtle text-success';
 
                 html += `
                 <tr class="credit-row">
                     <td>
-                        <input type="checkbox" class="form-check-input credit-checkbox" data-amount="${amount}">
-                        <input type="hidden" name="used_credits[${index}][id]" value="${credit.id}">
-                        <input type="hidden" name="used_credits[${index}][amount]" class="credit-amount-used-hidden" value="0.00">
+                        <input type="checkbox" class="form-check-input credit-checkbox" data-amount="${amount}" name="applied_credits[${index}][id]" value="${credit.id}">
+                        <input type="hidden" name="applied_credits[${index}][type]" value="${typeLabel}">
+                        <input type="hidden" name="applied_credits[${index}][amount_to_use]" class="credit-amount-used-hidden" value="0.00">
                     </td>
                     <td class="small">${credit.date || '—'}</td>
-                    <td class="small text-primary fw-medium">${credit.return_no || '—'}</td>
-                    <td class="small">${typeLabel}</td>
+                    <td class="small text-primary fw-medium">${refNo}</td>
+                    <td class="small"><span class="badge ${badgeClass} small">${typeLabel}</span></td>
                     <td class="text-end small">${amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                     <td class="text-end small remaining-balance-cell" data-initial="${amount}">${amount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                     <td>
@@ -706,24 +794,27 @@
         function renderBills(items) {
             let html = '';
             items.forEach((item, index) => {
-                const totalAmount = parseFloat(item.total_amount) || 0;
+                const dueAmount = parseFloat(item.total_amount) || 0;
+                const origAmount = parseFloat(item.original_amount) || dueAmount;
                 const billNo = type === 'Supplier' ? item.grn_no : item.invoice_no;
                 const idField = type === 'Supplier' ? 'grn_id' : 'invoice_id';
+                // Use the type label from API: "GRN" for suppliers, "Invoice" for customers
+                const typeLabel = item.type || (type === 'Supplier' ? 'GRN' : 'Invoice');
 
                 html += `
                 <tr class="bill-row">
-                    <td><input type="checkbox" class="form-check-input bill-checkbox" data-due="${totalAmount}"></td>
+                    <td><input type="checkbox" class="form-check-input bill-checkbox" data-due="${dueAmount}"></td>
                     <td>${item.date || '—'}</td>
-                    <td class="text-muted">${type === 'Supplier' ? 'Bill' : 'Invoice'}</td>
+                    <td><span class="badge bg-primary-subtle text-primary small">${typeLabel}</span></td>
                     <td>${billNo || '—'}</td>
-                    <td class="text-end orig-amt-cell">${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                    <td class="text-end amt-due-cell">${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td class="text-end orig-amt-cell">${origAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                    <td class="text-end amt-due-cell">${dueAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                     <td><input type="text" class="form-control form-control-sm text-end bg-light" readonly value="0.00"></td>
                     <td>
                         <input type="hidden" name="items[${index}][${idField}]" value="${item.id}">
                         <input type="hidden" name="items[${index}][credit_used]" class="credit-used-hidden" value="0.00">
                         <input type="number" name="items[${index}][amount_to_pay]" class="form-control form-control-sm text-end pay-input" 
-                               step="any" min="0" max="${totalAmount}" data-due="${totalAmount}" placeholder="0.00">
+                               step="any" min="0" max="${dueAmount}" data-due="${dueAmount}" placeholder="0.00">
                     </td>
                 </tr>`;
             });
@@ -737,84 +828,158 @@
             creditsTableBody.innerHTML = '<tr><td colspan="7" class="py-3 bg-light text-muted small">No credits available</td></tr>';
             availableCreditSpan.textContent = '0.00';
             cachedCredits = [];
+            displayAmountInput.value = '0.00';
             updateTotals();
+        }
+
+        // ── Waterfall Distribution Algorithm ──────────────────────────────────
+        // Reads the global Amount field, then cascades downward through checked
+        // bill rows in DOM order, allocating min(remaining pool, row amt due)
+        // to each row's New Payment input. Any surplus is tracked for the
+        // overpayment display.
+        function distributeWaterfall() {
+            const rawAmount = displayAmountInput.value.replace(/,/g, '');
+            let remainingPool = parseFloat(rawAmount) || 0;
+
+            document.querySelectorAll('.bill-row').forEach(row => {
+                const cb = row.querySelector('.bill-checkbox');
+                const payInput = row.querySelector('.pay-input');
+                const amtDue = parseFloat(payInput.dataset.due) || 0;
+
+                if (cb.checked) {
+                    // Allocate the lesser of the bill's due amount or the remaining pool
+                    const allocated = Math.min(amtDue, Math.max(0, remainingPool));
+                    payInput.value = allocated.toFixed(2);
+                    remainingPool -= allocated;
+                } else {
+                    payInput.value = '0.00';
+                }
+            });
+
+            updateTotals(false, false);
         }
 
         function initTableEvents() {
             const selectAllBills = document.getElementById('selectAllBills');
             
             selectAllBills.checked = false;
+
+            // ── Select All checkbox: toggle all then waterfall distribute ──────
             selectAllBills.addEventListener('change', function() {
-                const checkboxes = document.querySelectorAll('.bill-checkbox');
-                checkboxes.forEach(cb => {
+                document.querySelectorAll('.bill-checkbox').forEach(cb => {
                     cb.checked = this.checked;
-                    
-                    // USER REQUIREMENT 2: Checkbox Toggle Assist for Select All
-                    const row = cb.closest('tr');
-                    const payInput = row.querySelector('.pay-input');
-                    const amtDue = parseFloat(payInput.dataset.due) || 0;
-                    
-                    if (this.checked) {
-                        if (parseFloat(payInput.value) <= 0 || !payInput.value) {
-                            payInput.value = amtDue.toFixed(2);
-                        }
-                    } else {
-                        payInput.value = '0.00';
-                    }
                 });
-                updateTotals(true, false);
+                distributeWaterfall();
             });
 
+            // ── Individual bill checkbox: toggle then waterfall distribute ─────
             document.querySelectorAll('.bill-checkbox').forEach(cb => {
                 cb.addEventListener('change', function() {
-                    // USER REQUIREMENT 2: Checkbox Toggle Assist
-                    const row = this.closest('tr');
-                    const payInput = row.querySelector('.pay-input');
-                    const amtDue = parseFloat(payInput.dataset.due) || 0;
-                    
-                    if (this.checked) {
-                        if (parseFloat(payInput.value) <= 0 || !payInput.value) {
-                            payInput.value = amtDue.toFixed(2);
-                        }
-                    } else {
+                    // If unchecked, zero out the row immediately before redistributing
+                    if (!this.checked) {
+                        const payInput = this.closest('tr').querySelector('.pay-input');
                         payInput.value = '0.00';
                     }
 
-                    updateTotals(true, false);
-                    
-                    // Update Select All state
-                    const allChecked = document.querySelectorAll('.bill-checkbox:checked').length === document.querySelectorAll('.bill-checkbox').length;
-                    selectAllBills.checked = allChecked;
+                    distributeWaterfall();
+
+                    // Sync Select All state
+                    const total = document.querySelectorAll('.bill-checkbox').length;
+                    const checked = document.querySelectorAll('.bill-checkbox:checked').length;
+                    selectAllBills.checked = (total > 0 && checked === total);
                 });
             });
 
-            document.querySelectorAll('.pay-input').forEach(input => {
-                input.addEventListener('input', function() {
-                    const row = this.closest('tr');
-                    const cb = row.querySelector('.bill-checkbox');
-                    const val = parseFloat(this.value) || 0;
-                    
-                    // Auto-check if value entered
-                    if (val > 0) {
-                        cb.checked = true;
+            // ── Manual override on New Payment fields ─────────────────────────
+            // Debounced handler validates the manual entry against:
+            //   1. The row's Amt.Due ceiling
+            //   2. The remaining global pool (global amount minus other rows)
+            const debouncedManualOverride = debounce(function(input) {
+                const row = input.closest('tr');
+                const cb = row.querySelector('.bill-checkbox');
+                let val = parseFloat(input.value) || 0;
+                const amtDue = parseFloat(input.dataset.due) || 0;
+
+                // Auto-check if a positive value is entered
+                if (val > 0) {
+                    cb.checked = true;
+                } else {
+                    cb.checked = false;
+                }
+
+                // Guard 1: Cannot exceed the row's outstanding amount
+                if (val > amtDue) {
+                    val = amtDue;
+                    input.value = val.toFixed(2);
+                }
+
+                // Guard 2: Cannot cause total to overflow the global amount
+                const rawGlobal = displayAmountInput.value.replace(/,/g, '');
+                const globalAmount = parseFloat(rawGlobal) || 0;
+
+                // Sum all OTHER checked rows' pay-input values
+                let otherRowsTotal = 0;
+                document.querySelectorAll('.bill-row').forEach(otherRow => {
+                    if (otherRow === row) return;
+                    const otherCb = otherRow.querySelector('.bill-checkbox');
+                    const otherPay = otherRow.querySelector('.pay-input');
+                    if (otherCb.checked) {
+                        otherRowsTotal += parseFloat(otherPay.value) || 0;
                     }
-                    
-                    updateTotals(true, false);
+                });
+
+                const maxForThisRow = Math.max(0, globalAmount - otherRowsTotal);
+                if (val > maxForThisRow) {
+                    val = maxForThisRow;
+                    input.value = val.toFixed(2);
+                }
+
+                // Sync Select All state
+                const total = document.querySelectorAll('.bill-checkbox').length;
+                const checked = document.querySelectorAll('.bill-checkbox:checked').length;
+                selectAllBills.checked = (total > 0 && checked === total);
+
+                updateTotals(true, false);
+            }, 200);
+
+            document.querySelectorAll('.pay-input').forEach(input => {
+                // keyup + input events for manual typing
+                input.addEventListener('input', function() {
+                    debouncedManualOverride(this);
+                });
+
+                input.addEventListener('keyup', function() {
+                    debouncedManualOverride(this);
                 });
 
                 // Format on blur
                 input.addEventListener('blur', function() {
                     const val = parseFloat(this.value) || 0;
                     this.value = val.toFixed(2);
+                    updateTotals(true, false);
                 });
                 
-                // Allow double click to set full amount
+                // Double-click sets the lesser of full due or remaining pool
                 input.addEventListener('dblclick', function() {
                     const row = this.closest('tr');
                     const cb = row.querySelector('.bill-checkbox');
                     const due = parseFloat(this.dataset.due) || 0;
-                    
-                    this.value = due.toFixed(2);
+
+                    const rawGlobal = displayAmountInput.value.replace(/,/g, '');
+                    const globalAmount = parseFloat(rawGlobal) || 0;
+
+                    let otherRowsTotal = 0;
+                    document.querySelectorAll('.bill-row').forEach(otherRow => {
+                        if (otherRow === row) return;
+                        const otherCb = otherRow.querySelector('.bill-checkbox');
+                        const otherPay = otherRow.querySelector('.pay-input');
+                        if (otherCb.checked) {
+                            otherRowsTotal += parseFloat(otherPay.value) || 0;
+                        }
+                    });
+
+                    const maxForThisRow = Math.max(0, globalAmount - otherRowsTotal);
+                    this.value = Math.min(due, maxForThisRow).toFixed(2);
                     cb.checked = true;
                     updateTotals(true, false);
                 });
@@ -954,19 +1119,28 @@
                         amtDueCell.classList.remove('text-success', 'fw-bold');
                     }
                 } else {
-                    payInput.value = '0.00';
+                    // Reset display for unchecked rows without forcing the pay-input
+                    // value — that is handled by distributeWaterfall() on checkbox events.
                     amtDueCell.textContent = origAmt.toLocaleString(undefined, {minimumFractionDigits: 2});
                     amtDueCell.classList.remove('text-success', 'fw-bold');
                     creditHidden.value = '0.00';
                 }
             });
 
-            // 4. Update Header Fields (Sync to Table)
-            // USER REQUIREMENT 1: Automatically update the main Amount and LKR Total display fields
-            displayAmountInput.value = totalCashApplied.toFixed(2);
+            // 4. Update Header Fields
+            // The global Amount input (#displayAmount) is user-controlled and NOT
+            // overwritten here. Only the readonly summary/display fields are synced.
             lkrTotalAmountInput.value = totalCashApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
             document.getElementById('headerTotalAmount').textContent = totalCashApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('totalToPayInput').value = totalCashApplied.toFixed(2);
+
+            // CRITICAL: The hidden total_amount form field must carry the GLOBAL
+            // amount the user typed (e.g., 16,000), NOT just the allocated portion
+            // (e.g., 14,000). The difference (2,000) is the surplus that persists
+            // on the PayBill record and is surfaced as a "Payment" credit on the
+            // next getOutstandingBills() call.
+            const rawGlobalForSubmit = displayAmountInput.value.replace(/,/g, '');
+            const globalPaymentForSubmit = parseFloat(rawGlobalForSubmit) || 0;
+            document.getElementById('totalToPayInput').value = globalPaymentForSubmit.toFixed(2);
 
             // 5. Summary Box Updates
             document.getElementById('summaryAmountDue').value = totalOrigDue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});

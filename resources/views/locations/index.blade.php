@@ -61,7 +61,7 @@
                             </td>
                             <td class="pe-4 text-end">
                                 <div class="d-flex justify-content-end gap-2">
-                                    @if($location->name !== 'Main Stock')
+                                    @if($location->name !== 'Main Warehouse')
                                         <a href="{{ route('locations.edit', $location->id) }}" class="btn btn-sm btn-light border-0 rounded-circle text-primary" title="Edit">
                                             <i class="ri-edit-2-line fs-16"></i>
                                         </a>

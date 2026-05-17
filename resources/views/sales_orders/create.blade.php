@@ -194,7 +194,7 @@
                                     <td><input type="number" name="items[0][discount]" class="form-control form-control-sm text-end discount-input" step="any" placeholder="0.00"></td>
                                     <td><input type="number" name="items[0][total]" class="form-control form-control-sm text-end fw-bold total-input bg-light" readonly></td>
                                     <td>
-                                        <input type="text" name="items[0][location]" class="form-control form-control-sm text-center location-input bg-light" value="Main Stock" readonly>
+                                        <input type="text" name="items[0][location]" class="form-control form-control-sm text-center location-input bg-light" value="Main Warehouse" readonly>
                                     </td>
                                     <td><input type="text" name="items[0][unit]" class="form-control form-control-sm unit-input bg-light" readonly></td>
                                 </tr>
@@ -236,10 +236,13 @@
                                 </div>
                                 <div class="col-md-5">
                                     <label class="form-label small fw-bold mb-1">Account <span class="text-danger">*</span></label>
-                                    <select name="account_id" class="form-select form-select-sm border-danger" required>
+                                    <select name="account_id" id="account_id" class="form-select form-select-sm border-danger" required>
                                         <option value="">Select Account</option>
                                         @foreach($accounts as $account)
-                                            <option value="{{ $account->id }}" {{ old('account_id') == $account->id ? 'selected' : '' }}>{{ $account->name }}</option>
+                                            <option value="{{ $account->id }}" 
+                                                {{ trim($account->name) === 'Accounts Receivable' ? 'selected' : '' }}>
+                                                {{ $account->name }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -667,21 +670,7 @@
         // Initial State: The table must always start with 2 default empty rows when the page loads.
         salesOrderController.appendRow();
 
-        // Account dropdown default selection logic
-        setTimeout(function() { 
-            let accSelect = document.getElementById('account_id') || document.querySelector('select[name="account_id"]'); 
-            if (accSelect) { 
-                // More robust match for "Receivable" handling typos (ei/ie)
-                let accOpt = Array.from(accSelect.options).find(opt => opt.text.toLowerCase().includes('receiv')); 
-                if (accOpt) { 
-                    if (accSelect.tomselect) { 
-                        accSelect.tomselect.setValue(accOpt.value); 
-                    } else { 
-                        $(accSelect).val(accOpt.value).trigger('change'); 
-                    } 
-                } 
-            } 
-        }, 600);
+        salesOrderController.appendRow();
 
         setTimeout(function() { 
             let locSelect = document.getElementById('location_id') || document.querySelector('select[name="location_id"]'); 

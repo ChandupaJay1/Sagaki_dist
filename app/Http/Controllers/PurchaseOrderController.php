@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Models\PaymentTerm;
 use App\Models\Location;
 use App\Models\Product;
+use App\Models\Grn;
+use App\Models\GrnItem;
 use Illuminate\Http\Request;
 
 use Illuminate\Support\Arr;
@@ -102,9 +104,9 @@ class PurchaseOrderController extends Controller
                 $lastNo = (int)str_replace('POND', '', $lastOrder->po_no);
                 $data['po_no'] = 'POND' . str_pad($lastNo + 1, 5, '0', STR_PAD_LEFT);
             }
-            
+
             $data['status'] = 'Pending';
-            
+
             $purchaseOrder = PurchaseOrder::create($data);
 
             foreach ($request->items as $item) {
@@ -114,11 +116,11 @@ class PurchaseOrderController extends Controller
                     $amount = $qty * $rate;
                     $discPercent = (float)($item['disc_percent'] ?? 0);
                     $discount = (float)($item['discount'] ?? 0);
-                    
+
                     if ($discPercent > 0 && $discount == 0) {
                         $discount = ($amount * $discPercent) / 100;
                     }
-                    
+
                     $total = $amount - $discount;
 
                     $purchaseOrder->items()->create([
@@ -177,11 +179,23 @@ class PurchaseOrderController extends Controller
     {
         $model = PurchaseOrder::with(['items.product'])->findOrFail($po);
 
-        $items = $model->items->map(function ($item) {
+        // Pre-calculate how much has already been received against this PO
+        // by summing GrnItem qty across all GRNs whose `load` field = this PO's po_no
+        $poNo = $model->po_no;
+        $receivedQtyByProduct = GrnItem::whereHas('grn', function ($q) use ($poNo) {
+                $q->where('load', $poNo);
+            })
+            ->select('product_id', \DB::raw('SUM(qty) as total_received'))
+            ->groupBy('product_id')
+            ->pluck('total_received', 'product_id');
+
+        $items = $model->items->map(function ($item) use ($receivedQtyByProduct) {
             return [
                 'product_id' => $item->product_id,
                 'description' => $item->description,
-                'qty' => (float) $item->qty,
+                'qty' => (float) max(0, $item->qty - ($receivedQtyByProduct[$item->product_id] ?? 0)),
+                'original_qty' => (float) $item->qty,
+                'received_qty' => (float) ($receivedQtyByProduct[$item->product_id] ?? 0),
                 'rate' => (float) $item->rate,
                 'amount' => (float) $item->amount,
                 'disc_percent' => (float) ($item->disc_percent ?? 0),
@@ -314,7 +328,7 @@ class PurchaseOrderController extends Controller
                     $data[$field] = $data[$field] ?: 0;
                 }
             }
-            
+
             $purchaseOrder->update($data);
 
             $purchaseOrder->items()->delete();
@@ -325,11 +339,11 @@ class PurchaseOrderController extends Controller
                     $amount = $qty * $rate;
                     $discPercent = (float)($item['disc_percent'] ?? 0);
                     $discount = (float)($item['discount'] ?? 0);
-                    
+
                     if ($discPercent > 0 && $discount == 0) {
                         $discount = ($amount * $discPercent) / 100;
                     }
-                    
+
                     $total = $amount - $discount;
 
                     $purchaseOrder->items()->create([
@@ -354,7 +368,7 @@ class PurchaseOrderController extends Controller
     public function approve($id)
     {
         $purchaseOrder = PurchaseOrder::findOrFail($id);
-        
+
         if ($purchaseOrder->status === 'Approved') {
             return redirect()->back()->with('error', 'Purchase Order is already approved.');
         }
