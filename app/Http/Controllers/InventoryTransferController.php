@@ -13,7 +13,7 @@ class InventoryTransferController extends Controller
 {
     public function index()
     {
-        $transfers = InventoryTransfer::latest()->paginate(10);
+        $transfers = InventoryTransfer::with('repAgent')->latest()->paginate(10);
         return view('inventory_transfers.index', compact('transfers'));
     }
 
@@ -38,6 +38,7 @@ class InventoryTransferController extends Controller
         $validated = $request->validate([
             'site_from' => 'required|string',
             'site_to' => 'required|string',
+            'rep_agent_id' => 'nullable|exists:users,id',
             'date' => 'required|date',
             'memo' => 'nullable|string',
             'items' => 'required|array|min:1',
@@ -54,6 +55,7 @@ class InventoryTransferController extends Controller
             $transfer = InventoryTransfer::create([
                 'site_from' => $validated['site_from'],
                 'site_to' => $validated['site_to'],
+                'rep_agent_id' => $validated['rep_agent_id'] ?? null,
                 'transfer_no' => $transferNo,
                 'date' => $validated['date'],
                 'memo' => $validated['memo'],

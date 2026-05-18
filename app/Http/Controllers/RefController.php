@@ -165,4 +165,24 @@ class RefController extends Controller
             'message' => 'Location updated successfully.'
         ]);
     }
+
+    /**
+     * Get Rep Agents for a specific location via AJAX.
+     */
+    public function getLocationReps($locationId)
+    {
+        if (!is_numeric($locationId)) {
+            $location = Location::where('name', $locationId)->first();
+            $locationId = $location ? $location->id : null;
+        }
+
+        $reps = User::where('role', 'ref')
+                    ->where('location_id', $locationId)
+                    ->where('is_active', true)
+                    ->select('id', 'name')
+                    ->orderBy('name')
+                    ->get();
+                    
+        return response()->json($reps);
+    }
 }

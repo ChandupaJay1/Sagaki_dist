@@ -125,6 +125,7 @@ Route::middleware('auth')->group(function () {
     Route::get('api/products/{id}/stock', [\App\Http\Controllers\Api\ProductController::class, 'stock']);
     Route::get('api/customers/{id}', [\App\Http\Controllers\Api\CustomerController::class, 'show']);
     Route::get('api/vendors/{id}', [\App\Http\Controllers\Api\VendorController::class, 'show']);
+    Route::get('api/locations/{id}/reps', [RefController::class, 'getLocationReps']);
 
     // GRN create: Load prior GRNs by vendor and copy header/lines
     Route::get('ajax/vendors/{vendor}/grn-returns', [GrnReturnController::class, 'ajaxVendorGrnReturns'])->name('ajax.vendors.grn-returns');
