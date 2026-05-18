@@ -100,6 +100,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('routes/{route}/refs/{ref}', [RouteController::class, 'unassignRef'])->name('routes.unassign-ref');
     Route::patch('customers/{customer}/route', [CustomerController::class, 'updateRoute'])->name('customers.update-route');
     Route::patch('refs/{ref}/route', [RefController::class, 'updateRoute'])->name('refs.update-route');
+    Route::patch('refs/{ref}/location', [RefController::class, 'updateLocation'])->name('refs.update-location');
     Route::resource('customers', CustomerController::class);
     Route::resource('vendors', VendorController::class);
     Route::resource('products', ProductController::class);

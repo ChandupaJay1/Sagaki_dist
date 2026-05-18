@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Route;
+use App\Models\Location;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -15,9 +16,10 @@ class RefController extends Controller
      */
     public function index()
     {
-        $refs = User::with('route')->where('role', 'ref')->latest()->paginate(10);
+        $refs = User::with(['route', 'location'])->where('role', 'ref')->latest()->paginate(10);
         $routes = Route::where('is_active', true)->orderBy('name')->get();
-        return view('refs.index', compact('refs', 'routes'));
+        $locations = Location::where('is_active', true)->orderBy('name')->get();
+        return view('refs.index', compact('refs', 'routes', 'locations'));
     }
 
     /**
@@ -145,5 +147,22 @@ class RefController extends Controller
         $request->validate(['route_id' => 'nullable|exists:routes,id']);
         $ref->update(['route_id' => $request->route_id]);
         return redirect()->route('refs.index')->with('success', 'Route updated for rep agent.');
+    }
+
+    /**
+     * Update only the location assignment via AJAX.
+     */
+    public function updateLocation(Request $request, User $ref)
+    {
+        if ($ref->role !== 'ref') {
+            return response()->json(['success' => false, 'message' => 'Agent not found.'], 404);
+        }
+        $request->validate(['location_id' => 'nullable|exists:locations,id']);
+        $ref->update(['location_id' => $request->location_id]);
+        
+        return response()->json([
+            'success' => true, 
+            'message' => 'Location updated successfully.'
+        ]);
     }
 }
