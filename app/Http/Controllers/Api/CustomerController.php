@@ -154,12 +154,27 @@ class CustomerController extends Controller
                 return [
                     'id' => $return->id,
                     'date' => $return->date,
-                    'ref_no' => $return->return_no,
+                    'invoice_no' => $return->return_no,
                     'type' => 'Sales Return',
-                    'total_amount' => round((float)$return->total_amount, 2)
+                    'original_amount' => -abs(round((float)$return->subtotal ?? $return->total_amount, 2)),
+                    'total_amount' => -abs(round((float)$return->total_amount, 2)),
+                    'is_return' => true
                 ];
             })
             ->toBase();
+            
+        // Merge Invoices and Sales Returns into a single array for the main table
+        $invoicesAndReturns = $invoices->toBase()->map(function($inv) {
+            return [
+                'id' => $inv->id,
+                'date' => $inv->date,
+                'invoice_no' => $inv->invoice_no,
+                'type' => 'Invoice',
+                'original_amount' => round((float)($inv->original_amount ?? $inv->total_amount), 2),
+                'total_amount' => round((float)$inv->total_amount, 2),
+                'is_return' => false
+            ];
+        })->merge($salesReturns)->sortByDesc('date')->values();
 
         // 2. Past Payments — overpayments or direct payments never fully set off
         $pastPayments = \App\Models\PayBill::where('customer_id', $id)
@@ -188,12 +203,12 @@ class CustomerController extends Controller
             ->values()
             ->toBase();
 
-        // Merge returns and payments
-        $credits = $salesReturns->merge($pastPayments)->values();
+        // The credits array will now only contain past overpayments (not returns)
+        $credits = $pastPayments;
 
         return response()->json([
             'customer' => $customer,
-            'invoices' => $invoices,
+            'invoices' => $invoicesAndReturns,
             'credits' => $credits
         ]);
     }

@@ -470,12 +470,19 @@ class MobileController extends Controller
     /**
      * Get list of transfer notes
      * 
+     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function transferNotes()
+    public function transferNotes(Request $request)
     {
         try {
-            $transfers = InventoryTransfer::latest()->get();
+            // 1. Authenticate and get the logged-in Rep Agent via the Bearer Token
+            $authRepId = $request->user()->id;
+
+            // 2. Filter query to only return notes where 'rep_agent_id' matches this user
+            $transfers = InventoryTransfer::where('rep_agent_id', $authRepId)
+                ->latest()
+                ->get();
 
             $data = $transfers->map(function ($t) {
                 return [
@@ -491,6 +498,7 @@ class MobileController extends Controller
 
             return response()->json([
                 'success' => true,
+                'message' => 'Transfer notes fetched successfully',
                 'data' => $data
             ], 200);
 
@@ -507,10 +515,11 @@ class MobileController extends Controller
     /**
      * Get transfer note details
      * 
+     * @param Request $request
      * @param int $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function transferNoteDetails($id)
+    public function transferNoteDetails(Request $request, $id)
     {
         try {
             $t = InventoryTransfer::with(['items.product'])->find($id);
@@ -520,6 +529,14 @@ class MobileController extends Controller
                     'success' => false,
                     'message' => 'Transfer note not found'
                 ], 404);
+            }
+
+            // Security Filter: Ensure the requested transfer belongs to the authenticated Rep Agent
+            if ($t->rep_agent_id !== $request->user()->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized access to transfer note'
+                ], 403);
             }
 
             $data = [
@@ -569,8 +586,17 @@ class MobileController extends Controller
                 'status' => 'required|in:Approved,Rejected,Pending'
             ]);
 
-            return \DB::transaction(function () use ($validated, $id) {
+            return \DB::transaction(function () use ($validated, $id, $request) {
                 $transfer = InventoryTransfer::with('items')->findOrFail($id);
+
+                // Security Filter: Ensure the requested transfer belongs to the authenticated Rep Agent
+                if ($transfer->rep_agent_id !== $request->user()->id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Unauthorized access to update transfer note status'
+                    ], 403);
+                }
+
                 $oldStatus = $transfer->status;
                 $newStatus = $validated['status'];
 

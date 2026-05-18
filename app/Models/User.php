@@ -22,6 +22,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'route_id',
+        'location_id',
         'name',
         'email',
         'mobile_number',
@@ -54,6 +55,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'route_id' => 'integer',
+            'location_id' => 'integer',
         ];
     }
 
@@ -70,5 +72,10 @@ class User extends Authenticatable
     public function route()
     {
         return $this->belongsTo(Route::class);
+    }
+
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
     }
 }

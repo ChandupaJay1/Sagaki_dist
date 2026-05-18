@@ -27,6 +27,7 @@
                         <th class="ps-4 text-muted small fw-bold text-uppercase">From</th>
                         <th class="text-muted small fw-bold text-uppercase">To</th>
                         <th class="text-muted small fw-bold text-uppercase">Transfer No</th>
+                        <th class="text-muted small fw-bold text-uppercase">Rep Agent</th>
                         <th class="text-muted small fw-bold text-uppercase">Date</th>
                         <th class="text-muted small fw-bold text-uppercase text-center">Status</th>
                         <th class="text-muted small fw-bold text-uppercase text-end pe-4">Actions</th>
@@ -38,6 +39,13 @@
                             <td class="ps-4">{{ $t->site_from ?? '—' }}</td>
                             <td>{{ $t->site_to ?? '—' }}</td>
                             <td>{{ $t->transfer_no ?? '—' }}</td>
+                            <td>
+                                @if($t->repAgent)
+                                    <span class="fw-semibold text-dark">{{ $t->repAgent->name }}</span>
+                                @else
+                                    <span class="text-muted">—</span>
+                                @endif
+                            </td>
                             <td>{{ $t->date ?? '—' }}</td>
                             <td class="text-center">
                                 @if($t->status == 'Approved')
@@ -71,7 +79,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">No inventory transfers found.</td>
+                            <td colspan="7" class="text-center py-5 text-muted">No inventory transfers found.</td>
                         </tr>
                     @endforelse
                 </tbody>
