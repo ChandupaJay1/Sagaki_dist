@@ -45,16 +45,16 @@
 
                     <!-- Header Row -->
                     <div class="row g-2 mb-3">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label small fw-bold mb-1">Site From</label>
-                            <select name="site_from" class="form-select form-select-sm">
-                                <option value="">Select Site From</option>
+                            <select name="site_from" id="site_from_select" class="form-select form-select-sm">
+                                <option value="" data-id="">Select Site From</option>
                                 @foreach($locations as $loc)
-                                    <option value="{{ $loc->name }}" {{ (old('site_from') == $loc->name || $loc->name == 'Main Warehouse') ? 'selected' : '' }}>{{ $loc->name }}</option>
+                                    <option value="{{ $loc->name }}" data-id="{{ $loc->id }}" {{ (old('site_from') == $loc->name || $loc->name == 'Main Warehouse') ? 'selected' : '' }}>{{ $loc->name }}</option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label small fw-bold mb-1">Site To</label>
                             <select name="site_to" class="form-select form-select-sm">
                                 <option value="">Select Site To</option>
@@ -64,10 +64,16 @@
                             </select>
                         </div>
                         <div class="col-md-3">
+                            <label class="form-label small fw-bold mb-1">Rep Agent</label>
+                            <select name="rep_agent_id" id="rep_agent_select" class="form-select form-select-sm" disabled>
+                                <option value="">Select Rep Agent</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
                             <label class="form-label small fw-bold mb-1">Inventory Transfer No</label>
                             <input type="text" class="form-control form-control-sm bg-light" value="(Auto Generated)" readonly>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label small fw-bold mb-1">Date <span class="text-danger">*</span></label>
                             <input type="date" name="date" class="form-control form-control-sm" value="{{ old('date', date('Y-m-d')) }}">
                         </div>
@@ -96,6 +102,7 @@
                                     <th>Item Code</th>
                                     <th>Description</th>
                                     <th>OnHand (From Site)</th>
+                                    <th>Assigned Rep</th>
                                     <th>Qty</th>
                                     <th>Unit</th>
                                 </tr>
@@ -107,13 +114,14 @@
                                     </td>
                                     <td><input type="text" class="form-control form-control-sm description-input bg-light" readonly></td>
                                     <td><input type="text" class="form-control form-control-sm onhand-input text-center bg-light" readonly></td>
+                                    <td class="assigned-rep-name bg-light align-middle text-start px-2" style="font-size: 0.7rem; min-width: 120px;">—</td>
                                     <td><input type="number" class="form-control form-control-sm text-center qty-input" step="any"></td>
                                     <td><input type="text" class="form-control form-control-sm unit-input bg-light text-center" readonly></td>
                                 </tr>
                             </tbody>
                             <tfoot class="bg-light">
                                 <tr>
-                                    <td colspan="3" class="text-end fw-bold">Total Qty</td>
+                                    <td colspan="4" class="text-end fw-bold">Total Qty</td>
                                     <td><input type="text" class="form-control form-control-sm text-center bg-white footer-qty" readonly></td>
                                     <td></td>
                                 </tr>
@@ -267,13 +275,17 @@
             const onhandInput = row.querySelector('.onhand-input');
             if(!onhandInput) return;
 
+            const repCell = row.querySelector('.assigned-rep-name');
+
             if (!productId || !location) {
                 onhandInput.value = '';
                 transferNoteController.updateRowData(rowIndex, 'onhand', '');
+                if (repCell) repCell.textContent = '—';
                 return;
             }
             
             onhandInput.value = '...';
+            if (repCell) repCell.textContent = 'Loading...';
             
             fetch(`/api/products/${productId}/stock?location=${encodeURIComponent(location)}`)
                 .then(response => {
@@ -284,11 +296,15 @@
                     const balance = data.stock || 0; 
                     onhandInput.value = balance;
                     transferNoteController.updateRowData(rowIndex, 'onhand', balance);
+                    if (repCell) {
+                        repCell.textContent = data.assigned_rep_name ? data.assigned_rep_name : 'No Rep Assigned';
+                    }
                 })
                 .catch(error => {
                     console.error('Error fetching stock:', error);
                     onhandInput.value = '0';
                     transferNoteController.updateRowData(rowIndex, 'onhand', 0);
+                    if (repCell) repCell.textContent = 'No Rep Assigned';
                 });
         }
 
@@ -324,6 +340,8 @@
                     row.querySelector('.description-input').value = '';
                     row.querySelector('.unit-input').value = '';
                     if(row.querySelector('.onhand-input')) row.querySelector('.onhand-input').value = '';
+                    const repCell = row.querySelector('.assigned-rep-name');
+                    if (repCell) repCell.textContent = '—';
                     transferNoteController.calculateRow(rowIndex, row);
                 }
             }
@@ -373,23 +391,165 @@
 
         transferNoteController.init();
 
-        const siteFromSelect = document.querySelector('select[name="site_from"]');
-        if (siteFromSelect) {
-            siteFromSelect.addEventListener('change', function(e) {
-                if (e.detail && e.detail.isSyncTrigger) return; 
-                const newLocation = this.value;
+        // --- Unified Dependent Dropdown handling (TomSelect / Select2 / Native) --- //
+        const siteFromSelector = 'select[name="site_from"], #site_from_select, #site_from';
+        const repAgentSelector = 'select[name="rep_agent_id"], select[name="rep_agent"], #rep_agent_select, #rep_agent';
+
+        function fetchRepAgents(locationId) {
+            const repAgentEl = document.querySelector(repAgentSelector);
+            if (!repAgentEl) return;
+
+            // FIX: Completely empty out any pre-existing server-rendered Blade options first!
+            repAgentEl.innerHTML = '';
+
+            // Get or initialize TomSelect instance if TomSelect is loaded on page
+            let repAgentTS = repAgentEl.tomselect;
+            if (!repAgentTS && window.TomSelect) {
+                try {
+                    repAgentTS = new TomSelect(repAgentEl, {
+                        create: false,
+                        placeholder: "Select Rep Agent"
+                    });
+                } catch (e) {
+                    repAgentTS = repAgentEl.tomselect;
+                }
+            }
+
+            if (!locationId) {
+                repAgentEl.innerHTML = '<option value="">Select Rep Agent</option>';
+                repAgentEl.disabled = true;
+                if (repAgentTS) {
+                    repAgentTS.clearOptions();
+                    repAgentTS.sync();
+                    repAgentTS.disable();
+                } else if (window.jQuery && $(repAgentEl).data('select2')) {
+                    $(repAgentEl).trigger('change.select2');
+                }
+                return;
+            }
+
+            repAgentEl.innerHTML = '<option value="">Loading Reps...</option>';
+            repAgentEl.disabled = true;
+            if (repAgentTS) {
+                repAgentTS.clearOptions();
+                repAgentTS.sync();
+                repAgentTS.disable();
+            } else if (window.jQuery && $(repAgentEl).data('select2')) {
+                $(repAgentEl).trigger('change.select2');
+            }
+
+            fetch(`/api/locations/${locationId}/reps`)
+                .then(response => response.json())
+                .then(data => {
+                    // 1. Clear native select options
+                    repAgentEl.innerHTML = '<option value="">Select Rep Agent</option>';
+                    
+                    if (data && data.length > 0) {
+                        data.forEach(rep => {
+                            const option = document.createElement('option');
+                            option.value = rep.id;
+                            option.textContent = rep.name;
+                            repAgentEl.appendChild(option);
+                        });
+                        repAgentEl.disabled = false;
+                    } else {
+                        repAgentEl.innerHTML = '<option value="">No Reps Found</option>';
+                        repAgentEl.disabled = true;
+                    }
+
+                    // CRITICAL FIX: Explicitly notify and sync the UI dropdown component framework
+                    if (repAgentTS) {
+                        // If it's a TomSelect instance, clear cache and sync
+                        repAgentTS.clearOptions();
+                        repAgentTS.sync();
+                        if (data && data.length > 0) {
+                            repAgentTS.enable();
+                        } else {
+                            repAgentTS.disable();
+                        }
+                    } else if (window.jQuery && $(repAgentEl).data('select2')) {
+                        // If it's a Select2 instance, force update
+                        $(repAgentEl).trigger('change.select2');
+                    } else if (window.jQuery) {
+                        // Safe fallback for generic jQuery custom dropdown setups
+                        $(repAgentEl).trigger('change');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching reps:', error);
+                    repAgentEl.innerHTML = '<option value="">Error Loading Reps</option>';
+                    repAgentEl.disabled = true;
+                    if (repAgentTS) {
+                        repAgentTS.clearOptions();
+                        repAgentTS.sync();
+                        repAgentTS.disable();
+                    } else if (window.jQuery && $(repAgentEl).data('select2')) {
+                        $(repAgentEl).trigger('change.select2');
+                    }
+                });
+        }
+
+        // Setup event listeners using hybrid approach
+        if (window.jQuery) {
+            // Use jQuery delegation to capture Select2 / TomSelect events perfectly
+            $(document).on('change', siteFromSelector, function() {
+                const locationId = $(this).val();
+                fetchRepAgents(locationId);
+
+                // Run existing stock fetching loop
                 document.querySelectorAll('#itemsTable tbody tr.item-row').forEach(row => {
                     const rowIndex = parseInt(row.dataset.rowIndex);
-                    
                     if (!isNaN(rowIndex)) {
                         const productSelect = row.querySelector('.product-select');
                         const productId = productSelect ? productSelect.value : '';
                         if (productId) {
-                            fetchItemStock(productId, newLocation, rowIndex, row);
+                            fetchItemStock(productId, locationId, rowIndex, row);
                         }
                     }
                 });
             });
+
+            // Initial execution on ready
+            $(function() {
+                const initialLoc = $(siteFromSelector).val();
+                const $repAgent = $(repAgentSelector);
+                if (initialLoc) {
+                    if ($repAgent.length > 0) {
+                        $repAgent.html('<option value="">Select Rep Agent</option>');
+                    }
+                    fetchRepAgents(initialLoc);
+                }
+            });
+        } else {
+            // Native fallback
+            const nativeSiteFrom = document.querySelector(siteFromSelector);
+            if (nativeSiteFrom) {
+                nativeSiteFrom.addEventListener('change', function() {
+                    const locationId = this.value;
+                    fetchRepAgents(locationId);
+
+                    document.querySelectorAll('#itemsTable tbody tr.item-row').forEach(row => {
+                        const rowIndex = parseInt(row.dataset.rowIndex);
+                        if (!isNaN(rowIndex)) {
+                            const productSelect = row.querySelector('.product-select');
+                            const productId = productSelect ? productSelect.value : '';
+                            if (productId) {
+                                fetchItemStock(productId, locationId, rowIndex, row);
+                            }
+                        }
+                    });
+                });
+
+                // Initial native load
+                const initialLoc = nativeSiteFrom.value;
+                const nativeRepAgent = document.querySelector(repAgentSelector);
+                if (initialLoc) {
+                    if (nativeRepAgent) {
+                        nativeRepAgent.innerHTML = '<option value="">Select Rep Agent</option>';
+                    }
+                    fetchRepAgents(initialLoc);
+                }
+            }
         }
 
         // --- Form Submission Fix --- //

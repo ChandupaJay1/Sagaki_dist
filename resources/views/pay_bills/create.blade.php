@@ -801,22 +801,42 @@
                 // Use the type label from API: "GRN" for suppliers, "Invoice" for customers
                 const typeLabel = item.type || (type === 'Supplier' ? 'GRN' : 'Invoice');
 
-                html += `
-                <tr class="bill-row">
-                    <td><input type="checkbox" class="form-check-input bill-checkbox" data-due="${dueAmount}"></td>
-                    <td>${item.date || '—'}</td>
-                    <td><span class="badge bg-primary-subtle text-primary small">${typeLabel}</span></td>
-                    <td>${billNo || '—'}</td>
-                    <td class="text-end orig-amt-cell">${origAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                    <td class="text-end amt-due-cell">${dueAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
-                    <td><input type="text" class="form-control form-control-sm text-end bg-light" readonly value="0.00"></td>
-                    <td>
-                        <input type="hidden" name="items[${index}][${idField}]" value="${item.id}">
-                        <input type="hidden" name="items[${index}][credit_used]" class="credit-used-hidden" value="0.00">
-                        <input type="number" name="items[${index}][amount_to_pay]" class="form-control form-control-sm text-end pay-input" 
-                               step="any" min="0" max="${dueAmount}" data-due="${dueAmount}" placeholder="0.00">
-                    </td>
-                </tr>`;
+                if (item.is_return) {
+                    html += `
+                    <tr class="bill-row return-row bg-danger-subtle bg-opacity-10">
+                        <td><input type="checkbox" class="form-check-input bill-checkbox" data-due="${dueAmount}" data-is-return="true"></td>
+                        <td>${item.date || '—'}</td>
+                        <td><span class="badge bg-danger text-white small">${typeLabel}</span></td>
+                        <td>${billNo || '—'}</td>
+                        <td class="text-end orig-amt-cell text-danger">${origAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        <td class="text-end amt-due-cell text-danger">${dueAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        <td><input type="text" class="form-control form-control-sm text-end bg-light" readonly value="0.00"></td>
+                        <td>
+                            <input type="hidden" name="applied_credits[r_${index}][id]" value="${item.id}">
+                            <input type="hidden" name="applied_credits[r_${index}][type]" value="Return">
+                            <input type="hidden" name="applied_credits[r_${index}][amount_to_use]" class="credit-amount-used-hidden pay-input-hidden" value="0.00">
+                            <input type="number" class="form-control form-control-sm text-end pay-input text-danger fw-bold" 
+                                   step="any" max="0" min="${dueAmount}" data-due="${dueAmount}" placeholder="0.00">
+                        </td>
+                    </tr>`;
+                } else {
+                    html += `
+                    <tr class="bill-row">
+                        <td><input type="checkbox" class="form-check-input bill-checkbox" data-due="${dueAmount}"></td>
+                        <td>${item.date || '—'}</td>
+                        <td><span class="badge bg-primary-subtle text-primary small">${typeLabel}</span></td>
+                        <td>${billNo || '—'}</td>
+                        <td class="text-end orig-amt-cell">${origAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        <td class="text-end amt-due-cell">${dueAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        <td><input type="text" class="form-control form-control-sm text-end bg-light" readonly value="0.00"></td>
+                        <td>
+                            <input type="hidden" name="items[${index}][${idField}]" value="${item.id}">
+                            <input type="hidden" name="items[${index}][credit_used]" class="credit-used-hidden" value="0.00">
+                            <input type="number" name="items[${index}][amount_to_pay]" class="form-control form-control-sm text-end pay-input" 
+                                   step="any" min="0" max="${dueAmount}" data-due="${dueAmount}" placeholder="0.00">
+                        </td>
+                    </tr>`;
+                }
             });
             billsTableBody.innerHTML = html;
             initTableEvents();
@@ -841,7 +861,18 @@
             const rawAmount = displayAmountInput.value.replace(/,/g, '');
             let remainingPool = parseFloat(rawAmount) || 0;
 
-            document.querySelectorAll('.bill-row').forEach(row => {
+            // Offset the cash pool by adding the absolute value of any selected returns
+            let returnOffsets = 0;
+            document.querySelectorAll('.bill-row.return-row').forEach(row => {
+                const cb = row.querySelector('.bill-checkbox');
+                const payInput = row.querySelector('.pay-input');
+                if (cb.checked) {
+                    returnOffsets += Math.abs(parseFloat(payInput.value) || 0);
+                }
+            });
+            remainingPool += returnOffsets;
+
+            document.querySelectorAll('.bill-row:not(.return-row)').forEach(row => {
                 const cb = row.querySelector('.bill-checkbox');
                 const payInput = row.querySelector('.pay-input');
                 const amtDue = parseFloat(payInput.dataset.due) || 0;
@@ -879,6 +910,14 @@
                     if (!this.checked) {
                         const payInput = this.closest('tr').querySelector('.pay-input');
                         payInput.value = '0.00';
+                        const hiddenInput = this.closest('tr').querySelector('.pay-input-hidden');
+                        if(hiddenInput) hiddenInput.value = '0.00';
+                    } else if (this.dataset.isReturn === 'true') {
+                        // Auto-fill full negative amount for returns when checked
+                        const payInput = this.closest('tr').querySelector('.pay-input');
+                        payInput.value = parseFloat(this.dataset.due).toFixed(2);
+                        const hiddenInput = this.closest('tr').querySelector('.pay-input-hidden');
+                        if(hiddenInput) hiddenInput.value = Math.abs(parseFloat(this.dataset.due)).toFixed(2);
                     }
 
                     distributeWaterfall();
@@ -917,21 +956,30 @@
                 const rawGlobal = displayAmountInput.value.replace(/,/g, '');
                 const globalAmount = parseFloat(rawGlobal) || 0;
 
-                // Sum all OTHER checked rows' pay-input values
-                let otherRowsTotal = 0;
+                // Sum all OTHER checked rows' pay-input values (invoices subtract from pool, returns add to pool)
+                let otherInvoicesTotal = 0;
+                let otherReturnsTotal = 0;
                 document.querySelectorAll('.bill-row').forEach(otherRow => {
                     if (otherRow === row) return;
                     const otherCb = otherRow.querySelector('.bill-checkbox');
                     const otherPay = otherRow.querySelector('.pay-input');
                     if (otherCb.checked) {
-                        otherRowsTotal += parseFloat(otherPay.value) || 0;
+                        const val = parseFloat(otherPay.value) || 0;
+                        if (val > 0) otherInvoicesTotal += val;
+                        else otherReturnsTotal += Math.abs(val);
                     }
                 });
 
-                const maxForThisRow = Math.max(0, globalAmount - otherRowsTotal);
-                if (val > maxForThisRow) {
+                const maxForThisRow = Math.max(0, (globalAmount + otherReturnsTotal) - otherInvoicesTotal);
+                
+                // If it is a positive invoice, restrict it
+                if (val > 0 && val > maxForThisRow) {
                     val = maxForThisRow;
                     input.value = val.toFixed(2);
+                } else if (val < 0) {
+                    // Sync the hidden positive value if it's a return
+                    const hiddenInput = row.querySelector('.pay-input-hidden');
+                    if(hiddenInput) hiddenInput.value = Math.abs(val).toFixed(2);
                 }
 
                 // Sync Select All state
@@ -968,18 +1016,30 @@
                     const rawGlobal = displayAmountInput.value.replace(/,/g, '');
                     const globalAmount = parseFloat(rawGlobal) || 0;
 
-                    let otherRowsTotal = 0;
+                    let otherInvoicesTotal = 0;
+                    let otherReturnsTotal = 0;
                     document.querySelectorAll('.bill-row').forEach(otherRow => {
                         if (otherRow === row) return;
                         const otherCb = otherRow.querySelector('.bill-checkbox');
                         const otherPay = otherRow.querySelector('.pay-input');
                         if (otherCb.checked) {
-                            otherRowsTotal += parseFloat(otherPay.value) || 0;
+                            const val = parseFloat(otherPay.value) || 0;
+                            if (val > 0) otherInvoicesTotal += val;
+                            else otherReturnsTotal += Math.abs(val);
                         }
                     });
 
-                    const maxForThisRow = Math.max(0, globalAmount - otherRowsTotal);
-                    this.value = Math.min(due, maxForThisRow).toFixed(2);
+                    if (due < 0) {
+                        // Return row double-click
+                        this.value = due.toFixed(2);
+                        const hiddenInput = row.querySelector('.pay-input-hidden');
+                        if(hiddenInput) hiddenInput.value = Math.abs(due).toFixed(2);
+                    } else {
+                        // Invoice row double-click
+                        const maxForThisRow = Math.max(0, (globalAmount + otherReturnsTotal) - otherInvoicesTotal);
+                        this.value = Math.min(due, maxForThisRow).toFixed(2);
+                    }
+                    
                     cb.checked = true;
                     updateTotals(true, false);
                 });

@@ -71,7 +71,15 @@ class ProductController extends Controller
             ->where('location_id', $locationId)
             ->value('qty') ?? 0;
         
-        return response()->json(['stock' => (float) $stock], 200);
+        $repAgent = \App\Models\User::where('role', 'ref')
+            ->where('location_id', $locationId)
+            ->where('is_active', true)
+            ->first();
+        
+        return response()->json([
+            'stock' => (float) $stock,
+            'assigned_rep_name' => $repAgent ? $repAgent->name : null
+        ], 200);
     }
 
     /**
