@@ -1208,6 +1208,30 @@
                         </div>
                     </li>
 
+                    <li class="menu-item">
+                        <a class="menu-link" data-bs-toggle="collapse" href="#menuSalesReports" role="button" aria-expanded="false" aria-controls="menuSalesReports">
+                            <span class="nav-icon">
+                                <i class="ri-bar-chart-grouped-line"></i>
+                            </span>
+                            <span class="nav-text"> Sales Reports </span>
+                            <i class="ri-arrow-right-s-line menu-arrow"></i>
+                        </a>
+                        <div class="collapse" id="menuSalesReports">
+                            <ul class="sub-menu">
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('reports.profit') }}">
+                                        <span class="nav-text">Profit Report</span>
+                                    </a>
+                                </li>
+                                <li class="menu-item">
+                                    <a class="menu-link" href="{{ route('reports.sales-collection') }}">
+                                        <span class="nav-text">Sales &amp; Collection</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
                     <li class="menu-title">System</li>
 
                     <li class="menu-item">

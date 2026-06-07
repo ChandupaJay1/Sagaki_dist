@@ -6,6 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 
 use Laravel\Sanctum\HasApiTokens;
@@ -59,11 +60,25 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Get the user's name.
+     */
+    protected function name(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            get: function (?string $value) {
+                if (auth()->check() && auth()->id() === $this->id && Session::has('user_display_name')) {
+                    return Session::get('user_display_name');
+                }
+                return $value;
+            },
+        );
+    }
 
     public static function generateSerialNumber()
     {
         do {
-            $serial = 'SAGAKI-' . strtoupper(Str::random(8));
+            $serial = 'SAGAKI-'.strtoupper(Str::random(8));
         } while (self::where('serial_number', $serial)->exists());
 
         return $serial;

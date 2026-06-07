@@ -95,6 +95,16 @@ class InventoryTransferController extends Controller
         return redirect()->route('inventory-transfers.index')->with('success', 'Inventory Transfer created successfully.');
     }
 
+    public function show($id)
+    {
+        $transfer = InventoryTransfer::with([
+            'items.product',
+            'repAgent',
+        ])->findOrFail($id);
+
+        return view('inventory_transfers.show', compact('transfer'));
+    }
+
     public static function completeTransfer($transfer)
     {
         foreach ($transfer->items as $item) {

@@ -23,9 +23,27 @@
 <div class="row">
     <div class="col-lg-12">
         <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center justify-content-between">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <h5 class="card-title mb-0 fw-bold text-dark">Product Inventory</h5>
-                <div class="flex-shrink-0">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <form action="{{ route('products.index') }}" method="GET" class="d-flex align-items-center gap-2">
+                        <div class="input-group input-group-sm" style="min-width: 260px;">
+                            <span class="input-group-text bg-light border-end-0 border">
+                                <i class="ri-search-line text-muted"></i>
+                            </span>
+                            <input type="text"
+                                   name="search"
+                                   class="form-control border-start-0 border bg-light"
+                                   placeholder="Search by name or code…"
+                                   value="{{ $search ?? '' }}">
+                            @if(!empty($search))
+                                <a href="{{ route('products.index') }}" class="btn btn-sm btn-outline-secondary" title="Clear search">
+                                    <i class="ri-close-line"></i>
+                                </a>
+                            @endif
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary px-3 rounded-pill fw-bold">Search</button>
+                    </form>
                     <a href="{{ route('products.create') }}" class="btn btn-primary btn-sm px-3 rounded-pill fw-bold shadow-sm">
                         <i class="ri-add-line align-middle me-1"></i> Add New Product
                     </a>
@@ -70,7 +88,7 @@
                                     </td>
                                     <td>
                                         <div class="fw-bold text-dark">{{ $product->name }}</div>
-                                        <div class="text-muted small">Updated 2 days ago</div>
+                                        <div class="text-muted small">{{ $product->updated_at->diffForHumans() }}</div>
                                     </td>
                                     <td><span class="badge bg-light text-dark border fw-medium px-2 py-1">{{ $product->code }}</span></td>
                                     <td class="text-muted">{{ $product->sku }}</td>
@@ -108,7 +126,15 @@
                 </div>
                 <div class="px-4 py-3 border-top">
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                        <div class="text-muted small">Showing {{ $products->firstItem() }} to {{ $products->lastItem() }} of {{ $products->total() }} items</div>
+                        @if($products->total() > 0)
+                            <div class="text-muted small">Showing {{ $products->firstItem() }} to {{ $products->lastItem() }} of {{ $products->total() }} items
+                                @if(!empty($search))
+                                    for <strong>"{{ $search }}"</strong>
+                                @endif
+                            </div>
+                        @else
+                            <div class="text-muted small">No items found{{ !empty($search) ? ' for <strong>"' . e($search) . '"</strong>' : '' }}</div>
+                        @endif
                         <div>
                             {{ $products->links('pagination::bootstrap-4') }}
                         </div>

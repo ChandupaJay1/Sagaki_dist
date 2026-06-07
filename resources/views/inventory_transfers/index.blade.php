@@ -57,8 +57,11 @@
                                 @endif
                             </td>
                             <td class="text-end pe-4">
-                                @if($t->status == 'Pending')
-                                    <div class="d-flex justify-content-end gap-1">
+                                <div class="d-flex justify-content-end gap-1">
+                                    <a href="{{ route('inventory-transfers.show', $t->id) }}" class="btn btn-sm btn-light border-0 rounded-circle text-info" title="View Details">
+                                        <i class="ri-eye-line fs-16"></i>
+                                    </a>
+                                    @if($t->status == 'Pending')
                                         <form action="{{ route('inventory-transfers.update-status', $t->id) }}" method="POST">
                                             @csrf
                                             @method('PATCH')
@@ -71,10 +74,8 @@
                                             <input type="hidden" name="status" value="Rejected">
                                             <button type="submit" class="btn btn-soft-danger btn-icon btn-sm rounded-circle" title="Reject"><i class="ri-close-line"></i></button>
                                         </form>
-                                    </div>
-                                @else
-                                    <span class="text-muted small">—</span>
-                                @endif
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
