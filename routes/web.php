@@ -85,7 +85,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('grns', GrnController::class);
     Route::patch('grns/{id}/approve', [GrnController::class, 'approve'])->name('grns.approve');
     Route::resource('grn-returns', GrnReturnController::class);
-    Route::resource('inventory-transfers', InventoryTransferController::class)->only(['index','create','store']);
+    Route::resource('inventory-transfers', InventoryTransferController::class)->only(['index','create','store','show']);
     Route::patch('inventory-transfers/{id}/status', [InventoryTransferController::class, 'updateStatus'])->name('inventory-transfers.update-status');
     Route::resource('inventory-issues', InventoryIssueController::class);
     Route::patch('inventory-issues/{id}/approve', [InventoryIssueController::class, 'approve'])->name('inventory-issues.approve');
@@ -151,6 +151,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/reports/stock-by-site', [ReportController::class, 'stockBySiteSummary'])->name('reports.stock-by-site');
     Route::get('/reports/stock-valuation-summary', [ReportController::class, 'stockValuationSummary'])->name('reports.stock-valuation-summary');
     Route::get('/reports/stock-valuation-details', [ReportController::class, 'stockValuationDetails'])->name('reports.stock-valuation-details');
+    Route::get('/reports/profit', [ReportController::class, 'profitReport'])->name('reports.profit');
+    Route::get('/reports/sales-collection', [ReportController::class, 'salesCollectionReport'])->name('reports.sales-collection');
 });
 
 Route::get('/404', function () {
