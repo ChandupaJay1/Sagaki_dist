@@ -70,24 +70,13 @@ class InventoryTransferController extends Controller
                         $onhand = 0;
                     }
 
-                    $transferItem = $transfer->items()->create([
+                    $transfer->items()->create([
                         'product_id' => $item['product_id'],
                         'description' => $item['description'] ?? '',
                         'onhand' => $onhand,
                         'qty' => $item['qty'],
                         'unit' => $item['unit'] ?? '',
                     ]);
-
-                    // Deduct from Source Location immediately (Even when Pending)
-                    InventoryService::updateStock(
-                        $transferItem->product_id,
-                        $transfer->site_from,
-                        -$transferItem->qty,
-                        'Transfer Out (Pending)',
-                        'MTA',
-                        $transfer->id,
-                        "Pending transfer from {$transfer->site_from} to {$transfer->site_to} (MTA: {$transfer->transfer_no})"
-                    );
                 }
             }
         });
@@ -108,7 +97,18 @@ class InventoryTransferController extends Controller
     public static function completeTransfer($transfer)
     {
         foreach ($transfer->items as $item) {
-            // Only increase in destination. Source was already deducted on creation.
+            // Deduct from source
+            InventoryService::updateStock(
+                $item->product_id,
+                $transfer->site_from,
+                -$item->qty,
+                'Transfer Out',
+                'MTA',
+                $transfer->id,
+                "Transfer Out from {$transfer->site_from} to {$transfer->site_to} (MTA: {$transfer->transfer_no})"
+            );
+
+            // Add to destination
             InventoryService::updateStock(
                 $item->product_id,
                 $transfer->site_to,
@@ -124,7 +124,18 @@ class InventoryTransferController extends Controller
     public static function reverseTransfer($transfer)
     {
         foreach ($transfer->items as $item) {
-            // Reverse increase in destination (Subtract)
+            // Restore source (was deducted on approval)
+            InventoryService::updateStock(
+                $item->product_id,
+                $transfer->site_from,
+                $item->qty,
+                'Transfer Out Reverse',
+                'MTA',
+                $transfer->id,
+                "Reversed Transfer Out from {$transfer->site_from} to {$transfer->site_to} (MTA: {$transfer->transfer_no})"
+            );
+
+            // Subtract from destination (was added on approval)
             InventoryService::updateStock(
                 $item->product_id,
                 $transfer->site_to,
