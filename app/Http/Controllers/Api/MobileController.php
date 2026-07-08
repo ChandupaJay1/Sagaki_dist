@@ -235,20 +235,32 @@ class MobileController extends Controller
                 ->get();
 
             $data = $products->map(function ($p) use ($user) {
-                // Calculate Approved Qty from Inventory Transfers
-                // Logic: Sum of qty in InventoryTransferItems where Transfer is 'Approved' 
-                // and destination matches something relevant to the rep (using site_to for now)
-                
+                // Calculate available qty: (approved transfers) - (invoiced) + (returned)
                 $approvedQty = \App\Models\InventoryTransferItem::where('product_id', $p->id)
-                    ->whereHas('inventoryTransfer', function($query) {
-                        $query->where('status', 'Approved');
+                    ->whereHas('inventoryTransfer', function($query) use ($user) {
+                        $query->where('status', 'Approved')
+                              ->where('rep_agent_id', $user->id);
                     })->sum('qty');
+
+                $invoicedQty = \App\Models\InvoiceItem::where('product_id', $p->id)
+                    ->whereHas('invoice', function($query) use ($user) {
+                        $query->where('rep_id', $user->id)
+                              ->whereIn('status', ['Created', 'Partial', 'Paid']);
+                    })->sum('qty');
+
+                $returnedQty = \App\Models\SalesReturnItem::where('product_id', $p->id)
+                    ->whereHas('salesReturn', function($query) use ($user) {
+                        $query->where('rep', $user->name);
+                    })->sum('qty');
+
+                $availableQty = $approvedQty - $invoicedQty + $returnedQty;
+                if ($availableQty < 0) $availableQty = 0;
 
                 return [
                     'id' => (int)$p->id,
                     'name' => (string)$p->name,
                     'item_code' => (string)$p->code,
-                    'qty' => (double)$approvedQty,
+                    'qty' => (double)$availableQty,
                     'selling_price' => (double)$p->max_sale_price,
                 ];
             });
