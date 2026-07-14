@@ -71,7 +71,12 @@ class InvoiceController extends Controller
                 $salesReturn = null;
                 $totalPaid = 0;
                 $totalReturnAmount = 0;
-                $locationId = DB::table('locations')->where('is_active', 1)->where('name', 'like', '%Main%')->value('id') 
+
+                // Deduct stock from the authenticated rep's own location (where stock was transferred to),
+                // NOT from the head office / Main Warehouse.
+                $repUser = auth()->user();
+                $locationId = $repUser->location_id
+                              ?? DB::table('locations')->where('is_active', 1)->where('name', 'like', '%Main%')->value('id')
                               ?? DB::table('locations')->where('is_active', 1)->value('id');
                 $locationName = DB::table('locations')->where('id', $locationId)->value('name');
 
