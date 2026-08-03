@@ -58,12 +58,6 @@ class InvoiceController extends Controller
             'load' => ['nullable', 'string', 'max:255'],
             'invoice_no' => ['nullable', 'string', 'max:255'],
             'date' => ['nullable', 'date'],
-            'villa_type' => ['nullable', 'string', 'max:255'],
-            'meal_plan' => ['nullable', 'string', 'max:255'],
-            'no_of_pax' => ['nullable', 'integer'],
-            'check_in_date' => ['nullable', 'date'],
-            'room_type' => ['nullable', 'string', 'max:255'],
-            'check_out_date' => ['nullable', 'date'],
             'location_id' => ['nullable', 'exists:locations,id'],
             'payment_term_id' => ['nullable', 'exists:terms,id'],
             'account_id' => ['nullable', 'exists:accounts,id'],
@@ -184,6 +178,21 @@ class InvoiceController extends Controller
         return view('invoices.show', compact('invoice', 'outstanding'));
     }
 
+    public function print($id)
+    {
+        $invoice = Invoice::with(['customer', 'items.product', 'rep', 'paymentTerm'])->findOrFail($id);
+
+        $totalInvoices = Invoice::where('customer_id', $invoice->customer_id)->sum('total_amount');
+        $totalPaid = \App\Models\PayBillItem::whereHas('payBill', function($q) use ($invoice) {
+            $q->where('customer_id', $invoice->customer_id);
+        })->sum('amount_to_pay');
+        $totalReturns = \App\Models\SalesReturn::where('customer_id', $invoice->customer_id)->sum('total_amount');
+
+        $outstanding = ($totalInvoices - $totalPaid) - $totalReturns;
+
+        return view('invoices.print', compact('invoice', 'outstanding'));
+    }
+
     public function edit($id)
     {
         $invoice = Invoice::with('items')->findOrFail($id);
@@ -217,12 +226,6 @@ class InvoiceController extends Controller
             'load' => ['nullable', 'string', 'max:255'],
             'invoice_no' => ['nullable', 'string', 'max:255'],
             'date' => ['nullable', 'date'],
-            'villa_type' => ['nullable', 'string', 'max:255'],
-            'meal_plan' => ['nullable', 'string', 'max:255'],
-            'no_of_pax' => ['nullable', 'integer'],
-            'check_in_date' => ['nullable', 'date'],
-            'room_type' => ['nullable', 'string', 'max:255'],
-            'check_out_date' => ['nullable', 'date'],
             'location_id' => ['nullable', 'exists:locations,id'],
             'payment_term_id' => ['nullable', 'exists:terms,id'],
             'account_id' => ['nullable', 'exists:accounts,id'],

@@ -80,30 +80,6 @@
                         </div>
                     </div>
 
-                    <!-- Additional Info Row -->
-                    <div class="row g-2 mb-3">
-                        <div class="col-md-2">
-                            <label class="form-label small fw-bold mb-1">Villa Type</label>
-                            <input type="text" name="villa_type" class="form-control form-control-sm" value="{{ old('villa_type', $invoice->villa_type) }}">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label small fw-bold mb-1">Meal Plan</label>
-                            <input type="text" name="meal_plan" class="form-control form-control-sm" value="{{ old('meal_plan', $invoice->meal_plan) }}">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label small fw-bold mb-1">No of Pax</label>
-                            <input type="number" name="no_of_pax" class="form-control form-control-sm" value="{{ old('no_of_pax', $invoice->no_of_pax) }}">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label small fw-bold mb-1">Check In</label>
-                            <input type="date" name="check_in_date" class="form-control form-control-sm" value="{{ old('check_in_date', $invoice->check_in_date) }}">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label small fw-bold mb-1">Check Out</label>
-                            <input type="date" name="check_out_date" class="form-control form-control-sm" value="{{ old('check_out_date', $invoice->check_out_date) }}">
-                        </div>
-                    </div>
-
                     <style>
                         #itemsTable th, #itemsTable td { padding: 0.15rem !important; font-size: 0.7rem !important; white-space: nowrap; }
                         #itemsTable .form-control-sm { padding: 0.1rem 0.2rem !important; font-size: 0.7rem !important; min-height: 22px !important; }

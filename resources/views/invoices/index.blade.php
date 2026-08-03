@@ -43,6 +43,9 @@
                                     <a href="{{ route('invoices.show', $i->id) }}" class="btn btn-soft-info btn-sm icon-btn" title="View Detail">
                                         <i class="ri-eye-line"></i>
                                     </a>
+                                    <a href="{{ route('invoices.print', $i->id) }}" class="btn btn-soft-primary btn-sm icon-btn" title="Print / Reprint" target="_blank">
+                                        <i class="ri-printer-line"></i>
+                                    </a>
                                     <a href="{{ route('invoices.edit', $i->id) }}" class="btn btn-soft-success btn-sm icon-btn" title="Edit Invoice">
                                         <i class="ri-pencil-line"></i>
                                     </a>

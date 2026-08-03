@@ -39,25 +39,6 @@
                             <span class="text-muted">Load:</span>
                             <span class="fw-medium">{{ $invoice->load }}</span>
                         </div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="text-muted">Villa Type:</span>
-                            <span class="fw-medium">{{ $invoice->villa_type }}</span>
-                        </div>
-                    </div>
-                    <div class="col-sm-3">
-                        <h6 class="text-muted text-uppercase fw-semibold mb-2">Stay Details</h6>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="text-muted">Pax:</span>
-                            <span class="fw-medium">{{ $invoice->no_of_pax }}</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="text-muted">Meal Plan:</span>
-                            <span class="fw-medium">{{ $invoice->meal_plan }}</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="text-muted">Stay:</span>
-                            <span class="fw-medium text-nowrap">{{ $invoice->check_in_date }} to {{ $invoice->check_out_date }}</span>
-                        </div>
                     </div>
                     <div class="col-sm-3">
                         <h6 class="text-muted text-uppercase fw-semibold mb-2">Payment Details</h6>
