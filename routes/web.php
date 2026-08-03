@@ -79,6 +79,7 @@ Route::middleware('auth')->group(function () {
     Route::post('main-products', [ProductController::class, 'storeMain'])->name('main-products.store');
     Route::resource('sales-orders', SalesOrderController::class);
     Route::resource('invoices', InvoiceController::class);
+    Route::get('invoices/{id}/print', [InvoiceController::class, 'print'])->name('invoices.print');
     Route::resource('sales-returns', SalesReturnController::class);
     Route::resource('purchase-orders', PurchaseOrderController::class);
     Route::patch('purchase-orders/{id}/approve', [PurchaseOrderController::class, 'approve'])->name('purchase-orders.approve');

@@ -9,7 +9,6 @@
             <h4 class="mb-sm-0">Invoice</h4>
             <div class="d-flex align-items-center gap-2">
                 <span class="badge bg-danger-subtle text-danger"><i class="ri-error-warning-line me-1"></i>Date Control is Inactive.</span>
-                <span class="text-muted small fw-bold">Credit Limit: <span id="customer-credit-limit">0.00</span></span>
             </div>
         </div>
     </div>
@@ -42,115 +41,99 @@
                 <form id="createInvoiceForm" action="{{ route('invoices.store') }}" method="POST">
                     @csrf
 
-                    <!-- Header Row 1 -->
-                    <div class="row g-2 mb-2">
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold mb-1">Customer Name <span class="text-danger">*</span></label>
-                            <select name="customer_id" class="form-select form-select-sm" required>
-                                <option value="">Select Customer</option>
-                                @foreach($customers as $c)
-                                    <option value="{{ $c->id }}" {{ old('customer_id') == $c->id ? 'selected' : '' }}>{{ $c->company_name ?? $c->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                             <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
-                             <select name="location_id" class="form-select form-select-sm" required>
-                                 <option value="">Select Location</option>
-                                 @foreach($locations as $location)
-                                     <option value="{{ $location->id }}" data-name="{{ $location->name }}" {{ (old('location_id') == $location->id || $location->name == 'Main Warehouse') ? 'selected' : '' }}>{{ $location->name }}</option>
-                                 @endforeach
-                             </select>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold mb-1">Load <span class="text-muted fw-normal">(prior SO)</span></label>
-                            <select id="loadDropdown" class="form-select form-select-sm">
-                                <option value="">Select SO to copy</option>
-                            </select>
-                            <input type="hidden" name="load" id="soLoadSourceField" value="">
-                        </div>
-                    </div>
+                    <!-- Header Section -->
+                    <div class="row g-3 mb-3">
 
-                    <!-- Header Row 2 -->
-                    <div class="row g-2 mb-2">
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold mb-1">Address</label>
-                            <textarea name="address" class="form-control form-control-sm" rows="2" placeholder="address">{{ old('address') }}</textarea>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label small fw-bold mb-1">Delivery Destination</label>
-                            <textarea name="delivery_destination" class="form-control form-control-sm" rows="2" placeholder="deliver destination">{{ old('delivery_destination') }}</textarea>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-1">
-                                <label class="form-label small fw-bold mb-0">INV No</label>
-                                <input type="text" name="invoice_no" class="form-control form-control-sm bg-light" value="INV/ 2020/00109" readonly>
-                            </div>
-                            <div>
-                                <label class="form-label small fw-bold mb-0">Date</label>
-                                <input type="date" name="date" class="form-control form-control-sm" value="{{ old('date', date('Y-m-d')) }}">
+                        <!-- Bill To -->
+                        <div class="col-lg-7">
+                            <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+                                <h6 class="text-uppercase fw-bold text-primary mb-3 d-flex align-items-center border-bottom pb-2">
+                                    <i class="ri-user-line me-2"></i>Bill To
+                                </h6>
+                                <div class="row g-2">
+                                    <div class="col-md-8">
+                                        <label class="form-label small fw-bold mb-1">Customer Name <span class="text-danger">*</span></label>
+                                        <select name="customer_id" class="form-select form-select-sm" required>
+                                            <option value="">Select Customer</option>
+                                            @foreach($customers as $c)
+                                                <option value="{{ $c->id }}" {{ old('customer_id') == $c->id ? 'selected' : '' }}>{{ $c->company_name ?? $c->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <div class="w-100 bg-body-secondary border rounded-3 p-2 text-end">
+                                            <div class="small text-muted fw-bold text-uppercase">Credit Limit</div>
+                                            <div class="fs-14 fw-bold text-body-emphasis">Rs. <span id="customer-credit-limit">0.00</span></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold mb-1">Address</label>
+                                        <textarea name="address" class="form-control form-control-sm" rows="2" placeholder="Address">{{ old('address') }}</textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small fw-bold mb-1">Delivery Destination</label>
+                                        <textarea name="delivery_destination" class="form-control form-control-sm" rows="2" placeholder="Delivery destination">{{ old('delivery_destination') }}</textarea>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Header Row 3 -->
-                    <div class="row g-2 mb-2">
-                        <div class="col-md-3">
-                            <label class="form-label small fw-bold mb-1">Rep</label>
-                            <select name="rep_id" id="repSelect" class="form-select form-select-sm">
-                                <option value="">Select Rep</option>
-                                @foreach($reps as $rep)
-                                    <option value="{{ $rep->id }}" {{ old('rep_id') == $rep->id ? 'selected' : '' }}>{{ $rep->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label small fw-bold mb-1">Terms</label>
-                            <select name="payment_term_id" id="termsSelect" class="form-select form-select-sm">
-                                <option value="">Select Terms</option>
-                                @foreach($terms as $term)
-                                    @php $label = ($term->days == 0) ? 'Cash Only' : ($term->days.' Days Credit'); @endphp
-                                    <option value="{{ $term->id }}" data-days="{{ $term->days }}" {{ old('payment_term_id') == $term->id ? 'selected' : '' }}>{{ $label }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label small fw-bold mb-1">Due Date</label>
-                            <input type="date" name="due_date" class="form-control form-control-sm" value="{{ old('due_date', date('Y-m-d')) }}">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label small fw-bold mb-1">Villa Type</label>
-                            <select name="villa_type" class="form-select form-select-sm">
-                                <option value="">Select Villa Type</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Header Row 4 -->
-                    <div class="row g-2 mb-3">
-                        <div class="col-md-2">
-                            <label class="form-label small fw-bold mb-1">Meal Plan</label>
-                            <select name="meal_plan" class="form-select form-select-sm">
-                                <option value="">Select Meal Plan</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label small fw-bold mb-1">No of Pax</label>
-                            <input type="text" name="no_of_pax" class="form-control form-control-sm" value="{{ old('no_of_pax') }}">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label small fw-bold mb-1">Check In date</label>
-                            <input type="date" name="check_in_date" class="form-control form-control-sm" value="{{ old('check_in_date', date('Y-m-d')) }}">
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label small fw-bold mb-1">Room Type</label>
-                            <select name="room_type" class="form-select form-select-sm">
-                                <option value="">Select Room Type</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label small fw-bold mb-1">Check out Date</label>
-                            <input type="date" name="check_out_date" class="form-control form-control-sm" value="{{ old('check_out_date', date('Y-m-d')) }}">
+                        <!-- Invoice Details -->
+                        <div class="col-lg-5">
+                            <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+                                <h6 class="text-uppercase fw-bold text-primary mb-3 d-flex align-items-center border-bottom pb-2">
+                                    <i class="ri-bill-line me-2"></i>Invoice Details
+                                </h6>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <label class="form-label small fw-bold mb-1">Invoice No</label>
+                                        <input type="text" name="invoice_no" class="form-control form-control-sm bg-light" value="INV/ 2020/00109" readonly>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small fw-bold mb-1">Date</label>
+                                        <input type="date" name="date" class="form-control form-control-sm" value="{{ old('date', date('Y-m-d')) }}">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small fw-bold mb-1">Load <span class="text-muted fw-normal">(prior SO)</span></label>
+                                        <select id="loadDropdown" class="form-select form-select-sm">
+                                            <option value="">Select SO to copy</option>
+                                        </select>
+                                        <input type="hidden" name="load" id="soLoadSourceField" value="">
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <label class="form-label small fw-bold mb-1">Location <span class="text-danger">*</span></label>
+                                        <select name="location_id" class="form-select form-select-sm" required>
+                                            <option value="">Select Location</option>
+                                            @foreach($locations as $location)
+                                                <option value="{{ $location->id }}" data-name="{{ $location->name }}" {{ (old('location_id') == $location->id || $location->name == 'Main Warehouse') ? 'selected' : '' }}>{{ $location->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <label class="form-label small fw-bold mb-1">Rep</label>
+                                        <select name="rep_id" id="repSelect" class="form-select form-select-sm">
+                                            <option value="">Select Rep</option>
+                                            @foreach($reps as $rep)
+                                                <option value="{{ $rep->id }}" {{ old('rep_id') == $rep->id ? 'selected' : '' }}>{{ $rep->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <label class="form-label small fw-bold mb-1">Terms</label>
+                                        <select name="payment_term_id" id="termsSelect" class="form-select form-select-sm">
+                                            <option value="">Select Terms</option>
+                                            @foreach($terms as $term)
+                                                @php $label = ($term->days == 0) ? 'Cash Only' : ($term->days.' Days Credit'); @endphp
+                                                <option value="{{ $term->id }}" data-days="{{ $term->days }}" {{ old('payment_term_id') == $term->id ? 'selected' : '' }}>{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <label class="form-label small fw-bold mb-1">Due Date</label>
+                                        <input type="date" name="due_date" class="form-control form-control-sm" value="{{ old('due_date', date('Y-m-d')) }}">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
