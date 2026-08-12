@@ -22,7 +22,7 @@
                 <div class="float-end">
                     <button type="submit" form="createInvoiceForm" class="btn btn-info btn-sm me-1"><i class="ri-save-line me-1"></i>Save & New</button>
                     <button type="submit" form="createInvoiceForm" class="btn btn-success btn-sm me-1"><i class="ri-check-line me-1"></i>Save & Close</button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm me-1"><i class="ri-printer-line me-1"></i>Save & Print</button>
+                    <button type="submit" form="createInvoiceForm" class="btn btn-outline-secondary btn-sm me-1" name="action" value="print"><i class="ri-printer-line me-1"></i>Save & Print</button>
                     <button type="reset" form="createInvoiceForm" class="btn btn-warning btn-sm"><i class="ri-refresh-line me-1"></i>Reset</button>
                 </div>
             </div>
@@ -1180,6 +1180,17 @@
                     redirect: 'manual',
                 })
                 .then(function (response) {
+                    // "Save & Print" — server returns JSON with print_url after creating the invoice.
+                    if (actionValue === 'print' && response.ok) {
+                        return response.json().then(function (data) {
+                            if (data && data.print_url) {
+                                window.location.href = data.print_url;
+                            } else {
+                                window.location.href = storeBase;
+                            }
+                        });
+                    }
+
                     // Opaque redirect — Laravel issued 302 — store() succeeded.
                     if (response.type === 'opaqueredirect' || response.status === 0) {
                         window.location.href = storeBase;

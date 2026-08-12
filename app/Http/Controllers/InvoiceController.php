@@ -111,7 +111,9 @@ class InvoiceController extends Controller
             }
         }
 
-        \DB::transaction(function () use ($request, $validated) {
+        $invoice = null;
+
+        \DB::transaction(function () use ($request, $validated, &$invoice) {
             $data = Arr::except($validated, ['items']);
             foreach (['subtotal', 'header_discount_percent', 'header_discount_amount', 'tax_amount', 'sscl_percent', 'sscl_amount', 'vat_percent', 'vat_amount', 'total_amount'] as $field) {
                 if (array_key_exists($field, $data)) {
@@ -158,6 +160,14 @@ class InvoiceController extends Controller
                 }
             }
         });
+
+        if ($request->input('action') === 'print' && $invoice) {
+            return response()->json([
+                'success' => true,
+                'id' => $invoice->id,
+                'print_url' => route('invoices.print', $invoice->id),
+            ]);
+        }
 
         return redirect()->route('invoices.index')->with('success', 'Invoice created successfully.');
     }
