@@ -16,6 +16,7 @@ class Invoice extends Model
         'date',
         'location_id',
         'payment_term_id',
+        'payment_method',
         'subtotal',
         'header_discount_percent',
         'header_discount_amount',

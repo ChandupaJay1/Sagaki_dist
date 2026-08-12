@@ -132,6 +132,16 @@
                                         <label class="form-label small fw-bold mb-1">Due Date</label>
                                         <input type="date" name="due_date" class="form-control form-control-sm" value="{{ old('due_date', date('Y-m-d')) }}">
                                     </div>
+                                    <div class="col-lg-6">
+                                        <label class="form-label small fw-bold mb-1">Payment Method <span class="text-danger">*</span></label>
+                                        <select name="payment_method" id="paymentMethodSelect" class="form-select form-select-sm" required>
+                                            <option value="">Select Payment Method</option>
+                                            <option value="Cash" {{ old('payment_method') == 'Cash' ? 'selected' : '' }}>Cash</option>
+                                            <option value="Card" {{ old('payment_method') == 'Card' ? 'selected' : '' }}>Card</option>
+                                            <option value="Bank Transfer" {{ old('payment_method') == 'Bank Transfer' ? 'selected' : '' }}>Bank Transfer</option>
+                                            <option value="Cheque" {{ old('payment_method') == 'Cheque' ? 'selected' : '' }}>Cheque</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
                         </div>
