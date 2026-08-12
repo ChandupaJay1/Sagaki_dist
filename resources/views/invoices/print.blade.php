@@ -197,6 +197,12 @@
                     <span class="detail-value">{{ $invoice->payment_term->days ?? 'N/A' }} days</span>
                 </div>
                 @endif
+                @if($invoice->payment_method)
+                <div class="detail-item">
+                    <span class="detail-label">Payment:</span>
+                    <span class="detail-value">{{ $invoice->payment_method }}</span>
+                </div>
+                @endif
             </div>
         </div>
 
