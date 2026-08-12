@@ -80,6 +80,20 @@
                         </div>
                     </div>
 
+                    <!-- Header Row 3 -->
+                    <div class="row g-2 mb-2">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-bold mb-1">Payment Method <span class="text-danger">*</span></label>
+                            <select name="payment_method" id="paymentMethodSelect" class="form-select form-select-sm" required>
+                                <option value="">Select Payment Method</option>
+                                <option value="Cash" {{ old('payment_method', $invoice->payment_method) == 'Cash' ? 'selected' : '' }}>Cash</option>
+                                <option value="Card" {{ old('payment_method', $invoice->payment_method) == 'Card' ? 'selected' : '' }}>Card</option>
+                                <option value="Bank Transfer" {{ old('payment_method', $invoice->payment_method) == 'Bank Transfer' ? 'selected' : '' }}>Bank Transfer</option>
+                                <option value="Cheque" {{ old('payment_method', $invoice->payment_method) == 'Cheque' ? 'selected' : '' }}>Cheque</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <style>
                         #itemsTable th, #itemsTable td { padding: 0.15rem !important; font-size: 0.7rem !important; white-space: nowrap; }
                         #itemsTable .form-control-sm { padding: 0.1rem 0.2rem !important; font-size: 0.7rem !important; min-height: 22px !important; }
