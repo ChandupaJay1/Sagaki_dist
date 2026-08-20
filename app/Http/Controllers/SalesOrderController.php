@@ -242,6 +242,27 @@ class SalesOrderController extends Controller
     }
 
     /**
+     * All Sales Orders (no customer filter) — used by Invoice create Load dropdown.
+     */
+    public function ajaxAllSalesOrders()
+    {
+        $rows = SalesOrder::query()
+            ->orderByDesc('order_date')
+            ->orderByDesc('id')
+            ->get(['id', 'order_no', 'order_date', 'total_amount', 'customer_id']);
+
+        return response()->json($rows->map(function (SalesOrder $s) {
+            return [
+                'id'           => $s->id,
+                'order_no'     => $s->order_no,
+                'date'         => $s->order_date,
+                'total_amount' => (float) ($s->total_amount ?? 0),
+                'customer_id'  => $s->customer_id,
+            ];
+        }));
+    }
+
+    /**
      * Prior Sales Orders for the customer (Load dropdown on Invoice create).
      */
     public function ajaxCustomerSalesOrders(string $customer)

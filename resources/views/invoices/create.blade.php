@@ -296,47 +296,53 @@
         const creditLimitSpan = document.getElementById('customer-credit-limit');
         const loadDropdown = document.getElementById('loadDropdown');
 
-        function fetchCustomerSalesOrders(customerId) {
+        // All SOs fetched once on init; filtered client-side when customer changes
+        let allSalesOrders = [];
+
+        function populateLoadDropdown(rows) {
             if (!loadDropdown) return;
+            const ts = loadDropdown.tomselect;
+            if (ts) {
+                ts.clear(true);
+                ts.clearOptions();
+                ts.addOption({ value: '', text: 'Select SO to copy' });
+                rows.forEach(so => ts.addOption({
+                    value: String(so.id),
+                    text: `${so.order_no || 'SO'} — ${so.date || ''} (Rs. ${parseFloat(so.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })})`
+                }));
+                ts.setValue('', true);
+                ts.refreshOptions(false);
+            } else {
+                loadDropdown.innerHTML = '<option value="">Select SO to copy</option>';
+                rows.forEach(so => {
+                    const opt = document.createElement('option');
+                    opt.value = String(so.id);
+                    opt.textContent = `${so.order_no || 'SO'} — ${so.date || ''} (Rs. ${parseFloat(so.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })})`;
+                    loadDropdown.appendChild(opt);
+                });
+            }
+        }
+
+        function fetchAllSalesOrders() {
+            if (!loadDropdown) return;
+            fetch('/ajax/sales-orders', { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+                .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+                .then(data => {
+                    allSalesOrders = Array.isArray(data) ? data : [];
+                    populateLoadDropdown(allSalesOrders);
+                })
+                .catch(err => console.error('Could not load SO list:', err));
+        }
+
+        function fetchCustomerSalesOrders(customerId) {
+            // Filter the already-loaded list by customer; if no customer show all
+            const filtered = customerId
+                ? allSalesOrders.filter(so => String(so.customer_id) === String(customerId))
+                : allSalesOrders;
+            populateLoadDropdown(filtered);
 
             const loadHidden = document.getElementById('soLoadSourceField');
             if (loadHidden) loadHidden.value = '';
-
-            // Clear current options
-            if (loadDropdown.tomselect) {
-                loadDropdown.tomselect.clear(true);
-                loadDropdown.tomselect.clearOptions();
-                loadDropdown.tomselect.addOption({ value: '', text: 'Select SO to copy' });
-            } else {
-                loadDropdown.innerHTML = '<option value="">Select SO to copy</option>';
-            }
-
-            if (!customerId) return;
-
-            fetch(`/ajax/customers/${customerId}/sales-orders`, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
-                .then(response => {
-                    if (!response.ok) throw new Error('SO list request failed: ' + response.status);
-                    return response.json();
-                })
-                .then(data => {
-                    const rows = Array.isArray(data) ? data : [];
-                    const options = rows.map(so => ({
-                        value: String(so.id),
-                        text: `${so.order_no || 'SO'} - ${so.date || ''} (Rs. ${parseFloat(so.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })})`
-                    }));
-
-                    if (loadDropdown.tomselect) {
-                        loadDropdown.tomselect.addOptions(options);
-                    } else {
-                        options.forEach(opt => {
-                            const option = document.createElement('option');
-                            option.value = opt.value;
-                            option.textContent = opt.text;
-                            loadDropdown.appendChild(option);
-                        });
-                    }
-                })
-                .catch(error => console.error('Error fetching customer SOs:', error));
         }
 
         function normalizeSoItemsPayload(res) {
@@ -442,16 +448,22 @@
                     return response.json();
                 })
                 .then(res => {
-                    const selectedCustomerId = customerSelect && customerSelect.tomselect
-                        ? customerSelect.tomselect.getValue()
-                        : (customerSelect ? customerSelect.value : '');
-                    if (res.so && res.so.customer_id != null && String(res.so.customer_id) !== String(selectedCustomerId || '')) {
-                        alert('This Sales Order belongs to a different customer. Select the correct customer first.');
-                        if (labelEl) labelEl.innerHTML = originalLabel;
-                        return;
-                    }
                     if (res.so) {
                         applyLoadedSalesOrderHeader(res.so);
+                        // Auto-select the customer from the SO if none selected yet
+                        const currentCustomer = customerSelect && customerSelect.tomselect
+                            ? customerSelect.tomselect.getValue()
+                            : (customerSelect ? customerSelect.value : '');
+                        if (!currentCustomer && res.so.customer_id) {
+                            const cidStr = String(res.so.customer_id);
+                            if (customerSelect) {
+                                if (customerSelect.tomselect) {
+                                    customerSelect.tomselect.setValue(cidStr, true);
+                                } else {
+                                    customerSelect.value = cidStr;
+                                }
+                            }
+                        }
                     }
                     const items = normalizeSoItemsPayload(res);
                     if (items.length === 0) {
@@ -604,53 +616,59 @@
         }
 
         function fetchCustomerDetails(customerId) {
-            if (customerId) {
-                const url = "{{ url('api/customers') }}/" + customerId;
-                fetch(url)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (addressTextarea) addressTextarea.value = data.address || '';
-                        if (deliveryDestinationTextarea) deliveryDestinationTextarea.value = data.delivery_address || '';
-
-                        if (creditLimitSpan) creditLimitSpan.innerText = parseFloat(data.credit_limit || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
-
-                        if (repSelect && data.rep_id) {
-                            repSelect.value = data.rep_id;
-                            if (repSelect.tomselect) {
-                                repSelect.tomselect.setValue(data.rep_id);
-                            }
-                        }
-
-                        if (termsSelect && data.terms) {
-                            // Try to match by days first
-                            let daysMatch = data.terms.match(/\d+/);
-                            let matchedOption = null;
-
-                            if (daysMatch) {
-                                let days = parseInt(daysMatch[0]);
-                                matchedOption = Array.from(termsSelect.options).find(opt => opt.dataset.days == days);
-                            }
-
-                            if (!matchedOption) {
-                                // Try to match by text
-                                matchedOption = Array.from(termsSelect.options).find(opt => opt.text.toLowerCase().includes(data.terms.toLowerCase()));
-                            }
-
-                            if (matchedOption) {
-                                termsSelect.value = matchedOption.value;
-                                if (termsSelect.tomselect) {
-                                    termsSelect.tomselect.setValue(matchedOption.value);
-                                }
-                            }
-                        }
-
-                        // Fetch SOs for Load dropdown
-                        fetchCustomerSalesOrders(customerId);
-                    })
-                    .catch(error => console.error('Error fetching customer details:', error));
-            } else {
+            if (!customerId) {
                 fetchCustomerSalesOrders(null);
+                return;
             }
+
+            // Load the prior-SO list INDEPENDENTLY of the customer-detail call below, so a
+            // failure fetching customer details can never leave the Load dropdown empty.
+            fetchCustomerSalesOrders(customerId);
+
+            // Use a relative URL so it works regardless of the host/APP_URL the app is served from.
+            const url = 'api/customers/' + customerId;
+            fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+                .then(response => {
+                    if (!response.ok) throw new Error('Customer details request failed: ' + response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    if (addressTextarea) addressTextarea.value = data.address || '';
+                    if (deliveryDestinationTextarea) deliveryDestinationTextarea.value = data.delivery_address || '';
+
+                    if (creditLimitSpan) creditLimitSpan.innerText = parseFloat(data.credit_limit || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+
+                    if (repSelect && data.rep_id) {
+                        repSelect.value = data.rep_id;
+                        if (repSelect.tomselect) {
+                            repSelect.tomselect.setValue(data.rep_id);
+                        }
+                    }
+
+                    if (termsSelect && data.terms) {
+                        // Try to match by days first
+                        let daysMatch = data.terms.match(/\d+/);
+                        let matchedOption = null;
+
+                        if (daysMatch) {
+                            let days = parseInt(daysMatch[0]);
+                            matchedOption = Array.from(termsSelect.options).find(opt => opt.dataset.days == days);
+                        }
+
+                        if (!matchedOption) {
+                            // Try to match by text
+                            matchedOption = Array.from(termsSelect.options).find(opt => opt.text.toLowerCase().includes(data.terms.toLowerCase()));
+                        }
+
+                        if (matchedOption) {
+                            termsSelect.value = matchedOption.value;
+                            if (termsSelect.tomselect) {
+                                termsSelect.tomselect.setValue(matchedOption.value);
+                            }
+                        }
+                    }
+                })
+                .catch(error => console.error('Error fetching customer details:', error));
         }
 
         // Standard change event
@@ -666,13 +684,11 @@
                 customerSelect.addEventListener('change', function () {
                     fetchCustomerDetails(this.value);
                 });
-                if (this.value) {
-                    fetchCustomerDetails(this.value);
+                if (customerSelect.value) {
+                    fetchCustomerDetails(customerSelect.value);
                 }
             }
         }
-
-        setTimeout(attachCustomerListener, 500);
 
         // JavaScript account default selection removed as per structural immutability directive
 
@@ -693,20 +709,27 @@
             }
         }
 
-        // Initialize immediately if TomSelect is available, otherwise wait
-        if (window.TomSelect) {
-            initLoadDropdown();
-        }
-
+        // Initialize loadDropdown TomSelect FIRST, then attach the customer listener.
+        // This order matters: fetchCustomerSalesOrders() populates loadDropdown via
+        // TomSelect's addOption(). If TomSelect hasn't booted yet the options land on
+        // the raw <select> and get wiped when TomSelect initialises moments later.
         setTimeout(() => {
+            // 1. Boot all secondary TomSelects first (load, rep, terms)
+            initLoadDropdown();
             if (repSelect && window.TomSelect && !repSelect.tomselect) {
                 new TomSelect(repSelect, { create: false });
             }
             if (termsSelect && window.TomSelect && !termsSelect.tomselect) {
                 new TomSelect(termsSelect, { create: false });
             }
-            initLoadDropdown(); // Fallback initialization
-        }, 600);
+
+            // 2. Fetch all SOs immediately — shown before any customer is chosen
+            fetchAllSalesOrders();
+
+            // 3. Now attach the customer change listener (and fire initial fetch
+            //    if a customer is already selected via old() / default value).
+            attachCustomerListener();
+        }, 500);
 
         // --- Table Controller (Data Source Level) --- //
         function getDefaultLocation() {
