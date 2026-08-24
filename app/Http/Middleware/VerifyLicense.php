@@ -17,12 +17,12 @@ class VerifyLicense
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $licenseKey = env('NERDTECH_LICENSE_KEY');
+        $domain = $request->getHost();
         $licenseServer = env('NERDTECH_LICENSE_SERVER');
 
         // Prevent empty configuration from blocking local dev, or handle as needed
-        if (!$licenseKey || !$licenseServer) {
-            Log::warning('Nerdtech license configuration is missing.');
+        if (!$licenseServer) {
+            Log::warning('Nerdtech license server configuration is missing.');
             // Return $next($request); // Uncomment if you want to bypass when not configured
         }
 
@@ -31,7 +31,7 @@ class VerifyLicense
         try {
             // Send the POST request to verify the license
             $response = Http::timeout(5)->post(rtrim($licenseServer, '/') . '/api/verify-license', [
-                'license_key' => $licenseKey,
+                'domain' => $domain,
             ]);
 
             if ($response->successful()) {
