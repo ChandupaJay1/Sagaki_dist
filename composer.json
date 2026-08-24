@@ -12,7 +12,8 @@
         "php": "^8.2",
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
-        "laravel/tinker": "^2.10.1"
+        "laravel/tinker": "^2.10.1",
+        "nerdtech/license-manager": "@dev"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -87,6 +88,12 @@
             "php-http/discovery": true
         }
     },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "C:/Users/mgpde/OneDrive/Documents/My Projects/nerdtech-license-manager"
+        }
+    ],
     "minimum-stability": "stable",
     "prefer-stable": true
 }

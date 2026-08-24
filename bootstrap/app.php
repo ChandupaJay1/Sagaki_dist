@@ -3,7 +3,6 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use App\Http\Middleware\VerifyLicense;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -18,9 +17,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'check.status' => \App\Http\Middleware\CheckAccountStatus::class,
         ]);
         $middleware->append(\App\Http\Middleware\CheckAccountStatus::class);
-        $middleware->web(append: [
-            VerifyLicense::class,
-        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

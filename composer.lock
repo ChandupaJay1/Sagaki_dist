@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b061232aa2086a09d30cc4dced18a2a2",
+    "content-hash": "88605cc00c01fb6158f1baadbd7ea254",
     "packages": [
         {
             "name": "brick/math",
@@ -2185,6 +2185,38 @@
                 }
             ],
             "time": "2026-01-02T08:56:05+00:00"
+        },
+        {
+            "name": "nerdtech/license-manager",
+            "version": "dev-main",
+            "dist": {
+                "type": "path",
+                "url": "C:/Users/mgpde/OneDrive/Documents/My Projects/nerdtech-license-manager",
+                "reference": "d3e2ddde5d7568787a1870d044783d9bc026c8ab"
+            },
+            "require": {
+                "illuminate/http": "*",
+                "illuminate/routing": "*",
+                "illuminate/support": "*",
+                "php": "^8.1"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Nerdtech\\LicenseManager\\LicenseManagerServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Nerdtech\\LicenseManager\\": "src/"
+                }
+            },
+            "description": "Zero-Touch Domain-Based License checking system",
+            "transport-options": {
+                "relative": false
+            }
         },
         {
             "name": "nesbot/carbon",
@@ -8659,7 +8691,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "nerdtech/license-manager": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
