@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b061232aa2086a09d30cc4dced18a2a2",
+    "content-hash": "202989b5cd3f21c61c146e9e0340b89c",
     "packages": [
         {
             "name": "brick/math",
@@ -2185,6 +2185,48 @@
                 }
             ],
             "time": "2026-01-02T08:56:05+00:00"
+        },
+        {
+            "name": "nerdtech/license-manager",
+            "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/MGPathum/nerdtech-license-manager.git",
+                "reference": "eaa2bae322a18d5c6df7123b1718eb89525c45d3"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/MGPathum/nerdtech-license-manager/zipball/eaa2bae322a18d5c6df7123b1718eb89525c45d3",
+                "reference": "eaa2bae322a18d5c6df7123b1718eb89525c45d3",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/http": "*",
+                "illuminate/routing": "*",
+                "illuminate/support": "*",
+                "php": "^8.1"
+            },
+            "default-branch": true,
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Nerdtech\\LicenseManager\\LicenseManagerServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Nerdtech\\LicenseManager\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "description": "Zero-Touch Domain-Based License checking system",
+            "support": {
+                "issues": "https://github.com/MGPathum/nerdtech-license-manager/issues",
+                "source": "https://github.com/MGPathum/nerdtech-license-manager/tree/main"
+            },
+            "time": "2026-08-24T14:36:12+00:00"
         },
         {
             "name": "nesbot/carbon",
@@ -8659,7 +8701,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "nerdtech/license-manager": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
