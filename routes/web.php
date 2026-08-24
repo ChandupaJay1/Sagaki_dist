@@ -139,6 +139,7 @@ Route::middleware('auth')->group(function () {
     Route::get('ajax/purchase-orders/{po}/details', [PurchaseOrderController::class, 'ajaxPurchaseOrderDetails'])->name('ajax.purchase-orders.details');
 
     Route::get('ajax/customers/{customer}/sales-orders', [SalesOrderController::class, 'ajaxCustomerSalesOrders'])->name('ajax.customers.sales-orders');
+    Route::get('ajax/sales-orders', [SalesOrderController::class, 'ajaxAllSalesOrders'])->name('ajax.sales-orders.all');
     Route::get('ajax/sales-orders/{so}/details', [SalesOrderController::class, 'ajaxSalesOrderDetails'])->name('ajax.sales-orders.details');
 
     Route::get('ajax/customers/{customer}/invoices', [InvoiceController::class, 'ajaxCustomerInvoices'])->name('ajax.customers.invoices');
