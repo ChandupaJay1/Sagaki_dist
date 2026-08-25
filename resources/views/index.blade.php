@@ -144,7 +144,7 @@
                                 </div>
                                 <div>
                                     <p class="mb-1 text-muted fw-semibold small text-uppercase" style="letter-spacing: 0.05em;">Total Revenue</p>
-                                    <h3 class="fw-bold text-dark-emphasis mb-0 fs-28">Rs. 0.00</h3>
+                                    <h3 class="fw-bold text-dark-emphasis mb-0 fs-28">Rs. {{ number_format($totalRevenue ?? 0, 2) }}</h3>
                                     <p class="text-muted extra-small mt-2 mb-0">Initial Phase - Tracking Pending</p>
                                 </div>
                             </div>
@@ -220,14 +220,15 @@
                                         <h5 class="card-title mb-0 fw-bold text-dark">Revenue Summary</h5>
                                    </div>
                                    <div class="dropdown">
-                                        <a href="#" class="dropdown-toggle btn btn-sm btn-light border-0 px-3 rounded-pill fw-semibold"
+                                        <a href="#" class="dropdown-toggle btn btn-sm btn-light border-0 px-3 rounded-pill fw-semibold text-capitalize"
                                              data-bs-toggle="dropdown" aria-expanded="false">
-                                             Monthly
+                                             {{ $filter }}
                                         </a>
                                         <div class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
-                                             <a href="#!" class="dropdown-item py-2">Week</a>
-                                             <a href="#!" class="dropdown-item py-2">Months</a>
-                                             <a href="#!" class="dropdown-item py-2">Years</a>
+                                             <a href="?filter=daily" class="dropdown-item py-2 {{ $filter == 'daily' ? 'active' : '' }}">Daily</a>
+                                             <a href="?filter=weekly" class="dropdown-item py-2 {{ $filter == 'weekly' ? 'active' : '' }}">Weekly</a>
+                                             <a href="?filter=monthly" class="dropdown-item py-2 {{ $filter == 'monthly' ? 'active' : '' }}">Monthly</a>
+                                             <a href="?filter=yearly" class="dropdown-item py-2 {{ $filter == 'yearly' ? 'active' : '' }}">Yearly</a>
                                         </div>
                                    </div>
                               </div>
@@ -245,14 +246,13 @@
                                         <h5 class="card-title mb-0 fw-bold text-dark">Daily Delivery</h5>
                                    </div>
                                    <div class="dropdown">
-                                        <a href="#" class="dropdown-toggle btn btn-sm btn-link text-decoration-none text-muted fw-bold"
-                                             data-bs-toggle="dropdown" aria-expanded="false">
-                                             Weekly
-                                        </a>
+                                        <a href="#" class="dropdown-toggle btn btn-sm btn-link text-decoration-none text-muted fw-bold text-capitalize"
+                                             data-bs-toggle="dropdown" aria-expanded="false">{{ $filter }}</a>
                                         <div class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
-                                             <a href="#!" class="dropdown-item py-2">Week</a>
-                                             <a href="#!" class="dropdown-item py-2">Months</a>
-                                             <a href="#!" class="dropdown-item py-2">Years</a>
+                                             <a href="?filter=daily" class="dropdown-item py-2 {{ $filter == 'daily' ? 'active' : '' }}">Daily</a>
+                                             <a href="?filter=weekly" class="dropdown-item py-2 {{ $filter == 'weekly' ? 'active' : '' }}">Weekly</a>
+                                             <a href="?filter=monthly" class="dropdown-item py-2 {{ $filter == 'monthly' ? 'active' : '' }}">Monthly</a>
+                                             <a href="?filter=yearly" class="dropdown-item py-2 {{ $filter == 'yearly' ? 'active' : '' }}">Yearly</a>
                                         </div>
                                    </div>
                               </div>
@@ -274,12 +274,13 @@
                                         <h5 class="card-title mb-0 fw-bold text-dark">Orders Overview</h5>
                                    </div>
                                    <div class="dropdown">
-                                        <a href="#" class="dropdown-toggle btn btn-sm btn-link text-decoration-none text-muted fw-bold"
-                                             data-bs-toggle="dropdown" aria-expanded="false">Weekly</a>
+                                        <a href="#" class="dropdown-toggle btn btn-sm btn-link text-decoration-none text-muted fw-bold text-capitalize"
+                                             data-bs-toggle="dropdown" aria-expanded="false">{{ $filter }}</a>
                                         <div class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
-                                             <a href="#!" class="dropdown-item py-2">Week</a>
-                                             <a href="#!" class="dropdown-item py-2">Months</a>
-                                             <a href="#!" class="dropdown-item py-2">Years</a>
+                                             <a href="?filter=daily" class="dropdown-item py-2 {{ $filter == 'daily' ? 'active' : '' }}">Daily</a>
+                                             <a href="?filter=weekly" class="dropdown-item py-2 {{ $filter == 'weekly' ? 'active' : '' }}">Weekly</a>
+                                             <a href="?filter=monthly" class="dropdown-item py-2 {{ $filter == 'monthly' ? 'active' : '' }}">Monthly</a>
+                                             <a href="?filter=yearly" class="dropdown-item py-2 {{ $filter == 'yearly' ? 'active' : '' }}">Yearly</a>
                                         </div>
                                    </div>
                               </div>
@@ -300,15 +301,15 @@
                                         <h5 class="card-title mb-0 fw-bold text-dark">Recent Deliveries</h5>
                                    </div>
                                    <div class="dropdown">
-                                        <a href="#"
-                                             class="dropdown-toggle btn btn-sm btn-light border-0 px-3 rounded-pill fw-semibold"
+                                        <a href="#" class="dropdown-toggle btn btn-sm btn-light border-0 px-3 rounded-pill fw-semibold text-capitalize"
                                              data-bs-toggle="dropdown" aria-expanded="false">
-                                             Daily
+                                             {{ $filter }}
                                         </a>
                                         <div class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
-                                             <a href="#!" class="dropdown-item py-2">Week</a>
-                                             <a href="#!" class="dropdown-item py-2">Months</a>
-                                             <a href="#!" class="dropdown-item py-2">Years</a>
+                                             <a href="?filter=daily" class="dropdown-item py-2 {{ $filter == 'daily' ? 'active' : '' }}">Daily</a>
+                                             <a href="?filter=weekly" class="dropdown-item py-2 {{ $filter == 'weekly' ? 'active' : '' }}">Weekly</a>
+                                             <a href="?filter=monthly" class="dropdown-item py-2 {{ $filter == 'monthly' ? 'active' : '' }}">Monthly</a>
+                                             <a href="?filter=yearly" class="dropdown-item py-2 {{ $filter == 'yearly' ? 'active' : '' }}">Yearly</a>
                                         </div>
                                    </div>
                               </div>
@@ -326,56 +327,32 @@
                                              </thead>
 
                                              <tbody>
+                                                  @forelse($recentDeliveries as $delivery)
                                                   <tr>
-                                                       <td class="ps-4 fw-medium text-dark-emphasis">2025-08-06</td>
-                                                       <td class="text-muted small">Stripe Payment</td>
+                                                       <td class="ps-4 fw-medium text-dark-emphasis">{{ \Carbon\Carbon::parse($delivery->date)->format('Y-m-d') }}</td>
+                                                       <td class="text-muted small">{{ $delivery->payment_method ?? 'Unknown' }}</td>
                                                        <td>
-                                                            <span class="badge-soft bg-success-subtle text-success">
-                                                                <i class="ri-checkbox-circle-fill me-1"></i> Success
-                                                            </span>
+                                                            @if(strtolower($delivery->status) == 'success' || strtolower($delivery->status) == 'paid')
+                                                                <span class="badge-soft bg-success-subtle text-success">
+                                                                    <i class="ri-checkbox-circle-fill me-1"></i> {{ ucfirst($delivery->status) }}
+                                                                </span>
+                                                            @elseif(strtolower($delivery->status) == 'pending')
+                                                                <span class="badge-soft bg-warning-subtle text-warning">
+                                                                    <i class="ri-time-fill me-1"></i> {{ ucfirst($delivery->status) }}
+                                                                </span>
+                                                            @else
+                                                                <span class="badge-soft bg-danger-subtle text-danger">
+                                                                    <i class="ri-close-circle-fill me-1"></i> {{ ucfirst($delivery->status) }}
+                                                                </span>
+                                                            @endif
                                                        </td>
-                                                       <td class="pe-4 text-end fw-bold text-dark-emphasis">21,000.00</td>
+                                                       <td class="pe-4 text-end fw-bold text-dark-emphasis">{{ number_format($delivery->total_amount, 2) }}</td>
                                                   </tr>
+                                                  @empty
                                                   <tr>
-                                                       <td class="ps-4 fw-medium text-dark-emphasis">2025-08-05</td>
-                                                       <td class="text-muted small">UPI Transfer</td>
-                                                       <td>
-                                                            <span class="badge-soft bg-warning-subtle text-warning">
-                                                                <i class="ri-time-fill me-1"></i> Pending
-                                                            </span>
-                                                       </td>
-                                                       <td class="pe-4 text-end fw-bold text-dark-emphasis">13,550.50</td>
+                                                      <td colspan="4" class="text-center py-4 text-muted">No recent deliveries found.</td>
                                                   </tr>
-                                                  <tr>
-                                                       <td class="ps-4 fw-medium text-dark-emphasis">2025-08-04</td>
-                                                       <td class="text-muted small">PayPal Wallet</td>
-                                                       <td>
-                                                            <span class="badge-soft bg-danger-subtle text-danger">
-                                                                <i class="ri-close-circle-fill me-1"></i> Failed
-                                                            </span>
-                                                       </td>
-                                                       <td class="pe-4 text-end fw-bold text-dark-emphasis">32,075.00</td>
-                                                  </tr>
-                                                  <tr>
-                                                       <td class="ps-4 fw-medium text-dark-emphasis">2025-08-03</td>
-                                                       <td class="text-muted small">Debit Card</td>
-                                                       <td>
-                                                            <span class="badge-soft bg-success-subtle text-success">
-                                                                <i class="ri-checkbox-circle-fill me-1"></i> Success
-                                                            </span>
-                                                       </td>
-                                                       <td class="pe-4 text-end fw-bold text-dark-emphasis">8,999.00</td>
-                                                  </tr>
-                                                  <tr>
-                                                       <td class="ps-4 fw-medium text-dark-emphasis">2025-08-02</td>
-                                                       <td class="text-muted small">Bank Transfer</td>
-                                                       <td>
-                                                            <span class="badge-soft bg-success-subtle text-success">
-                                                                <i class="ri-checkbox-circle-fill me-1"></i> Success
-                                                            </span>
-                                                       </td>
-                                                       <td class="pe-4 text-end fw-bold text-dark-emphasis">15,045.00</td>
-                                                  </tr>
+                                                  @endforelse
                                              </tbody>
                                         </table>
                                    </div>
@@ -498,5 +475,92 @@
 
 @section('scripts')
      <!-- Dashboard Js -->
-     <script src="{{ asset('assets/js/pages/dashboard.js') }}"></script>
+     <script>
+    const revenueCategories = @json($revenueSummary->pluck('label'));
+    const revenueData = @json($revenueSummary->pluck('total'));
+    
+    const ordersCategories = @json($ordersOverview->pluck('label'));
+    const ordersData = @json($ordersOverview->pluck('count'));
+
+    const revenueWithOrderOptions = {
+        series: [
+            { name: "Revenue", data: revenueData }
+        ],
+        chart: { height: 300, type: "line", toolbar: { show: false }, zoom: { enabled: false }, parentHeightOffset: 0 },
+        colors: ["#663ffa"],
+        stroke: { curve: "smooth", width: [2] },
+        markers: { size: 0 },
+        grid: { borderColor: "#f1f3fa", yaxis: { lines: { show: true } }, xaxis: { lines: { show: false } } },
+        xaxis: { 
+            categories: revenueCategories, 
+            axisBorder: { show: false }, 
+            axisTicks: { show: false }, 
+            labels: { style: { fontSize: "12px", colors: "#4d5761" } } 
+        },
+        yaxis: { 
+            labels: { style: { fontSize: "12px", colors: "#4d5761" }, formatter: function(e) { return "Rs. " + e.toLocaleString(); } } 
+        },
+        legend: { position: "top", horizontalAlign: "right", fontSize: "12px", markers: { width: 10, height: 10, radius: 6 } },
+        dataLabels: { enabled: false },
+        tooltip: { shared: true, intersect: false, y: { formatter: function(e) { return "Rs. " + e.toLocaleString(); } } }
+    };
+
+    if(document.querySelector("#revenue_summary")) {
+        const revenueWithOrderChart = new ApexCharts(document.querySelector("#revenue_summary"), revenueWithOrderOptions);
+        revenueWithOrderChart.render();
+    }
+
+    const columnChartDatabaseOptions = {
+        chart: { height: 250, type: "bar", toolbar: { show: false } },
+        plotOptions: { bar: { borderRadius: 2, columnWidth: "30%", horizontal: true, dataLabels: { position: "top" } } },
+        dataLabels: { enabled: true, formatter: function(e) { return e; }, offsetX: 25, style: { fontSize: "12px", colors: ["#304758"] } },
+        colors: ["#5d7186"],
+        legend: { show: true, horizontalAlign: "center", offsetX: 0, offsetY: -5 },
+        series: [{ name: "Total Orders", data: ordersData }],
+        xaxis: { 
+            categories: ordersCategories, 
+            position: "bottom", 
+            labels: { offsetY: 0, style: { fontSize: "12px", colors: "#4d5761" } }, 
+            axisBorder: { show: true }, 
+            axisTicks: { show: true }, 
+            tooltip: { enabled: true, offsetY: -10 } 
+        },
+        yaxis: { axisBorder: { show: true }, axisTicks: { show: true }, labels: { show: true, style: { fontSize: "12px", colors: "#4d5761" } } },
+        grid: { row: { colors: ["transparent", "transparent"], opacity: 0.2 }, borderColor: "#f1f3fa" }
+    };
+
+    if(document.querySelector("#datalabels-column2")) {
+        const columnChartDatabaseChart = new ApexCharts(document.querySelector("#datalabels-column2"), columnChartDatabaseOptions);
+        columnChartDatabaseChart.render();
+    }
+    
+    // For basic heatmap just render static as they are fast moving items mockup
+    function generateData(count, yrange) {
+        let i = 0;
+        let series = [];
+        while (i < count) {
+            let x = (i + 1).toString();
+            let y = Math.floor(Math.random() * (yrange.max - yrange.min + 1)) + yrange.min;
+            series.push({ x: x, y: y });
+            i++;
+        }
+        return series;
+    }
+    const basicHeatmapOptions = {
+        chart: { toolbar: { show: false }, height: 250, type: "heatmap" },
+        dataLabels: { enabled: false },
+        colors: ["#53389f"],
+        series: [
+            { name: "Food", data: generateData(7, { min: 0, max: 90 }) },
+            { name: "Beverage", data: generateData(7, { min: 0, max: 90 }) },
+            { name: "Snack", data: generateData(7, { min: 0, max: 90 }) },
+        ],
+        xaxis: { type: "category" },
+        yaxis: { labels: { style: { fontSize: "11px" } } }
+    };
+    if(document.querySelector("#basic-heatmap")) {
+        const basicHeatmapChart = new ApexCharts(document.querySelector("#basic-heatmap"), basicHeatmapOptions);
+        basicHeatmapChart.render();
+    }
+</script>
 @endsection

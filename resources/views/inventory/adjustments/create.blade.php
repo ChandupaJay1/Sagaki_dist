@@ -404,6 +404,7 @@
                 const rows = document.querySelectorAll('#itemsTable tbody tr.item-row');
                 let validRowIndex = 0;
                 let hasValidRow = false;
+                let hasValidationError = false;
 
                 rows.forEach((row) => {
                     const productSelect = row.querySelector('.product-select');
@@ -411,6 +412,15 @@
 
                     if (productId) {
                         hasValidRow = true;
+                        
+                        const newQtyInput = row.querySelector('.new-qty-input');
+                        if (newQtyInput && newQtyInput.value.trim() === '') {
+                            hasValidationError = true;
+                            newQtyInput.classList.add('is-invalid', 'border-danger');
+                        } else if (newQtyInput) {
+                            newQtyInput.classList.remove('is-invalid', 'border-danger');
+                        }
+
                         row.querySelectorAll('input, select').forEach(el => {
                             if (el.name) {
                                 el.name = el.name.replace(/items\[\d+\]/, `items[${validRowIndex}]`);
@@ -423,6 +433,12 @@
                         });
                     }
                 });
+
+                if (hasValidationError) {
+                    e.preventDefault();
+                    alert('Please enter a New Qty (Physical) for all selected items.');
+                    return;
+                }
 
                 if (!hasValidRow) {
                     e.preventDefault();

@@ -3,12 +3,9 @@
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    $customerCount = \App\Models\Customer::count();
-    $vendorCount = \App\Models\Vendor::count();
-    $productCount = \App\Models\Product::count();
-    return view('index', compact('customerCount', 'vendorCount', 'productCount'));
-})->name('dashboard')->middleware('auth');
+use App\Http\Controllers\DashboardController;
+
+Route::get('/', [DashboardController::class, 'index'])->name('dashboard')->middleware('auth');
 
 Route::get('/login', [AuthController::class , 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class , 'login']);
@@ -78,15 +75,21 @@ Route::middleware('auth')->group(function () {
     Route::get('main-products/create', [ProductController::class, 'createMain'])->name('main-products.create');
     Route::post('main-products', [ProductController::class, 'storeMain'])->name('main-products.store');
     Route::resource('sales-orders', SalesOrderController::class);
+    Route::get('sales-orders/{id}/print', [SalesOrderController::class, 'print'])->name('sales-orders.print');
     Route::resource('invoices', InvoiceController::class);
     Route::get('invoices/{id}/print', [InvoiceController::class, 'print'])->name('invoices.print');
     Route::resource('sales-returns', SalesReturnController::class);
+    Route::get('sales-returns/{id}/print', [SalesReturnController::class, 'print'])->name('sales-returns.print');
     Route::resource('purchase-orders', PurchaseOrderController::class);
+    Route::get('purchase-orders/{id}/print', [PurchaseOrderController::class, 'print'])->name('purchase-orders.print');
     Route::patch('purchase-orders/{id}/approve', [PurchaseOrderController::class, 'approve'])->name('purchase-orders.approve');
     Route::resource('grns', GrnController::class);
+    Route::get('grns/{id}/print', [GrnController::class, 'print'])->name('grns.print');
     Route::patch('grns/{id}/approve', [GrnController::class, 'approve'])->name('grns.approve');
     Route::resource('grn-returns', GrnReturnController::class);
+    Route::get('grn-returns/{id}/print', [GrnReturnController::class, 'print'])->name('grn-returns.print');
     Route::resource('inventory-transfers', InventoryTransferController::class)->only(['index','create','store','show']);
+    Route::get('inventory-transfers/{id}/print', [InventoryTransferController::class, 'print'])->name('inventory-transfers.print');
     Route::patch('inventory-transfers/{id}/status', [InventoryTransferController::class, 'updateStatus'])->name('inventory-transfers.update-status');
     Route::resource('inventory-issues', InventoryIssueController::class);
     Route::patch('inventory-issues/{id}/approve', [InventoryIssueController::class, 'approve'])->name('inventory-issues.approve');

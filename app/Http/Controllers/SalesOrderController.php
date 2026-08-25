@@ -351,4 +351,10 @@ class SalesOrderController extends Controller
             'items' => $items,
         ]);
     }
+
+    public function print()
+    {
+        $order = SalesOrder::with(['customer', 'rep', 'items.product'])->findOrFail($id);
+        return view('sales_orders.print', compact('order'));
+    }
 }
