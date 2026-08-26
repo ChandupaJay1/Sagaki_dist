@@ -178,7 +178,15 @@ class CustomerController extends Controller
     public function destroy($id)
     {
         $customer = Customer::findOrFail($id);
-        $customer->delete();
+        
+        try {
+            $customer->delete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->errorInfo[1] == 1451) {
+                return redirect()->back()->with('error', 'Cannot delete this customer because they have associated invoices or other records.');
+            }
+            throw $e;
+        }
 
         return redirect()->route('customers.index')->with('success', 'Customer deleted successfully.');
     }

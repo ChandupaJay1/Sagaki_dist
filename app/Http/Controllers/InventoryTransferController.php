@@ -173,4 +173,14 @@ class InventoryTransferController extends Controller
 
         return redirect()->back()->with('success', 'Inventory Transfer status updated to ' . $request->status);
     }
+
+    public function print()
+    {
+        $transfer = InventoryTransfer::with([
+            'items.product',
+            'repAgent',
+        ])->findOrFail($id);
+
+        return view('inventory_transfers.print', compact('transfer'));
+    }
 }

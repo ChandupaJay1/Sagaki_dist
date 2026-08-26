@@ -23,7 +23,7 @@
                 <div class="float-end">
                     <button type="submit" name="action" value="save_and_new" form="createPurchaseOrderForm" class="btn btn-info btn-sm me-1"><i class="ri-save-line me-1"></i>Save & New</button>
                     <button type="submit" name="action" value="save_and_close" form="createPurchaseOrderForm" class="btn btn-success btn-sm me-1"><i class="ri-check-line me-1"></i>Save & Close</button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm me-1"><i class="ri-printer-line me-1"></i>Save & Print</button>
+                    <button type="submit" form="createPurchaseOrderForm" name="action" value="save_and_print" class="btn btn-outline-secondary btn-sm me-1"><i class="ri-printer-line me-1"></i>Save & Print</button>
                     <button type="reset" form="createPurchaseOrderForm" class="btn btn-warning btn-sm"><i class="ri-refresh-line me-1"></i>Reset</button>
                 </div>
             </div>

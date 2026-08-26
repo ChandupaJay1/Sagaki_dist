@@ -399,4 +399,10 @@ class GrnReturnController extends Controller
             'items' => $items,
         ]);
     }
+
+    public function print()
+    {
+        $return = GrnReturn::with(['vendor', 'items.product'])->findOrFail($id);
+        return view('grn_returns.print', compact('return'));
+    }
 }

@@ -23,7 +23,7 @@
                 <div class="float-end">
                     <button type="submit" form="createSalesReturnForm" class="btn btn-info btn-sm me-1"><i class="ri-save-line me-1"></i>Save & New</button>
                     <button type="submit" form="createSalesReturnForm" class="btn btn-success btn-sm me-1"><i class="ri-check-line me-1"></i>Save & Close</button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm me-1"><i class="ri-printer-line me-1"></i>Save & Print</button>
+                    <button type="submit" form="createSalesReturnForm" name="action" value="save_and_print" class="btn btn-outline-secondary btn-sm me-1"><i class="ri-printer-line me-1"></i>Save & Print</button>
                     <button type="reset" form="createSalesReturnForm" class="btn btn-warning btn-sm"><i class="ri-refresh-line me-1"></i>Reset</button>
                 </div>
             </div>
@@ -1099,8 +1099,8 @@
             [qtyInput, rateInput, discPercentInput, discountInput].forEach(input => {
                 input.addEventListener('input', function() {
                     let fieldName = 'qty';
-                    let sourceField = 'disc_percent';
-                    if (this.classList.contains('rate-input')) fieldName = 'rate';
+                    let sourceField = 'qty';
+                    if (this.classList.contains('rate-input')) { fieldName = 'rate'; sourceField = 'rate'; }
                     if (this.classList.contains('disc-percent-input')) { fieldName = 'disc_percent'; sourceField = 'disc_percent'; }
                     if (this.classList.contains('discount-input')) { fieldName = 'discount'; sourceField = 'discount'; }
                     salesReturnController.updateRowData(rowIndex, fieldName, parseFloat(this.value) || 0);
@@ -1231,6 +1231,21 @@
                 const formData = new FormData(form);
                 if (actionValue) formData.set('action', actionValue);
 
+                // FORCE BIND ITEM VALUES (Fallback for browser DOM desyncs)
+                let finalIdx = 0;
+                rows.forEach((row) => {
+                    const productId = row.querySelector('.product-select') ? row.querySelector('.product-select').value : '';
+                    if (productId) {
+                        const qty = row.querySelector('.qty-input') ? row.querySelector('.qty-input').value : '1';
+                        formData.set(`items[${finalIdx}][qty]`, qty);
+                        
+                        const rate = row.querySelector('.rate-input') ? row.querySelector('.rate-input').value : '0';
+                        formData.set(`items[${finalIdx}][rate]`, rate);
+                        
+                        finalIdx++;
+                    }
+                });
+
                 // ── Step 4: disable submit buttons to prevent double-submit ──
                 const submitBtns = form.querySelectorAll('[type="submit"]');
                 submitBtns.forEach(btn => { btn.disabled = true; });
@@ -1253,6 +1268,17 @@
                     redirect: 'manual',
                 })
                 .then(function (response) {
+                                        // "Save & Print" - server returns JSON with print_url after creating.
+                    if (actionValue === 'save_and_print' && response.ok) {
+                        return response.json().then(function (data) {
+                            if (data && data.print_url) {
+                                window.location.href = data.print_url;
+                            } else {
+                                window.location.href = storeBase;
+                            }
+                        });
+                    }
+
                     // Opaque redirect — Laravel issued 302 — store() succeeded.
                     if (response.type === 'opaqueredirect' || response.status === 0) {
                         window.location.href = storeBase;

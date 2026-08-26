@@ -658,4 +658,10 @@ class GrnController extends Controller
             ->route("grns.index")
             ->with("success", "GRN deleted successfully.");
     }
+
+    public function print()
+    {
+        $grn = Grn::with(["vendor", "items.product"])->findOrFail($id);
+        return view("grns.print", compact("grn"));
+    }
 }
