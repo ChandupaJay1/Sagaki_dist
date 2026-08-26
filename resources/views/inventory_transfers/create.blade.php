@@ -24,7 +24,7 @@
                 </div>
                 <div class="float-end">
                     <button type="submit" form="createTransferForm" class="btn btn-success btn-sm me-1"><i class="ri-check-line me-1"></i>Transfer</button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm me-1"><i class="ri-printer-line me-1"></i>Save & Print</button>
+                    <button type="submit" form="createTransferForm" name="action" value="save_and_print" class="btn btn-outline-secondary btn-sm me-1"><i class="ri-printer-line me-1"></i>Save & Print</button>
                     <button type="reset" form="createTransferForm" class="btn btn-warning btn-sm"><i class="ri-refresh-line me-1"></i>Reset</button>
                 </div>
             </div>

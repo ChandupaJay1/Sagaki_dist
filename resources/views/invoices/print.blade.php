@@ -189,7 +189,7 @@
                 </div>
                 <div class="detail-item">
                     <span class="detail-label">Location:</span>
-                    <span class="detail-value">{{ $invoice->location ?? '' }}</span>
+                    <span class="detail-value">{{ $invoice->location->name ?? 'N/A' }}</span>
                 </div>
                 @if($invoice->payment_term_id)
                 <div class="detail-item">
@@ -285,3 +285,5 @@
     </script>
 </body>
 </html>
+
+<script> window.onload = function() { window.print(); } </script>

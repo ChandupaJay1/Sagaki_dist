@@ -59,4 +59,9 @@ class Invoice extends Model
     {
         return $this->hasMany(PayBillItem::class);
     }
+
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
+    }
 }

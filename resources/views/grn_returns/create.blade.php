@@ -64,7 +64,7 @@
                             <div class="d-flex gap-2">
                                 <button type="submit" name="action" value="save_new" class="btn btn-info btn-sm"><i class="ri-save-line align-bottom me-1"></i> Save & New</button>
                                 <button type="submit" name="action" value="save_close" class="btn btn-success btn-sm"><i class="ri-checkbox-circle-line align-bottom me-1"></i> Save & Close</button>
-                                <button type="button" class="btn btn-primary btn-sm disabled"><i class="ri-printer-line align-bottom me-1"></i> Save & Print</button>
+                                <button type="submit" name="action" value="save_and_print" class="btn btn-primary btn-sm disabled"><i class="ri-printer-line align-bottom me-1"></i> Save & Print</button>
                                 <a href="{{ route('grn-returns.index') }}" class="btn btn-danger btn-sm"><i class="ri-close-circle-line align-bottom me-1"></i> Reset</a>
                             </div>
                         </div>
@@ -1311,6 +1311,17 @@
                     redirect: 'manual',
                 })
                 .then(function (response) {
+                                        // "Save & Print" - server returns JSON with print_url after creating.
+                    if (actionValue === 'save_and_print' && response.ok) {
+                        return response.json().then(function (data) {
+                            if (data && data.print_url) {
+                                window.location.href = data.print_url;
+                            } else {
+                                window.location.href = storeBase;
+                            }
+                        });
+                    }
+
                     // Opaque redirect — Laravel issued 302 — store() succeeded.
                     if (response.type === 'opaqueredirect' || response.status === 0) {
                         window.location.href = (actionValue === 'save_new') ? createUrl : indexUrl;

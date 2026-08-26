@@ -15,33 +15,68 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $customerCount = Customer::count();
-        $vendorCount = Vendor::count();
-        $productCount = Product::count();
-        
-        // Revenue calculation (sum of total_amount from invoices)
-        $totalRevenue = Invoice::sum('total_amount');
-        
-        // Prepare data for Revenue Summary Chart (Last 6 months)
-        $revenueSummary = Invoice::select(
-            DB::raw('SUM(total_amount) as total'),
-            DB::raw("DATE_FORMAT(date, '%b') as month"),
-            DB::raw("DATE_FORMAT(date, '%Y-%m') as month_key")
-        )
-        ->groupBy('month_key', 'month')
-        ->orderBy('month_key', 'asc')
-        ->get();
+        $filter = request()->query('filter', 'monthly');
+        $startDate = Carbon::now();
+        $endDate = Carbon::now();
 
-        // Prepare data for Orders Overview (Last 7 days)
-        $ordersOverview = SalesOrder::select(
-            DB::raw('COUNT(*) as count'),
-            DB::raw("DATE_FORMAT(order_date, '%a') as day"),
-            DB::raw("DATE_FORMAT(order_date, '%Y-%m-%d') as day_key")
-        )
-        ->where('order_date', '>=', Carbon::now()->subDays(7))
-        ->groupBy('day_key', 'day')
-        ->orderBy('day_key', 'asc')
-        ->get();
+        switch ($filter) {
+            case 'daily':
+                $startDate = Carbon::today();
+                $endDate = Carbon::today()->endOfDay();
+                break;
+            case 'weekly':
+                $startDate = Carbon::now()->startOfWeek();
+                $endDate = Carbon::now()->endOfWeek();
+                break;
+            case 'yearly':
+                $startDate = Carbon::now()->startOfYear();
+                $endDate = Carbon::now()->endOfYear();
+                break;
+            case 'monthly':
+            default:
+                $startDate = Carbon::now()->startOfMonth();
+                $endDate = Carbon::now()->endOfMonth();
+                break;
+        }
+
+        $customerCount = Customer::whereBetween('created_at', [$startDate, $endDate])->count();
+        $vendorCount = Vendor::whereBetween('created_at', [$startDate, $endDate])->count();
+        $productCount = Product::whereBetween('created_at', [$startDate, $endDate])->count();
+        
+        // Revenue calculation
+        $totalRevenue = Invoice::whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
+                               ->sum('total_amount');
+        
+        // Prepare data for Revenue Summary Chart
+        $isDaily = in_array($filter, ['daily', 'weekly']);
+        
+        $revenueSelect = $isDaily ? 
+            [DB::raw('SUM(total_amount) as total'), DB::raw("DATE_FORMAT(date, '%a') as label"), DB::raw("DATE_FORMAT(date, '%Y-%m-%d') as sort_key")] :
+            [DB::raw('SUM(total_amount) as total'), DB::raw("DATE_FORMAT(date, '%b') as label"), DB::raw("DATE_FORMAT(date, '%Y-%m') as sort_key")];
+            
+        $revenueSummary = Invoice::select($revenueSelect)
+            ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->groupBy('sort_key', 'label')
+            ->orderBy('sort_key', 'asc')
+            ->get();
+
+        // Prepare data for Orders Overview
+        $ordersSelect = $isDaily ? 
+            [DB::raw('COUNT(*) as count'), DB::raw("DATE_FORMAT(order_date, '%a') as label"), DB::raw("DATE_FORMAT(order_date, '%Y-%m-%d') as sort_key")] :
+            [DB::raw('COUNT(*) as count'), DB::raw("DATE_FORMAT(order_date, '%b') as label"), DB::raw("DATE_FORMAT(order_date, '%Y-%m') as sort_key")];
+            
+        $ordersOverview = SalesOrder::select($ordersSelect)
+            ->whereBetween('order_date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->groupBy('sort_key', 'label')
+            ->orderBy('sort_key', 'asc')
+            ->get();
+
+        // Recent Deliveries
+        $recentDeliveries = Invoice::select('date', 'payment_method', 'status', 'total_amount')
+            ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->orderBy('date', 'desc')
+            ->take(5)
+            ->get();
 
         // Top 3 Major Outlets (Using Customers as a proxy for now, or just static as per screenshot)
         $majorOutlets = [
@@ -66,8 +101,10 @@ class DashboardController extends Controller
             'totalRevenue',
             'revenueSummary',
             'ordersOverview',
+            'recentDeliveries',
             'majorOutlets',
-            'fastMovingItems'
+            'fastMovingItems',
+            'filter'
         ));
     }
 }

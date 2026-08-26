@@ -115,7 +115,7 @@ class SalesReturnController extends Controller
             }
         }
 
-        \DB::transaction(function () use ($request, $validated) {
+        $salesReturn = \DB::transaction(function () use ($request, $validated) {
             $data = Arr::except($validated, ['items']);
             foreach (['subtotal', 'header_discount_percent', 'header_discount_amount', 'tax_amount', 'sscl_percent', 'sscl_amount', 'vat_percent', 'vat_amount', 'total_amount'] as $field) {
                 if (array_key_exists($field, $data)) {
@@ -138,14 +138,21 @@ class SalesReturnController extends Controller
                     $amountCalc = (float)($item['qty'] ?? 0) * (float)($item['rate'] ?? 0);
                     $discPercent = isset($item['disc_percent']) && $item['disc_percent'] !== '' ? (float)$item['disc_percent'] : 0;
                     $discountVal = isset($item['discount']) && $item['discount'] !== '' ? (float)$item['discount'] : 0;
-                    $amountVal = isset($item['amount']) && $item['amount'] !== '' ? (float)$item['amount'] : $amountCalc;
-                    $totalVal = isset($item['total']) && $item['total'] !== '' ? (float)$item['total'] : ($amountVal - $discountVal);
+                    
+                    if (empty($item['amount'])) {
+                        $item['amount'] = $amountCalc;
+                    }
+                    if ($discountVal == 0 && $discPercent > 0 && $item['amount'] > 0) {
+                        $discountVal = ($item['amount'] * $discPercent) / 100;
+                    }
+                    $totalVal = (float)$item['amount'] - $discountVal;
+
                     $salesReturn->items()->create([
                         'product_id' => $item['product_id'],
                         'description' => $item['description'] ?? '',
                         'qty' => (float)($item['qty'] ?? 0),
                         'rate' => (float)($item['rate'] ?? 0),
-                        'amount' => $amountVal,
+                        'amount' => (float)$item['amount'],
                         'disc_percent' => $discPercent,
                         'discount' => $discountVal,
                         'total' => $totalVal,
@@ -165,6 +172,8 @@ class SalesReturnController extends Controller
                     );
                 }
             }
+            
+            return $salesReturn;
         });
 
         return redirect()->route('sales-returns.index')->with('success', 'Sales Return created successfully.');
@@ -354,5 +363,11 @@ class SalesReturnController extends Controller
         });
 
         return redirect()->route('sales-returns.index')->with('success', 'Sales Return deleted successfully.');
+    }
+
+    public function print()
+    {
+        $return = SalesReturn::with(['customer', 'items.product'])->findOrFail($id);
+        return view('sales_returns.print', compact('return'));
     }
 }

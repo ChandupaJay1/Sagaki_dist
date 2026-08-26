@@ -376,7 +376,7 @@ class PurchaseOrderController extends Controller
         $purchaseOrder->status = 'Approved';
         $purchaseOrder->save();
 
-        return redirect()->route('purchase-orders.show', $id)->with('success', 'Purchase Order approved successfully.');
+        return redirect()->route('purchase-orders.print', $id)->with('success', 'Purchase Order approved successfully.');
     }
 
     public function destroy($id)
@@ -385,5 +385,11 @@ class PurchaseOrderController extends Controller
         $purchaseOrder->items()->delete();
         $purchaseOrder->delete();
         return redirect()->route('purchase-orders.index')->with('success', 'Purchase Order deleted successfully.');
+    }
+
+    public function print()
+    {
+        $order = PurchaseOrder::with(['vendor', 'items.product'])->findOrFail($id);
+        return view('purchase_orders.print', compact('order'));
     }
 }
