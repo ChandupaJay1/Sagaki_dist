@@ -303,7 +303,22 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        let initialRows = document.querySelectorAll('#itemsTable tbody tr.item-row');
+        initialRows.forEach((row, index) => {
+            if(index > 0) {
+                let qtyInput = row.querySelector('.qty-input');
+                if(qtyInput) qtyInput.value = '0';
+            }
+        });
+    }, 200);
+});
+</script>
 @endsection
+
 
 @push('scripts')
 <script>
@@ -660,6 +675,11 @@
                     const currentRow = this.data[rowIndex];
                     if (currentRow.product_id) {
                         this.appendRow();
+                        let rows = document.querySelectorAll('#itemsTable tbody tr');
+                        if (rows.length > 0) {
+                            let lastRowQty = rows[rows.length - 1].querySelector('.qty-input');
+                            if (lastRowQty) { lastRowQty.value = '0'; }
+                        }
                     }
                 }
             },
@@ -724,6 +744,9 @@
                 }
 
                 initRowEvents(newRow);
+                if (window.jQuery && $.fn.select2) {
+                    $(newRow).find('.select2, .product-select').select2();
+                }
             },
 
             updateRowData(rowIndex, field, value) {
@@ -764,7 +787,36 @@
                 let grandDiscount = 0;
                 let grandTotal = 0;
 
-                this.data.forEach(row => {
+                const domRows = document.querySelectorAll('#itemsTable tbody tr.item-row');
+                domRows.forEach(domRow => {
+                    const productSelect = domRow.querySelector('.product-select');
+                    if (!productSelect || !productSelect.value || productSelect.value.trim() === '') return;
+                    
+                    const qtyInput = domRow.querySelector('.qty-input');
+                    const domQty = qtyInput ? (parseFloat(qtyInput.value) || 0) : 0;
+                    if (domQty <= 0) return; // Completely ignore rows where visible DOM qty is 0 or empty
+
+                    const amountInput = domRow.querySelector('.amount-input');
+                    const domAmount = amountInput ? (parseFloat(amountInput.value) || 0) : 0;
+
+                    const discountInput = domRow.querySelector('.discount-input');
+                    const domDiscount = discountInput ? (parseFloat(discountInput.value) || 0) : 0;
+
+                    const totalInput = domRow.querySelector('.total-input');
+                    const domTotal = totalInput ? (parseFloat(totalInput.value) || 0) : 0;
+
+                    const valueDiffInput = domRow.querySelector('.value-diff-input');
+                    const domValueDiff = valueDiffInput ? (parseFloat(valueDiffInput.value) || 0) : 0;
+
+                    // Proxy row object using DOM values
+                    const row = {
+                        qty: domQty,
+                        amount: domAmount,
+                        discount: domDiscount,
+                        total: domTotal,
+                        value_diff: domValueDiff
+                    };
+
                     if (row.product_id) {
                         grandQty += parseFloat(row.qty) || 0;
                         grandAmount += parseFloat(row.amount) || 0;

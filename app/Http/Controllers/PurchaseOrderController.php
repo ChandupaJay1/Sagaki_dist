@@ -387,7 +387,7 @@ class PurchaseOrderController extends Controller
         return redirect()->route('purchase-orders.index')->with('success', 'Purchase Order deleted successfully.');
     }
 
-    public function print()
+    public function print($id)
     {
         $order = PurchaseOrder::with(['vendor', 'items.product'])->findOrFail($id);
         return view('purchase_orders.print', compact('order'));

@@ -131,7 +131,8 @@ class GrnReturnController extends Controller
             }
         }
 
-        \DB::transaction(function () use ($request, $validated) {
+        $grnReturn = null;
+        \DB::transaction(function () use ($request, $validated, &$grnReturn) {
             $data = Arr::except($validated, ['items']);
             foreach (['subtotal', 'header_discount_percent', 'header_discount_amount', 'tax_amount', 'sscl_percent', 'sscl_amount', 'vat_percent', 'vat_amount', 'total_amount'] as $field) {
                 if (array_key_exists($field, $data)) {
@@ -183,6 +184,16 @@ class GrnReturnController extends Controller
                 }
             }
         });
+
+        if ($request->action === 'save_and_print' && $grnReturn) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'print_url' => route('grn-returns.show', $grnReturn->id) . '?print=true'
+                ]);
+            }
+            return redirect()->route('grn-returns.show', $grnReturn->id)->with('success', 'GRN Return created successfully.');
+        }
 
         if ($request->action === 'save_and_new') {
             return redirect()->route('grn-returns.create')->with('success', 'GRN Return created successfully.');

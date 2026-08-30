@@ -102,7 +102,7 @@ class ProductController extends Controller
             'cost' => 'nullable|numeric',
             'max_sale_price' => 'nullable|numeric',
             'min_sale_price' => 'nullable|numeric',
-            'image_path' => 'nullable|image|max:5120', // 5MB max
+            'image_path' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240', // 10MB max
         ]);
 
         // Handle boolean fields which might not be present in request
@@ -168,7 +168,7 @@ class ProductController extends Controller
             'main_product_id' => 'nullable|exists:products,id',
             'vendor_id' => 'nullable|exists:vendors,id',
             'cost' => 'nullable|numeric',
-            'image_path' => 'nullable|image|max:5120',
+            'image_path' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
         ]);
 
         // Handle boolean fields

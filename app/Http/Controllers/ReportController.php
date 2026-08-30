@@ -59,20 +59,17 @@ class ReportController extends Controller
             $itemData['good_in_transit'] = (float)$goodInTransit->where('product_id', $product->id)->sum('total_qty');
 
             $mainStockTotal = 0;
-            $allowedMainStockLocations = ['Main', 'Main Warehouse', 'Showroom', 'Testing', 'Transit'];
 
             foreach ($locations as $location) {
                 $qty = $summaries->get($product->id)?->where('location_id', $location->id)->first()?->qty ?? 0;
                 $itemData['locations'][$location->name] = (float)$qty;
                 
-                if (in_array(trim($location->name), $allowedMainStockLocations)) {
-                    $mainStockTotal += (float)$qty;
-                }
+                $mainStockTotal += (float)$qty;
             }
             
-            $itemData['total_stock'] = $mainStockTotal;
+            $itemData['total_stock'] = $mainStockTotal + $itemData['good_in_transit'];
 
-            if ($request->has('no_zero') && $mainStockTotal <= 0) {
+            if ($request->has('no_zero') && $itemData['total_stock'] <= 0) {
                 continue;
             }
 

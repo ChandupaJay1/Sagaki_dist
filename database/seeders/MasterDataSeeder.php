@@ -58,6 +58,12 @@ class MasterDataSeeder extends Seeder
             ]
         );
 
+        // 4.5 Demo Customer
+        \App\Models\Customer::firstOrCreate(
+            ['email' => 'customer@example.com'],
+            ['name' => 'Demo Customer', 'phone' => '0779999999', 'address' => 'Colombo']
+        );
+
         // 5. Inventory Summaries (Location Stock)
         InventorySummary::updateOrCreate(
             ['product_id' => $product->id, 'location_id' => $loc1->id],

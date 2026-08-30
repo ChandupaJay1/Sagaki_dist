@@ -17,9 +17,10 @@ class DemoProductSeeder extends Seeder
             ['name' => 'Demo Vendor', 'phone' => '0771234567', 'address' => 'Colombo']
         );
 
-        \App\Models\Product::create([
+        \App\Models\Product::updateOrCreate(
+            ['code' => 'LIVE-001'],
+            [
             'name' => 'Live Demo Product',
-            'code' => 'LIVE-001',
             'sku' => '88888888',
             'category' => 'Electronics',
             'cost' => 5000,

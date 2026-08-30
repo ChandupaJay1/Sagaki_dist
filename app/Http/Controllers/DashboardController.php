@@ -39,9 +39,29 @@ class DashboardController extends Controller
                 break;
         }
 
-        $customerCount = Customer::whereBetween('created_at', [$startDate, $endDate])->count();
-        $vendorCount = Vendor::whereBetween('created_at', [$startDate, $endDate])->count();
-        $productCount = Product::whereBetween('created_at', [$startDate, $endDate])->count();
+        if ($filter == 'daily') {
+            $customerCount = Customer::whereDate('created_at', Carbon::today())->count();
+            $vendorCount = Vendor::whereDate('created_at', Carbon::today())->count();
+            $productCount = Product::whereDate('created_at', Carbon::today())->count();
+        } elseif ($filter == 'weekly') {
+            $customerCount = Customer::whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->count();
+            $vendorCount = Vendor::whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->count();
+            $productCount = Product::whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->count();
+        } elseif ($filter == 'yearly') {
+            $customerCount = Customer::whereYear('created_at', Carbon::now()->year)->count();
+            $vendorCount = Vendor::whereYear('created_at', Carbon::now()->year)->count();
+            $productCount = Product::whereYear('created_at', Carbon::now()->year)->count();
+        } else {
+            $customerCount = Customer::whereMonth('created_at', Carbon::now()->month)
+                                     ->whereYear('created_at', Carbon::now()->year)
+                                     ->count();
+            $vendorCount = Vendor::whereMonth('created_at', Carbon::now()->month)
+                                   ->whereYear('created_at', Carbon::now()->year)
+                                   ->count();
+            $productCount = Product::whereMonth('created_at', Carbon::now()->month)
+                                     ->whereYear('created_at', Carbon::now()->year)
+                                     ->count();
+        }
         
         // Revenue calculation
         $totalRevenue = Invoice::whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
@@ -94,6 +114,38 @@ class DashboardController extends Controller
             ];
         });
 
+        // Determine Text and label
+        $filterText = 'this month';
+        $filterLabel = 'Monthly';
+        if ($filter == 'daily') {
+            $filterText = 'today';
+            $filterLabel = 'Daily';
+        } elseif ($filter == 'weekly') {
+            $filterText = 'this week';
+            $filterLabel = 'Weekly';
+        } elseif ($filter == 'yearly') {
+            $filterText = 'this year';
+            $filterLabel = 'Yearly';
+        }
+
+        // Calculate counts based on explicit request logic
+        $deliveredOrdersQuery = Invoice::query();
+        $newOrdersQuery = SalesOrder::query();
+
+        if ($filter == 'daily') {
+            $deliveredOrders = $deliveredOrdersQuery->whereDate('created_at', Carbon::today())->count();
+            $newOrders = $newOrdersQuery->whereDate('created_at', Carbon::today())->count();
+        } elseif ($filter == 'weekly') {
+            $deliveredOrders = $deliveredOrdersQuery->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->count();
+            $newOrders = $newOrdersQuery->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->count();
+        } elseif ($filter == 'yearly') {
+            $deliveredOrders = $deliveredOrdersQuery->whereYear('created_at', Carbon::now()->year)->count();
+            $newOrders = $newOrdersQuery->whereYear('created_at', Carbon::now()->year)->count();
+        } else {
+            $deliveredOrders = $deliveredOrdersQuery->whereMonth('created_at', Carbon::now()->month)->count();
+            $newOrders = $newOrdersQuery->whereMonth('created_at', Carbon::now()->month)->count();
+        }
+
         return view('index', compact(
             'customerCount', 
             'vendorCount', 
@@ -104,7 +156,11 @@ class DashboardController extends Controller
             'recentDeliveries',
             'majorOutlets',
             'fastMovingItems',
-            'filter'
+            'filter',
+            'filterText',
+            'filterLabel',
+            'deliveredOrders',
+            'newOrders'
         ));
     }
 }
