@@ -139,19 +139,13 @@ class VendorController extends Controller
                     "date" => $return->date,
                     "due_date" => null,
                     "type" => "GRN Return",
-                    "grn_no" => $return->return_no,
-                    "original_amount" => -abs(round((float) ($return->subtotal ?? $return->total_amount), 2)),
-                    "total_amount" => -abs(round((float) $return->total_amount, 2)),
+                    "return_no" => $return->return_no,
+                    "original_amount" => abs(round((float) ($return->subtotal ?? $return->total_amount), 2)),
+                    "total_amount" => abs(round((float) $return->total_amount, 2)),
                     "is_return" => true
                 ];
             })
-            ->toBase(); // Convert to base collection to avoid Eloquent merge issues
-            
-        // Merge GRNs and GRN Returns into a single array for the main table
-        $billsAndReturns = $bills->toBase()->map(function($bill) {
-            $bill['is_return'] = false;
-            return $bill;
-        })->merge($grnReturns)->sortByDesc('date')->values();
+            ->toBase(); 
 
         // 2. Past Payments — overpayments or direct payments never fully set off
         //    against a specific GRN. We find PayBill records for this vendor
@@ -185,12 +179,12 @@ class VendorController extends Controller
             ->values()
             ->toBase();
 
-        // The credits array will now only contain past overpayments (not returns)
-        $credits = $pastPayments;
+        // The credits array will now contain BOTH past overpayments and GRN returns
+        $credits = $pastPayments->merge($grnReturns)->sortByDesc('date')->values();
 
         return response()->json([
             "vendor" => $vendor,
-            "bills" => $billsAndReturns,
+            "bills" => $bills,
             "credits" => $credits,
         ]);
     }

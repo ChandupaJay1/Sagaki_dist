@@ -565,7 +565,7 @@
                     });
                 } else {
                     // Reset UI for unchecked rows
-                    useInput.value = '0.00';
+                    if(useInput) useInput.value = '0.00';
                     if (amountUsedHidden) amountUsedHidden.value = '0.00';
                     balanceCell.textContent = initialBalance.toLocaleString(undefined, {minimumFractionDigits: 2});
                 }
@@ -605,20 +605,20 @@
                 }
 
                 // Update bill fields
-                creditHidden.value = billAllocatedFromCredit.toFixed(2);
+                if(creditHidden) creditHidden.value = billAllocatedFromCredit.toFixed(2);
                 const currentVal = parseFloat(payInput.value) || 0;
-                payInput.value = Math.max(currentVal, billAllocatedFromCredit).toFixed(2);
+                if(payInput) payInput.value = Math.max(currentVal, billAllocatedFromCredit).toFixed(2);
             });
 
             // 3. Update Credit Row UI (Dynamic Balance Deduction)
             creditSources.forEach(source => {
                 // Update inputs
-                source.input.value = source.used.toFixed(2);
+                if(source.input) source.input.value = source.used.toFixed(2);
                 if (source.hidden) source.hidden.value = source.used.toFixed(2);
                 
                 // DYNAMIC SUBTRACTION: Update the "Credit Balance" text node
                 const remaining = source.initial - source.used;
-                source.cell.textContent = remaining.toLocaleString(undefined, {minimumFractionDigits: 2});
+                if(source.cell) source.cell.textContent = remaining.toLocaleString(undefined, {minimumFractionDigits: 2});
             });
 
             // 4. Trigger Recalculation (Sync summary boxes & header)
@@ -626,14 +626,14 @@
             
             // Visual feedback
             const originalHtml = this.innerHTML;
-            this.innerHTML = '<i class="ri-check-line me-1"></i>Credit Applied';
-            this.classList.remove('btn-primary');
-            this.classList.add('btn-success');
+            if(this) this.innerHTML = '<i class="ri-check-line me-1"></i>Credit Applied';
+            if(this) this.classList.remove('btn-primary');
+            if(this) this.classList.add('btn-success');
             
             setTimeout(() => {
                 this.innerHTML = originalHtml;
-                this.classList.remove('btn-success');
-                this.classList.add('btn-primary');
+                if(this) this.classList.remove('btn-success');
+                if(this) this.classList.add('btn-primary');
             }, 2000);
         });
 
@@ -680,8 +680,8 @@
             } else {
                 chequeNoInput.disabled = true;
                 pdChequeDateInput.disabled = true;
-                chequeNoInput.value = '';
-                pdChequeDateInput.value = '';
+                if(chequeNoInput) chequeNoInput.value = '';
+                if(pdChequeDateInput) pdChequeDateInput.value = '';
             }
         });
 
@@ -714,26 +714,47 @@
                 return;
             }
 
-            billsTableBody.innerHTML = '<tr><td colspan="9" class="py-4 text-center bg-light"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading...</td></tr>';
+            if(billsTableBody) billsTableBody.innerHTML = '<tr><td colspan="9" class="py-4 text-center bg-light"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Loading...</td></tr>';
 
+            const baseUrl = "{{ url('/') }}";
             const endpoint = type === 'Supplier' 
-                ? `/api/vendors/${entityId}/outstanding-bills` 
-                : `/api/customers/${entityId}/outstanding-invoices`;
+                ? `${baseUrl}/api/vendors/${entityId}/outstanding-bills` 
+                : `${baseUrl}/api/customers/${entityId}/outstanding-invoices`;
 
-            fetch(endpoint)
-                .then(response => response.json())
+            fetch(endpoint, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : ''
+                }
+            })
+                .then(async response => {
+                    if (!response.ok) {
+                        const errText = await response.text();
+                        console.error('API Error Response:', errText);
+                        throw new Error(`HTTP error! status: ${response.status} - ${errText.substring(0, 100)}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     const entity = type === 'Supplier' ? data.vendor : data.customer;
                     const items = type === 'Supplier' ? data.bills : data.invoices;
 
                     if (entity) {
-                        entityBalanceInput.value = parseFloat(entity.credit_limit || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+                        if (entityBalanceInput) {
+                            if(entityBalanceInput) entityBalanceInput.value = parseFloat(entity.credit_limit || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+                        }
                     }
                     
                     cachedCredits = data.credits || [];
                     let totalCredit = cachedCredits.reduce((sum, c) => sum + parseFloat(c.total_amount), 0);
-                    availableCreditSpan.textContent = totalCredit.toLocaleString(undefined, {minimumFractionDigits: 2});
-                    creditCountSpan.textContent = cachedCredits.length;
+                    
+                    if (availableCreditSpan) {
+                        if(availableCreditSpan) availableCreditSpan.textContent = totalCredit.toLocaleString(undefined, {minimumFractionDigits: 2});
+                    }
+                    if (creditCountSpan) {
+                        if(creditCountSpan) creditCountSpan.textContent = cachedCredits.length;
+                    }
                     
                     // Automatically render credits so they appear in the table immediately
                     renderCredits(cachedCredits);
@@ -741,19 +762,22 @@
                     if (items && items.length > 0) {
                         renderBills(items);
                     } else {
-                        billsTableBody.innerHTML = `<tr><td colspan="9" class="py-4 text-muted bg-light">No outstanding ${type === 'Supplier' ? 'bills' : 'invoices'} found.</td></tr>`;
+                        if (billsTableBody) {
+                            if(billsTableBody) billsTableBody.innerHTML = `<tr><td colspan="9" class="py-4 text-muted bg-light">No outstanding ${type === 'Supplier' ? 'bills' : 'invoices'} found.</td></tr>`;
+                        }
                         updateTotals();
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
-                    billsTableBody.innerHTML = '<tr><td colspan="9" class="py-4 text-danger bg-light">Error loading data. Please try again.</td></tr>';
+                    console.error('Full Error:', error);
+                    alert('System Error: ' + error.message);
+                    if(billsTableBody) billsTableBody.innerHTML = '<tr><td colspan="9" class="py-4 text-danger bg-light">Error loading data. Please try again.</td></tr>';
                 });
         }
 
         function renderCredits(credits) {
             if (!credits || credits.length === 0) {
-                creditsTableBody.innerHTML = '<tr><td colspan="7" class="py-3 bg-light text-muted small">No credits available</td></tr>';
+                if(creditsTableBody) creditsTableBody.innerHTML = '<tr><td colspan="7" class="py-3 bg-light text-muted small">No credits available</td></tr>';
                 return;
             }
 
@@ -787,7 +811,7 @@
                     </td>
                 </tr>`;
             });
-            creditsTableBody.innerHTML = html;
+            if(creditsTableBody) creditsTableBody.innerHTML = html;
             initCreditEvents();
         }
 
@@ -838,17 +862,17 @@
                     </tr>`;
                 }
             });
-            billsTableBody.innerHTML = html;
+            if(billsTableBody) billsTableBody.innerHTML = html;
             initTableEvents();
             updateTotals();
         }
 
         function clearTable() {
-            billsTableBody.innerHTML = `<tr class="empty-row"><td colspan="9" class="py-4 text-muted small italic bg-light">Select a ${type === 'Supplier' ? 'vendor' : 'customer'} to load outstanding bills.</td></tr>`;
-            creditsTableBody.innerHTML = '<tr><td colspan="7" class="py-3 bg-light text-muted small">No credits available</td></tr>';
-            availableCreditSpan.textContent = '0.00';
+            if(billsTableBody) billsTableBody.innerHTML = `<tr class="empty-row"><td colspan="9" class="py-4 text-muted small italic bg-light">Select a ${type === 'Supplier' ? 'vendor' : 'customer'} to load outstanding bills.</td></tr>`;
+            if(creditsTableBody) creditsTableBody.innerHTML = '<tr><td colspan="7" class="py-3 bg-light text-muted small">No credits available</td></tr>';
+            if(availableCreditSpan) availableCreditSpan.textContent = '0.00';
             cachedCredits = [];
-            displayAmountInput.value = '0.00';
+            if(displayAmountInput) displayAmountInput.value = '0.00';
             updateTotals();
         }
 
@@ -880,10 +904,10 @@
                 if (cb.checked) {
                     // Allocate the lesser of the bill's due amount or the remaining pool
                     const allocated = Math.min(amtDue, Math.max(0, remainingPool));
-                    payInput.value = allocated.toFixed(2);
+                    if(payInput) payInput.value = allocated.toFixed(2);
                     remainingPool -= allocated;
                 } else {
-                    payInput.value = '0.00';
+                    if(payInput) payInput.value = '0.00';
                 }
             });
 
@@ -909,13 +933,13 @@
                     // If unchecked, zero out the row immediately before redistributing
                     if (!this.checked) {
                         const payInput = this.closest('tr').querySelector('.pay-input');
-                        payInput.value = '0.00';
+                        if(payInput) payInput.value = '0.00';
                         const hiddenInput = this.closest('tr').querySelector('.pay-input-hidden');
                         if(hiddenInput) hiddenInput.value = '0.00';
                     } else if (this.dataset.isReturn === 'true') {
                         // Auto-fill full negative amount for returns when checked
                         const payInput = this.closest('tr').querySelector('.pay-input');
-                        payInput.value = parseFloat(this.dataset.due).toFixed(2);
+                        if(payInput) payInput.value = parseFloat(this.dataset.due).toFixed(2);
                         const hiddenInput = this.closest('tr').querySelector('.pay-input-hidden');
                         if(hiddenInput) hiddenInput.value = Math.abs(parseFloat(this.dataset.due)).toFixed(2);
                     }
@@ -949,7 +973,7 @@
                 // Guard 1: Cannot exceed the row's outstanding amount
                 if (val > amtDue) {
                     val = amtDue;
-                    input.value = val.toFixed(2);
+                    if(input) input.value = val.toFixed(2);
                 }
 
                 // Guard 2: Cannot cause total to overflow the global amount
@@ -975,7 +999,7 @@
                 // If it is a positive invoice, restrict it
                 if (val > 0 && val > maxForThisRow) {
                     val = maxForThisRow;
-                    input.value = val.toFixed(2);
+                    if(input) input.value = val.toFixed(2);
                 } else if (val < 0) {
                     // Sync the hidden positive value if it's a return
                     const hiddenInput = row.querySelector('.pay-input-hidden');
@@ -1003,7 +1027,7 @@
                 // Format on blur
                 input.addEventListener('blur', function() {
                     const val = parseFloat(this.value) || 0;
-                    this.value = val.toFixed(2);
+                    if(this) this.value = val.toFixed(2);
                     updateTotals(true, false);
                 });
                 
@@ -1031,13 +1055,13 @@
 
                     if (due < 0) {
                         // Return row double-click
-                        this.value = due.toFixed(2);
+                        if(this) this.value = due.toFixed(2);
                         const hiddenInput = row.querySelector('.pay-input-hidden');
                         if(hiddenInput) hiddenInput.value = Math.abs(due).toFixed(2);
                     } else {
                         // Invoice row double-click
                         const maxForThisRow = Math.max(0, (globalAmount + otherReturnsTotal) - otherInvoicesTotal);
-                        this.value = Math.min(due, maxForThisRow).toFixed(2);
+                        if(this) this.value = Math.min(due, maxForThisRow).toFixed(2);
                     }
                     
                     cb.checked = true;
@@ -1099,7 +1123,7 @@
                     selectedCreditsCount++;
                 } else {
                     if (!isSetCreditAction) {
-                        useInput.value = '0.00';
+                        if(useInput) useInput.value = '0.00';
                         if (amountUsedHidden) amountUsedHidden.value = '0.00';
                         const remainingCell = row.querySelector('.remaining-balance-cell');
                         if (remainingCell) remainingCell.textContent = available.toLocaleString(undefined, {minimumFractionDigits: 2});
@@ -1110,10 +1134,10 @@
             let remainingCreditToAllocate = totalSelectedCreditBalance;
 
             if (selectedCreditsCount > 0) {
-                appliedCreditsSummary.classList.remove('d-none');
-                appliedCreditsCount.textContent = selectedCreditsCount;
+                if(appliedCreditsSummary) appliedCreditsSummary.classList.remove('d-none');
+                if(appliedCreditsCount) appliedCreditsCount.textContent = selectedCreditsCount;
             } else {
-                appliedCreditsSummary.classList.add('d-none');
+                if(appliedCreditsSummary) appliedCreditsSummary.classList.add('d-none');
             }
 
             // 2. USER REQUIREMENT 1: Sum up "New Payment" values for checked rows to update header
@@ -1148,20 +1172,20 @@
                     if (isSetCreditAction) {
                         creditAllocated = Math.min(origAmt, remainingCreditToAllocate);
                         remainingCreditToAllocate -= creditAllocated;
-                        creditHidden.value = creditAllocated.toFixed(2);
+                        if(creditHidden) creditHidden.value = creditAllocated.toFixed(2);
                     }
 
                     // B. Determine Cash Part (New Payment - Credit)
                     let currentNewPayment = parseFloat(payInput.value) || 0;
                     if (currentNewPayment > origAmt) {
                         currentNewPayment = origAmt;
-                        payInput.value = currentNewPayment.toFixed(2);
+                        if(payInput) payInput.value = currentNewPayment.toFixed(2);
                     }
                     
                     // If credit allocated is more than total payment (can happen if user reduced total), reduce credit
                     if (creditAllocated > currentNewPayment) {
                         creditAllocated = currentNewPayment;
-                        creditHidden.value = creditAllocated.toFixed(2);
+                        if(creditHidden) creditHidden.value = creditAllocated.toFixed(2);
                     }
 
                     let cashAllocated = currentNewPayment - creditAllocated;
@@ -1171,27 +1195,27 @@
 
                     // C. Update Amt. Due cell (Remaining Balance after this payment)
                     let finalAmtDue = origAmt - currentNewPayment;
-                    amtDueCell.textContent = finalAmtDue.toLocaleString(undefined, {minimumFractionDigits: 2});
+                    if(amtDueCell) amtDueCell.textContent = finalAmtDue.toLocaleString(undefined, {minimumFractionDigits: 2});
                     
                     if (finalAmtDue <= 0.01) {
-                        amtDueCell.classList.add('text-success', 'fw-bold');
+                        if(amtDueCell) amtDueCell.classList.add('text-success', 'fw-bold');
                     } else {
-                        amtDueCell.classList.remove('text-success', 'fw-bold');
+                        if(amtDueCell) amtDueCell.classList.remove('text-success', 'fw-bold');
                     }
                 } else {
                     // Reset display for unchecked rows without forcing the pay-input
                     // value — that is handled by distributeWaterfall() on checkbox events.
-                    amtDueCell.textContent = origAmt.toLocaleString(undefined, {minimumFractionDigits: 2});
-                    amtDueCell.classList.remove('text-success', 'fw-bold');
-                    creditHidden.value = '0.00';
+                    if(amtDueCell) amtDueCell.textContent = origAmt.toLocaleString(undefined, {minimumFractionDigits: 2});
+                    if(amtDueCell) amtDueCell.classList.remove('text-success', 'fw-bold');
+                    if(creditHidden) creditHidden.value = '0.00';
                 }
             });
 
             // 4. Update Header Fields
             // The global Amount input (#displayAmount) is user-controlled and NOT
             // overwritten here. Only the readonly summary/display fields are synced.
-            lkrTotalAmountInput.value = totalCashApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('headerTotalAmount').textContent = totalCashApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if(lkrTotalAmountInput) lkrTotalAmountInput.value = totalCashApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            (() => { let el = document.getElementById('headerTotalAmount'); if(el) el.textContent = totalCashApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}); })();
 
             // CRITICAL: The hidden total_amount form field must carry the GLOBAL
             // amount the user typed (e.g., 16,000), NOT just the allocated portion
@@ -1200,15 +1224,15 @@
             // next getOutstandingBills() call.
             const rawGlobalForSubmit = displayAmountInput.value.replace(/,/g, '');
             const globalPaymentForSubmit = parseFloat(rawGlobalForSubmit) || 0;
-            document.getElementById('totalToPayInput').value = globalPaymentForSubmit.toFixed(2);
+            (() => { let el = document.getElementById('totalToPayInput'); if(el) el.value = globalPaymentForSubmit.toFixed(2); })();
 
             // 5. Summary Box Updates
-            document.getElementById('summaryAmountDue').value = totalOrigDue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('summaryCredit').value = totalCreditApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            document.getElementById('summaryPayment').value = totalCashApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            (() => { let el = document.getElementById('summaryAmountDue'); if(el) el.value = totalOrigDue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}); })();
+            (() => { let el = document.getElementById('summaryCredit'); if(el) el.value = totalCreditApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}); })();
+            (() => { let el = document.getElementById('summaryPayment'); if(el) el.value = totalCashApplied.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}); })();
             
             const summaryTotalPayment = totalCashApplied + totalCreditApplied;
-            document.getElementById('summaryTotalPayment').value = summaryTotalPayment.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            (() => { let el = document.getElementById('summaryTotalPayment'); if(el) el.value = summaryTotalPayment.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}); })();
 
             // 5. Update Credit Record rows (Labels and Inputs)
             let totalCreditConsumedAcrossAllBills = totalCreditApplied;
@@ -1221,11 +1245,11 @@
                     const initial = parseFloat(remainingCell.dataset.initial) || 0;
                     
                     let consumedFromThisRecord = Math.min(initial, totalCreditConsumedAcrossAllBills);
-                    useInput.value = consumedFromThisRecord.toFixed(2);
+                    if(useInput) useInput.value = consumedFromThisRecord.toFixed(2);
                     if (amountUsedHidden) amountUsedHidden.value = consumedFromThisRecord.toFixed(2);
                     
                     let remaining = initial - consumedFromThisRecord;
-                    remainingCell.textContent = remaining.toLocaleString(undefined, {minimumFractionDigits: 2});
+                    if(remainingCell) remainingCell.textContent = remaining.toLocaleString(undefined, {minimumFractionDigits: 2});
                     
                     totalCreditConsumedAcrossAllBills -= consumedFromThisRecord;
                 }
@@ -1242,7 +1266,7 @@
             if (amount <= 0.01) {
                 if (existingRow) existingRow.remove();
                 if (creditsTableBody.querySelectorAll('tr.credit-row, tr#overpayment-row').length === 0) {
-                    creditsTableBody.innerHTML = '<tr><td colspan="7" class="py-3 bg-light text-muted small">No credits available</td></tr>';
+                    if(creditsTableBody) creditsTableBody.innerHTML = '<tr><td colspan="7" class="py-3 bg-light text-muted small">No credits available</td></tr>';
                 }
                 return;
             }

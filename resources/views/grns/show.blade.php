@@ -3,7 +3,8 @@
 @section('title', 'GRN - View Details')
 
 @section('content')
-<div class="row">
+<!-- Header Buttons (Visible on Screen, Hidden on Print) -->
+<div class="row d-print-none mb-3">
     <div class="col-12">
         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
             <h4 class="mb-sm-0">GRN Details</h4>
@@ -23,7 +24,10 @@
     </div>
 </div>
 
-<div class="row">
+<!-- ========================================== -->
+<!-- 1. ORIGINAL SCREEN VIEW (Hidden on Print)  -->
+<!-- ========================================== -->
+<div class="row d-print-none">
     <div class="col-lg-12">
         <div class="card">
             <div class="card-header bg-soft-info d-flex justify-content-between align-items-center py-2">
@@ -113,4 +117,171 @@
         </div>
     </div>
 </div>
+
+<!-- ========================================== -->
+<!-- 2. PREMIUM PRINT VIEW (Visible ONLY on Print) -->
+<!-- ========================================== -->
+<div class="d-none d-print-block print-document">
+    
+    <!-- Document Title (Visible mainly in print or stylized view) -->
+    <div class="text-center mb-4 pb-2 border-bottom">
+        <h2 class="fw-bold mb-1" style="color: #2c3e50; letter-spacing: 1px;">GOODS RECEIPT NOTE</h2>
+        <h5 class="text-muted">#{{ $grn->grn_no }}</h5>
+    </div>
+
+    <div class="row mb-5">
+        <!-- Left: Vendor Details -->
+        <div class="col-6">
+            <h6 class="text-muted text-uppercase fw-bold mb-3" style="font-size: 0.85rem; letter-spacing: 0.5px;">Vendor Details</h6>
+            <h5 class="fw-bold mb-1 text-dark">{{ $grn->vendor->company_name ?? $grn->vendor->name }}</h5>
+            @if($grn->address)
+                <p class="text-muted mb-1" style="font-size: 0.95rem;">{{ $grn->address }}</p>
+            @endif
+            @if($grn->delivery_destination)
+                <p class="text-muted mb-0" style="font-size: 0.95rem;"><span class="fw-bold">DELIVERY:</span> {{ $grn->delivery_destination }}</p>
+            @endif
+        </div>
+
+        <!-- Right: GRN Info -->
+        <div class="col-6 text-end">
+            <h6 class="text-muted text-uppercase fw-bold mb-3" style="font-size: 0.85rem; letter-spacing: 0.5px;">GRN Info</h6>
+            <table class="table-sm table-borderless ms-auto text-end" style="width: auto;">
+                <tbody>
+                    <tr>
+                        <td class="text-muted text-uppercase fw-bold" style="font-size: 0.8rem; padding-right: 15px;">Date:</td>
+                        <td class="fw-bold text-dark" style="font-size: 0.95rem;">{{ \Carbon\Carbon::parse($grn->date)->format('Y-m-d') }}</td>
+                    </tr>
+                    @if($grn->reference_no)
+                    <tr>
+                        <td class="text-muted text-uppercase fw-bold" style="font-size: 0.8rem; padding-right: 15px;">Reference:</td>
+                        <td class="fw-bold text-dark" style="font-size: 0.95rem;">{{ $grn->reference_no }}</td>
+                    </tr>
+                    @endif
+                    <tr>
+                        <td class="text-muted text-uppercase fw-bold" style="font-size: 0.8rem; padding-right: 15px;">Status:</td>
+                        <td class="fw-bold text-dark" style="font-size: 0.95rem;">{{ $grn->status ?? 'Pending' }}</td>
+                    </tr>
+                    @if($grn->load)
+                    <tr>
+                        <td class="text-muted text-uppercase fw-bold" style="font-size: 0.8rem; padding-right: 15px;">Load:</td>
+                        <td class="fw-bold text-dark" style="font-size: 0.95rem;">{{ $grn->load }}</td>
+                    </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle print-table" style="width: 100%;">
+            <thead style="background-color: #f8f9fa;">
+                <tr>
+                    <th class="text-center" style="width: 5%; color: #495057; font-weight: 700;">#</th>
+                    <th class="text-start" style="width: 15%; color: #495057; font-weight: 700;">ITEM CODE</th>
+                    <th class="text-start" style="width: 25%; color: #495057; font-weight: 700;">DESCRIPTION</th>
+                    <th class="text-end" style="width: 10%; color: #495057; font-weight: 700;">QTY</th>
+                    <th class="text-end" style="width: 12%; color: #495057; font-weight: 700;">RATE</th>
+                    <th class="text-end" style="width: 12%; color: #495057; font-weight: 700;">AMOUNT</th>
+                    <th class="text-end" style="width: 8%; color: #495057; font-weight: 700;">DISC%</th>
+                    <th class="text-end" style="width: 13%; color: #495057; font-weight: 700;">TOTAL</th>
+                </tr>
+            </thead>
+            <tbody>
+                @php $totalQty = 0; @endphp
+                @foreach($grn->items as $index => $item)
+                    <tr>
+                        <td class="text-center">{{ $index + 1 }}</td>
+                        <td class="text-start text-dark fw-medium">{{ $item->product->code ?? '—' }}</td>
+                        <td class="text-start">{{ $item->description }}</td>
+                        <td class="text-end fw-bold">{{ number_format($item->qty, 2) }}</td>
+                        <td class="text-end">{{ number_format($item->rate, 2) }}</td>
+                        <td class="text-end">{{ number_format($item->amount, 2) }}</td>
+                        <td class="text-end">{{ $item->disc_percent }}%</td>
+                        <td class="text-end fw-bold text-dark">{{ number_format($item->total, 2) }}</td>
+                    </tr>
+                    @php $totalQty += $item->qty; @endphp
+                @endforeach
+            </tbody>
+            <tfoot style="background-color: #f8f9fa;">
+                <tr>
+                    <td colspan="3" class="text-end text-uppercase fw-bold text-muted" style="font-size: 0.85rem;">Total Qty</td>
+                    <td class="text-end fw-bold text-dark fs-6">{{ number_format($totalQty, 2) }}</td>
+                    <td colspan="3" class="text-end text-uppercase fw-bold" style="font-size: 1.1rem; color: #2c3e50;">Grand Total</td>
+                    <td class="text-end fw-bold" style="font-size: 1.2rem; color: #2c3e50; border-top: 2px solid #343a40;">
+                        {{ number_format($grn->total_amount, 2) }}
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    @if($grn->memo)
+        <div class="mt-4 p-3 bg-light border rounded">
+            <h6 class="fw-bold mb-2 text-uppercase text-muted" style="font-size: 0.8rem;">Memo / Remarks:</h6>
+            <p class="mb-0 text-dark">{{ $grn->memo }}</p>
+        </div>
+    @endif
+    
+    <div class="mt-5 text-center text-muted" style="font-size: 0.85rem;">
+        <p>This is a computer generated document. No signature is required.</p>
+    </div>
+
+</div>
+
+<style>
+/* Document Base Styling */
+.print-document {
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.05);
+}
+.print-table th, .print-table td {
+    padding: 12px 15px !important;
+    vertical-align: middle;
+}
+
+/* Print Specific CSS */
+@media print {
+    @page {
+        size: A4;
+        margin: 10mm;
+    }
+    
+    /* Reset margins and shadows for print */
+    body, .main-content, .page-content, .container-fluid {
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: #fff !important;
+    }
+    
+    /* Hide non-printable areas */
+    .no-print, .no-print *, header, footer, .navbar, .sidebar, #global-preloader {
+        display: none !important;
+    }
+
+    .print-document {
+        padding: 0 !important;
+        box-shadow: none !important;
+    }
+    
+    /* Fix table overflow and width */
+    .table-responsive {
+        overflow: visible !important;
+    }
+    
+    table {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Force background colors on print */
+    .print-table thead th, .print-table tfoot td {
+        background-color: #f8f9fa !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+</style>
 @endsection

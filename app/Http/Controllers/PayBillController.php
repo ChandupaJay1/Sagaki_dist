@@ -19,7 +19,7 @@ class PayBillController extends Controller
     public function index(Request $request)
     {
         $type = $request->get("type", "Supplier");
-        $payments = PayBill::with(["vendor", "customer"])
+        $payments = PayBill::with(["vendor", "customer", "items"])
             ->where("type", $type)
             ->latest()
             ->paginate(10);

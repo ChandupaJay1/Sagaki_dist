@@ -106,7 +106,22 @@
 <script>
     window.serverProductList = @json($products ?? []);
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        let initialRows = document.querySelectorAll('#itemsTable tbody tr.item-row');
+        initialRows.forEach((row, index) => {
+            if(index > 0) {
+                let qtyInput = row.querySelector('.qty-input');
+                if(qtyInput) qtyInput.value = '0';
+            }
+        });
+    }, 200);
+});
+</script>
 @endsection
+
 
 @push('scripts')
 <script>
@@ -136,6 +151,11 @@
                     const currentRow = this.data[rowIndex];
                     if (currentRow.product_id) {
                         this.appendRow();
+                        let rows = document.querySelectorAll('#itemsTable tbody tr');
+                        if (rows.length > 0) {
+                            let lastRowQty = rows[rows.length - 1].querySelector('.qty-input');
+                            if (lastRowQty) { lastRowQty.value = '0'; }
+                        }
                     }
                 }
             },
@@ -178,6 +198,9 @@
 
                 document.querySelector('#itemsTable tbody').appendChild(newRow);
                 initRowEvents(newRow);
+                if (window.jQuery && $.fn.select2) {
+                    $(newRow).find('.select2, .product-select').select2();
+                }
             },
 
             updateRowData(rowIndex, field, value) {

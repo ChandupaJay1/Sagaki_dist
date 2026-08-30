@@ -173,6 +173,7 @@
                                     <th class="fw-bold py-2 text-uppercase">Total</th>
                                     <th class="fw-bold py-2 text-uppercase">Location</th>
                                     <th class="fw-bold py-2 text-uppercase">Unit</th>
+                                    <th class="fw-bold py-2 text-uppercase text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -197,6 +198,11 @@
                                         <input type="text" name="items[0][location]" class="form-control form-control-sm text-center location-input bg-light" value="Main Warehouse" readonly>
                                     </td>
                                     <td><input type="text" name="items[0][unit]" class="form-control form-control-sm unit-input bg-light" readonly></td>
+                                    <td class="text-center align-middle">
+                                        <button type="button" class="btn btn-sm btn-danger px-2 py-1" onclick="this.closest('tr').remove(); salesOrderController.calculateGrandTotal('none');" title="Remove Row">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
                                 </tr>
                             </tbody>
                             <tfoot class="bg-light">
@@ -208,7 +214,7 @@
                                     <td class="text-end fw-bold">Discount</td>
                                     <td><input type="text" class="form-control form-control-sm text-end bg-white footer-discount" readonly></td>
                                     <td class="text-end fw-bold">Total</td>
-                                    <td colspan="2"><input type="text" class="form-control form-control-sm text-end bg-white fw-bold footer-total" readonly></td>
+                                    <td colspan="3"><input type="text" class="form-control form-control-sm text-end bg-white fw-bold footer-total" readonly></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -282,7 +288,22 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        let initialRows = document.querySelectorAll('#itemsTable tbody tr.item-row');
+        initialRows.forEach((row, index) => {
+            if(index > 0) {
+                let qtyInput = row.querySelector('.qty-input');
+                if(qtyInput) qtyInput.value = '0';
+            }
+        });
+    }, 200);
+});
+</script>
 @endsection
+
 
 @push('scripts')
 <script>
@@ -376,6 +397,11 @@
                     const currentRow = this.data[rowIndex];
                     if (currentRow.product_id) {
                         this.appendRow();
+                        let rows = document.querySelectorAll('#itemsTable tbody tr');
+                        if (rows.length > 0) {
+                            let lastRowQty = rows[rows.length - 1].querySelector('.qty-input');
+                            if (lastRowQty) { lastRowQty.value = '0'; }
+                        }
                     }
                 }
             },
@@ -418,9 +444,10 @@
                 });
                 
                 // Full Select Cleanup just to be absolutely safe
-                newRow.querySelectorAll('.ts-wrapper').forEach(wrapper => wrapper.remove());
+                newRow.querySelectorAll('.ts-wrapper, .select2-container').forEach(wrapper => wrapper.remove());
+                newRow.querySelectorAll('[data-select2-id]').forEach(el => el.removeAttribute('data-select2-id'));
                 newRow.querySelectorAll('select').forEach(select => {
-                    select.classList.remove('tomselected', 'ts-hidden-accessible');
+                    select.classList.remove('tomselected', 'ts-hidden-accessible', 'select2-hidden-accessible');
                     select.style.display = '';
                     if (select.hasAttribute('id')) select.removeAttribute('id');
                     select.value = '';
@@ -440,6 +467,9 @@
                 itemsTableBody.appendChild(newRow);
                 
                 initRowEvents(newRow);
+                if (window.jQuery && $.fn.select2) {
+                    $(newRow).find('.select2, .product-select').select2();
+                }
             },
 
             updateRowData(rowIndex, field, value) {
@@ -477,7 +507,36 @@
                 let grandDiscount = 0;
                 let grandTotal = 0; 
 
-                this.data.forEach(row => {
+                const domRows = document.querySelectorAll('#itemsTable tbody tr.item-row');
+                domRows.forEach(domRow => {
+                    const productSelect = domRow.querySelector('.product-select');
+                    if (!productSelect || !productSelect.value || productSelect.value.trim() === '') return;
+                    
+                    const qtyInput = domRow.querySelector('.qty-input');
+                    const domQty = qtyInput ? (parseFloat(qtyInput.value) || 0) : 0;
+                    if (domQty <= 0) return; // Completely ignore rows where visible DOM qty is 0 or empty
+
+                    const amountInput = domRow.querySelector('.amount-input');
+                    const domAmount = amountInput ? (parseFloat(amountInput.value) || 0) : 0;
+
+                    const discountInput = domRow.querySelector('.discount-input');
+                    const domDiscount = discountInput ? (parseFloat(discountInput.value) || 0) : 0;
+
+                    const totalInput = domRow.querySelector('.total-input');
+                    const domTotal = totalInput ? (parseFloat(totalInput.value) || 0) : 0;
+
+                    const valueDiffInput = domRow.querySelector('.value-diff-input');
+                    const domValueDiff = valueDiffInput ? (parseFloat(valueDiffInput.value) || 0) : 0;
+
+                    // Proxy row object using DOM values
+                    const row = {
+                        qty: domQty,
+                        amount: domAmount,
+                        discount: domDiscount,
+                        total: domTotal,
+                        value_diff: domValueDiff
+                    };
+
                     grandQty += parseFloat(row.qty) || 0;
                     grandAmount += parseFloat(row.amount) || 0;
                     grandDiscount += parseFloat(row.discount) || 0;

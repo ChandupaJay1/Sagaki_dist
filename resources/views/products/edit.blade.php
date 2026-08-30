@@ -473,7 +473,7 @@
 </div>
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
     document.getElementById('image_path').addEventListener('change', function(event) {
         const file = event.target.files[0];
@@ -488,4 +488,4 @@
         }
     });
 </script>
-@endsection
+@endpush
