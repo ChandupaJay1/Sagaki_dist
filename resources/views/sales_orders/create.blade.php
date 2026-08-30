@@ -22,8 +22,8 @@
                 <h5 class="card-title mb-0"><i class="ri-file-list-3-line me-1"></i>Job Order - Create</h5>
                 <div class="float-end">
                     <button type="submit" form="createSalesOrderForm" name="action" value="save_and_print" class="btn btn-outline-secondary btn-sm me-1"><i class="ri-printer-line me-1"></i>Save & Print</button>
-                    <button type="submit" form="createSalesOrderForm" class="btn btn-info btn-sm me-1"><i class="ri-save-line me-1"></i>Save & New</button>
-                    <button type="submit" form="createSalesOrderForm" class="btn btn-success btn-sm me-1"><i class="ri-check-line me-1"></i>Save & Close</button>
+                    <button type="submit" form="createSalesOrderForm" name="action" value="save_and_new" class="btn btn-info btn-sm me-1"><i class="ri-save-line me-1"></i>Save & New</button>
+                    <button type="submit" form="createSalesOrderForm" name="action" value="save_and_close" class="btn btn-success btn-sm me-1"><i class="ri-check-line me-1"></i>Save & Close</button>
                     <button type="reset" form="createSalesOrderForm" class="btn btn-warning btn-sm"><i class="ri-refresh-line me-1"></i>Reset</button>
                 </div>
             </div>

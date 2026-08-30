@@ -979,12 +979,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         value_diff: domValueDiff
                     };
 
-                    if (row.product_id) {
-                        grandQty += parseFloat(row.qty) || 0;
-                        grandGrossAmount += (parseFloat(row.qty) || 0) * (parseFloat(row.rate) || 0);
-                        grandRowDiscount += parseFloat(row.discount) || 0;
-                        grandNetTotal += parseFloat(row.total) || 0;
-                    }
+                    grandQty += parseFloat(row.qty) || 0;
+                    grandGrossAmount += parseFloat(row.amount) || 0;
+                    grandRowDiscount += parseFloat(row.discount) || 0;
+                    grandNetTotal += parseFloat(row.total) || 0;
                 });
 
                 document.querySelector('.footer-qty').value = grandQty.toFixed(2);

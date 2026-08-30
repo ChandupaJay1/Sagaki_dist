@@ -687,6 +687,11 @@
 
         // Form Validation before submission
         document.getElementById('createPayBillForm').addEventListener('submit', function(e) {
+            if (this.dataset.submitting === 'true') {
+                e.preventDefault();
+                return false;
+            }
+
             const entityId = entitySelectWrapper.value;
             const totalPay = parseFloat(document.getElementById('totalToPayInput').value) || 0;
             
@@ -706,6 +711,21 @@
                 alert('Please enter a payment amount or select a credit to use.');
                 return false;
             }
+            
+            this.dataset.submitting = 'true';
+            
+            // Disable submit buttons to prevent double-click
+            setTimeout(() => {
+                const buttons = this.querySelectorAll('button[type="submit"]');
+                buttons.forEach(btn => {
+                    btn.disabled = true;
+                    btn.innerHTML = 'Processing...';
+                });
+                document.querySelectorAll('button[type="submit"][form="createPayBillForm"]').forEach(btn => {
+                    btn.disabled = true;
+                    btn.innerHTML = 'Processing...';
+                });
+            }, 50);
         });
 
         function fetchOutstandingBills(entityId) {

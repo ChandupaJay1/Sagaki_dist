@@ -86,7 +86,7 @@ class SalesOrderController extends Controller
             'items.*.rate' => ['required', 'numeric'],
         ]);
 
-        \DB::transaction(function () use ($request, $validated) {
+        $salesOrder = \DB::transaction(function () use ($request, $validated) {
             $data = Arr::except($validated, ['items', 'rep']);
             foreach (['subtotal', 'header_discount_percent', 'header_discount_amount', 'tax_amount', 'sscl_percent', 'sscl_amount', 'vat_percent', 'vat_amount', 'total_amount'] as $field) {
                 if (array_key_exists($field, $data)) {
@@ -127,7 +127,14 @@ class SalesOrderController extends Controller
                     ]);
                 }
             }
+            return $salesOrder;
         });
+
+        if ($request->action === 'save_and_print') {
+            return redirect()->route('sales-orders.print', $salesOrder->id);
+        } elseif ($request->action === 'save_and_new') {
+            return redirect()->route('sales-orders.create')->with('success', 'Sales Order created successfully.');
+        }
 
         return redirect()->route('sales-orders.index')->with('success', 'Sales Order created successfully.');
     }
@@ -352,7 +359,7 @@ class SalesOrderController extends Controller
         ]);
     }
 
-    public function print()
+    public function print($id)
     {
         $order = SalesOrder::with(['customer', 'rep', 'items.product'])->findOrFail($id);
         return view('sales_orders.print', compact('order'));
