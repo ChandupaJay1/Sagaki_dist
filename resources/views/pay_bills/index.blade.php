@@ -69,27 +69,24 @@
                                 <td class="text-end fw-bold text-success">{{ number_format($p->total_amount, 2) }}</td>
                                 <td class="text-end fw-bold text-danger">
                                     @php
-                                        $outstanding = 0;
-                                        if ($p->type === 'Customer' && $p->customer) {
-                                            $totalInvoices = \App\Models\Invoice::where('customer_id', $p->customer_id)->sum('total_amount');
-                                            $totalPaid = \App\Models\PayBillItem::whereHas('payBill', function($q) use ($p) {
-                                                $q->where('customer_id', $p->customer_id);
-                                            })->sum('amount_to_pay');
-                                            $totalReturns = \App\Models\SalesReturn::where('customer_id', $p->customer_id)->sum('total_amount');
-                                            $outstanding = ($totalInvoices - $totalPaid) - $totalReturns;
-                                        } elseif ($p->type === 'Supplier' && $p->vendor) {
-                                            $totalBills = \App\Models\Grn::where('vendor_id', $p->vendor_id)->sum('total_amount');
-                                            $totalPaid = \App\Models\PayBillItem::whereHas('payBill', function($q) use ($p) {
-                                                $q->where('vendor_id', $p->vendor_id);
-                                            })->sum('amount_to_pay');
-                                            $totalReturns = \App\Models\GrnReturn::where('vendor_id', $p->vendor_id)->sum('total_amount');
-                                            $outstanding = ($totalBills - $totalPaid) - $totalReturns;
-                                        }
+                                        $totalPaid = $p->items ? $p->items->sum('amount_to_pay') : 0;
+                                        $outstanding = max(0, $p->total_amount - $totalPaid);
                                     @endphp
                                     {{ number_format($outstanding, 2) }}
                                 </td>
                                 <td class="text-center">
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2">Paid</span>
+                                    @php
+                                        $statusClass = 'bg-secondary-subtle text-secondary border-secondary-subtle';
+                                        $lowerStatus = strtolower($p->status ?? '');
+                                        if ($lowerStatus === 'completed' || $lowerStatus === 'paid') {
+                                            $statusClass = 'bg-success-subtle text-success border-success-subtle';
+                                        } elseif ($lowerStatus === 'pending') {
+                                            $statusClass = 'bg-warning-subtle text-warning border-warning-subtle';
+                                        } elseif ($lowerStatus === 'partial') {
+                                            $statusClass = 'bg-info-subtle text-info border-info-subtle';
+                                        }
+                                    @endphp
+                                    <span class="badge {{ $statusClass }} border px-2">{{ $p->status ?? 'Unknown' }}</span>
                                 </td>
                                 <td class="text-end pe-4">
                                     <div class="d-flex justify-content-end gap-2">

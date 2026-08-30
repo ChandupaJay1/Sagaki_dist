@@ -420,7 +420,7 @@
                                             <span class="input-group-text"><i class="ri-user-line"></i></span>
                                             <input type="text" class="form-control" id="contact_person_1"
                                                 name="contact_person_1" value="{{ old('contact_person_1') }}"
-                                                placeholder="FullName 1">
+                                                placeholder="FullName 1" autocomplete="nope">
                                         </div>
                                     </div>
                                 </div>
@@ -435,7 +435,7 @@
                                             <span class="input-group-text"><i class="ri-user-2-line"></i></span>
                                             <input type="text" class="form-control" id="contact_person_2"
                                                 name="contact_person_2" value="{{ old('contact_person_2') }}"
-                                                placeholder="FullName 2">
+                                                placeholder="FullName 2" autocomplete="nope">
                                         </div>
                                     </div>
                                 </div>
@@ -450,7 +450,7 @@
                                             <span class="input-group-text"><i class="ri-user-3-line"></i></span>
                                             <input type="text" class="form-control" id="contact_person_3"
                                                 name="contact_person_3" value="{{ old('contact_person_3') }}"
-                                                placeholder="FullName 3">
+                                                placeholder="FullName 3" autocomplete="nope">
                                         </div>
                                     </div>
                                 </div>

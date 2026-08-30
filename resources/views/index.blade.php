@@ -19,7 +19,6 @@
     .dashboard-welcome .welcome-date { font-size: 12px; color: var(--bs-secondary); font-weight: 600; }
     .dashboard-stat-card {
         border-radius: 20px !important;
-        overflow: hidden;
         border: 1px solid rgba(0,0,0,0.04) !important;
         transition: transform 0.25s ease, box-shadow 0.25s ease;
     }
@@ -45,13 +44,11 @@
     .dashboard-chart-card {
         border-radius: 20px !important;
         border: 1px solid rgba(0,0,0,0.04) !important;
-        overflow: hidden;
     }
     [data-bs-theme="dark"] .dashboard-chart-card { border-color: rgba(255,255,255,0.06) !important; }
     .dashboard-sidebar-card {
         border-radius: 20px !important;
         border: 1px solid rgba(0,0,0,0.04) !important;
-        overflow: hidden;
     }
     [data-bs-theme="dark"] .dashboard-sidebar-card { border-color: rgba(255,255,255,0.06) !important; }
     .dashboard-table-card .table thead th { font-size: 11px; letter-spacing: 0.06em; }
@@ -94,6 +91,8 @@
     [data-bs-theme="dark"] .outlet-item:hover, [data-bs-theme="dark"] .fast-item:hover {
         box-shadow: 0 8px 24px rgba(0,0,0,0.25);
     }
+
+
 </style>
 
         <!-- Welcome strip - extra only, no content removed -->
@@ -214,7 +213,7 @@
 
                 <div class="row g-4">
                     <div class="col-12">
-                         <div class="card border-0 shadow-sm dashboard-chart-card">
+                         <div class="card border-0 shadow-sm dashboard-chart-card" style="overflow: visible !important; position: relative; z-index: 10 !important;">
                               <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center justify-content-between">
                                    <div>
                                         <h5 class="card-title mb-0 fw-bold text-dark">Revenue Summary</h5>
@@ -222,44 +221,60 @@
                                    <div class="dropdown">
                                         <a href="#" class="dropdown-toggle btn btn-sm btn-light border-0 px-3 rounded-pill fw-semibold text-capitalize"
                                              data-bs-toggle="dropdown" aria-expanded="false">
-                                             {{ $filter }}
+                                             {{ $filterLabel }}
                                         </a>
-                                        <div class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
-                                             <a href="?filter=daily" class="dropdown-item py-2 {{ $filter == 'daily' ? 'active' : '' }}">Daily</a>
-                                             <a href="?filter=weekly" class="dropdown-item py-2 {{ $filter == 'weekly' ? 'active' : '' }}">Weekly</a>
-                                             <a href="?filter=monthly" class="dropdown-item py-2 {{ $filter == 'monthly' ? 'active' : '' }}">Monthly</a>
-                                             <a href="?filter=yearly" class="dropdown-item py-2 {{ $filter == 'yearly' ? 'active' : '' }}">Yearly</a>
-                                        </div>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="padding: 0 !important; overflow: hidden !important; min-width: 150px; z-index: 1050 !important;">
+                                            <li style="padding: 0 !important; margin: 0 !important;">
+                                                <a class="dropdown-item {{ $filter == 'daily' ? 'active' : '' }}" href="?filter=daily" style="padding: 10px 20px !important; margin: 0 !important; width: 100% !important; display: block !important; border-radius: 0 !important;">Daily</a>
+                                            </li>
+                                            <li style="padding: 0 !important; margin: 0 !important;">
+                                                <a class="dropdown-item {{ $filter == 'weekly' ? 'active' : '' }}" href="?filter=weekly" style="padding: 10px 20px !important; margin: 0 !important; width: 100% !important; display: block !important; border-radius: 0 !important;">Weekly</a>
+                                            </li>
+                                            <li style="padding: 0 !important; margin: 0 !important;">
+                                                <a class="dropdown-item {{ $filter == 'monthly' ? 'active' : '' }}" href="?filter=monthly" style="padding: 10px 20px !important; margin: 0 !important; width: 100% !important; display: block !important; border-radius: 0 !important;">Monthly</a>
+                                            </li>
+                                            <li style="padding: 0 !important; margin: 0 !important;">
+                                                <a class="dropdown-item {{ $filter == 'yearly' ? 'active' : '' }}" href="?filter=yearly" style="padding: 10px 20px !important; margin: 0 !important; width: 100% !important; display: block !important; border-radius: 0 !important;">Yearly</a>
+                                            </li>
+                                        </ul>
                                    </div>
                               </div>
 
-                              <div class="card-body px-4 pb-4">
+                              <div class="card-body px-4 pb-4" style="overflow: visible !important;">
                                    <div id="revenue_summary" class="apex-charts"></div>
                               </div>
                          </div>
                     </div>
 
                     <div class="col-12 col-lg-6">
-                         <div class="card border-0 shadow-sm h-100 dashboard-chart-card">
+                         <div class="card border-0 shadow-sm h-100 dashboard-chart-card" style="overflow: visible !important; position: relative; z-index: 9 !important;">
                               <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center justify-content-between">
                                    <div>
                                         <h5 class="card-title mb-0 fw-bold text-dark">Daily Delivery</h5>
                                    </div>
                                    <div class="dropdown">
                                         <a href="#" class="dropdown-toggle btn btn-sm btn-link text-decoration-none text-muted fw-bold text-capitalize"
-                                             data-bs-toggle="dropdown" aria-expanded="false">{{ $filter }}</a>
-                                        <div class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
-                                             <a href="?filter=daily" class="dropdown-item py-2 {{ $filter == 'daily' ? 'active' : '' }}">Daily</a>
-                                             <a href="?filter=weekly" class="dropdown-item py-2 {{ $filter == 'weekly' ? 'active' : '' }}">Weekly</a>
-                                             <a href="?filter=monthly" class="dropdown-item py-2 {{ $filter == 'monthly' ? 'active' : '' }}">Monthly</a>
-                                             <a href="?filter=yearly" class="dropdown-item py-2 {{ $filter == 'yearly' ? 'active' : '' }}">Yearly</a>
-                                        </div>
+                                             data-bs-toggle="dropdown" aria-expanded="false">{{ $filterLabel }}</a>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="padding: 0 !important; overflow: hidden !important; min-width: 150px; z-index: 1050 !important;">
+                                            <li style="padding: 0 !important; margin: 0 !important;">
+                                                <a class="dropdown-item {{ $filter == 'daily' ? 'active' : '' }}" href="?filter=daily" style="padding: 10px 20px !important; margin: 0 !important; width: 100% !important; display: block !important; border-radius: 0 !important;">Daily</a>
+                                            </li>
+                                            <li style="padding: 0 !important; margin: 0 !important;">
+                                                <a class="dropdown-item {{ $filter == 'weekly' ? 'active' : '' }}" href="?filter=weekly" style="padding: 10px 20px !important; margin: 0 !important; width: 100% !important; display: block !important; border-radius: 0 !important;">Weekly</a>
+                                            </li>
+                                            <li style="padding: 0 !important; margin: 0 !important;">
+                                                <a class="dropdown-item {{ $filter == 'monthly' ? 'active' : '' }}" href="?filter=monthly" style="padding: 10px 20px !important; margin: 0 !important; width: 100% !important; display: block !important; border-radius: 0 !important;">Monthly</a>
+                                            </li>
+                                            <li style="padding: 0 !important; margin: 0 !important;">
+                                                <a class="dropdown-item {{ $filter == 'yearly' ? 'active' : '' }}" href="?filter=yearly" style="padding: 10px 20px !important; margin: 0 !important; width: 100% !important; display: block !important; border-radius: 0 !important;">Yearly</a>
+                                            </li>
+                                        </ul>
                                    </div>
                               </div>
-                              <div class="card-body px-4 pb-4">
+                              <div class="card-body px-4 pb-4" style="overflow: visible !important;">
                                    <div class="mb-4">
                                         <p class="text-muted mb-0 small fw-medium">You have delivered <span
-                                                  class="text-primary fw-bold">910</span> orders today
+                                                  class="text-primary fw-bold">{{ $deliveredOrders }}</span> orders {{ $filterText }}
                                         </p>
                                    </div>
                                    <div id="basic-heatmap" class="apex-charts"></div>
@@ -268,26 +283,34 @@
                     </div>
 
                     <div class="col-12 col-lg-6">
-                         <div class="card border-0 shadow-sm h-100 dashboard-chart-card">
+                         <div class="card border-0 shadow-sm h-100 dashboard-chart-card" style="overflow: visible !important; position: relative; z-index: 8 !important;">
                               <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center justify-content-between">
                                    <div>
                                         <h5 class="card-title mb-0 fw-bold text-dark">Orders Overview</h5>
                                    </div>
                                    <div class="dropdown">
                                         <a href="#" class="dropdown-toggle btn btn-sm btn-link text-decoration-none text-muted fw-bold text-capitalize"
-                                             data-bs-toggle="dropdown" aria-expanded="false">{{ $filter }}</a>
-                                        <div class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
-                                             <a href="?filter=daily" class="dropdown-item py-2 {{ $filter == 'daily' ? 'active' : '' }}">Daily</a>
-                                             <a href="?filter=weekly" class="dropdown-item py-2 {{ $filter == 'weekly' ? 'active' : '' }}">Weekly</a>
-                                             <a href="?filter=monthly" class="dropdown-item py-2 {{ $filter == 'monthly' ? 'active' : '' }}">Monthly</a>
-                                             <a href="?filter=yearly" class="dropdown-item py-2 {{ $filter == 'yearly' ? 'active' : '' }}">Yearly</a>
-                                        </div>
+                                             data-bs-toggle="dropdown" aria-expanded="false">{{ $filterLabel }}</a>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="padding: 0 !important; overflow: hidden !important; min-width: 150px; z-index: 1050 !important;">
+                                            <li style="padding: 0 !important; margin: 0 !important;">
+                                                <a class="dropdown-item {{ $filter == 'daily' ? 'active' : '' }}" href="?filter=daily" style="padding: 10px 20px !important; margin: 0 !important; width: 100% !important; display: block !important; border-radius: 0 !important;">Daily</a>
+                                            </li>
+                                            <li style="padding: 0 !important; margin: 0 !important;">
+                                                <a class="dropdown-item {{ $filter == 'weekly' ? 'active' : '' }}" href="?filter=weekly" style="padding: 10px 20px !important; margin: 0 !important; width: 100% !important; display: block !important; border-radius: 0 !important;">Weekly</a>
+                                            </li>
+                                            <li style="padding: 0 !important; margin: 0 !important;">
+                                                <a class="dropdown-item {{ $filter == 'monthly' ? 'active' : '' }}" href="?filter=monthly" style="padding: 10px 20px !important; margin: 0 !important; width: 100% !important; display: block !important; border-radius: 0 !important;">Monthly</a>
+                                            </li>
+                                            <li style="padding: 0 !important; margin: 0 !important;">
+                                                <a class="dropdown-item {{ $filter == 'yearly' ? 'active' : '' }}" href="?filter=yearly" style="padding: 10px 20px !important; margin: 0 !important; width: 100% !important; display: block !important; border-radius: 0 !important;">Yearly</a>
+                                            </li>
+                                        </ul>
                                    </div>
                               </div>
-                              <div class="card-body px-4 pb-4">
+                              <div class="card-body px-4 pb-4" style="overflow: visible !important;">
                                    <div class="mb-4">
                                         <p class="text-muted mb-0 small fw-medium">Received <span
-                                                  class="text-success fw-bold">+33</span> new orders today</p>
+                                                  class="text-success fw-bold">+{{ $newOrders }}</span> new orders {{ $filterText }}</p>
                                    </div>
                                    <div id="datalabels-column2" class="apex-charts" data-colors="#6366f1"></div>
                               </div>
@@ -295,7 +318,7 @@
                     </div>
 
                     <div class="col-12">
-                         <div class="card border-0 shadow-sm dashboard-chart-card dashboard-table-card">
+                         <div class="card border-0 shadow-sm dashboard-chart-card dashboard-table-card" style="overflow: visible !important; position: relative; z-index: 7 !important;">
                               <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex align-items-center justify-content-between">
                                    <div>
                                         <h5 class="card-title mb-0 fw-bold text-dark">Recent Deliveries</h5>
@@ -303,18 +326,26 @@
                                    <div class="dropdown">
                                         <a href="#" class="dropdown-toggle btn btn-sm btn-light border-0 px-3 rounded-pill fw-semibold text-capitalize"
                                              data-bs-toggle="dropdown" aria-expanded="false">
-                                             {{ $filter }}
+                                             {{ $filterLabel }}
                                         </a>
-                                        <div class="dropdown-menu dropdown-menu-end border-0 shadow-lg">
-                                             <a href="?filter=daily" class="dropdown-item py-2 {{ $filter == 'daily' ? 'active' : '' }}">Daily</a>
-                                             <a href="?filter=weekly" class="dropdown-item py-2 {{ $filter == 'weekly' ? 'active' : '' }}">Weekly</a>
-                                             <a href="?filter=monthly" class="dropdown-item py-2 {{ $filter == 'monthly' ? 'active' : '' }}">Monthly</a>
-                                             <a href="?filter=yearly" class="dropdown-item py-2 {{ $filter == 'yearly' ? 'active' : '' }}">Yearly</a>
-                                        </div>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="padding: 0 !important; overflow: hidden !important; min-width: 150px; z-index: 1050 !important;">
+                                            <li style="padding: 0 !important; margin: 0 !important;">
+                                                <a class="dropdown-item {{ $filter == 'daily' ? 'active' : '' }}" href="?filter=daily" style="padding: 10px 20px !important; margin: 0 !important; width: 100% !important; display: block !important; border-radius: 0 !important;">Daily</a>
+                                            </li>
+                                            <li style="padding: 0 !important; margin: 0 !important;">
+                                                <a class="dropdown-item {{ $filter == 'weekly' ? 'active' : '' }}" href="?filter=weekly" style="padding: 10px 20px !important; margin: 0 !important; width: 100% !important; display: block !important; border-radius: 0 !important;">Weekly</a>
+                                            </li>
+                                            <li style="padding: 0 !important; margin: 0 !important;">
+                                                <a class="dropdown-item {{ $filter == 'monthly' ? 'active' : '' }}" href="?filter=monthly" style="padding: 10px 20px !important; margin: 0 !important; width: 100% !important; display: block !important; border-radius: 0 !important;">Monthly</a>
+                                            </li>
+                                            <li style="padding: 0 !important; margin: 0 !important;">
+                                                <a class="dropdown-item {{ $filter == 'yearly' ? 'active' : '' }}" href="?filter=yearly" style="padding: 10px 20px !important; margin: 0 !important; width: 100% !important; display: block !important; border-radius: 0 !important;">Yearly</a>
+                                            </li>
+                                        </ul>
                                    </div>
                               </div>
 
-                              <div class="card-body p-0 mt-2">
+                              <div class="card-body p-0 mt-2" style="overflow: visible !important;">
                                    <div class="table-responsive">
                                         <table class="table table-hover align-middle mb-0">
                                              <thead class="bg-light">

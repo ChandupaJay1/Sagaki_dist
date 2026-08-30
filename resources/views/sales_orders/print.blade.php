@@ -3,6 +3,31 @@
 @section('title', 'Sales Order - View Details')
 
 @section('content')
+<style>
+    @media print {
+        #global-preloader { display: none !important; }
+        body { padding: 0; background: #fff !important; }
+        @page { size: A4; margin: 10mm; }
+        
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { margin: 0; font-size: 24px; color: #2c3e50; text-transform: uppercase; }
+        .info-section { width: 100%; margin-bottom: 30px; display: flex; justify-content: space-between; }
+        .info-box { width: 45%; }
+        .info-box h3 { margin-top: 0; margin-bottom: 10px; font-size: 16px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+        .info-box p { margin: 5px 0; font-size: 14px; }
+        .table-print { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; }
+        .table-print th, .table-print td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        .table-print th { background-color: #f8f9fa; font-weight: bold; }
+        .text-right { text-align: right !important; }
+        .text-center { text-align: center !important; }
+        .totals-section { width: 100%; display: flex; justify-content: flex-end; }
+        .totals-table { width: 300px; border-collapse: collapse; font-size: 14px; }
+        .totals-table th, .totals-table td { padding: 8px; border: 1px solid #ddd; }
+        .totals-table th { background-color: #f8f9fa; text-align: left; }
+    }
+</style>
+
+<div class="d-print-none">
 <div class="row">
     <div class="col-12">
         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
@@ -112,6 +137,83 @@
                 @endif
             </div>
         </div>
+    </div>
+    </div>
+</div>
+</div>
+
+<div class="d-none d-print-block" id="print-area">
+    <div class="header">
+        <h1>Sales Order</h1>
+        <p style="margin-top: 5px; color: #7f8c8d;">{{ $order->reference_no ?? 'No Reference' }}</p>
+    </div>
+
+    <div class="info-section">
+        <div class="info-box">
+            <h3>Customer Details</h3>
+            <p><strong>Name:</strong> {{ $order->customer->company_name ?? $order->customer->name ?? 'N/A' }}</p>
+            <p><strong>Address:</strong> {{ $order->address ?? 'N/A' }}</p>
+            <p><strong>Delivery:</strong> {{ $order->delivery_destination ?? 'N/A' }}</p>
+        </div>
+        <div class="info-box">
+            <h3>Order Details</h3>
+            <p><strong>Date:</strong> {{ $order->order_date }}</p>
+            <p><strong>Expected Date:</strong> {{ $order->expected_date }}</p>
+            <p><strong>Location:</strong> {{ $order->location }}</p>
+            <p><strong>Terms:</strong> {{ $order->terms }} Days</p>
+            <p><strong>Rep:</strong> {{ $order->rep->name ?? '—' }}</p>
+        </div>
+    </div>
+
+    <table class="table-print">
+        <thead>
+            <tr>
+                <th width="5%" class="text-center">#</th>
+                <th width="45%">Item Code & Description</th>
+                <th width="15%" class="text-center">Qty</th>
+                <th width="15%" class="text-right">Rate</th>
+                <th width="20%" class="text-right">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($order->items as $index => $item)
+                <tr>
+                    <td class="text-center">{{ $index + 1 }}</td>
+                    <td>
+                        {{ $item->description }}
+                        @if($item->product && $item->product->code)
+                            <br><small style="color: #6c757d;">Code: {{ $item->product->code }}</small>
+                        @endif
+                    </td>
+                    <td class="text-center">{{ number_format($item->qty, 2) }}</td>
+                    <td class="text-right">{{ number_format($item->rate, 2) }}</td>
+                    <td class="text-right">{{ number_format($item->total, 2) }}</td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+
+    <div class="totals-section">
+        <table class="totals-table">
+            <tr>
+                <th>Subtotal</th>
+                <td class="text-right">{{ number_format($order->subtotal ?? $order->total_amount, 2) }}</td>
+            </tr>
+            @if($order->header_discount_amount > 0)
+            <tr>
+                <th>Discount</th>
+                <td class="text-right">-{{ number_format($order->header_discount_amount, 2) }}</td>
+            </tr>
+            @endif
+            <tr>
+                <th style="font-size: 16px;">Grand Total</th>
+                <td class="text-right" style="font-size: 16px; font-weight: bold;">{{ number_format($order->total_amount, 2) }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div style="margin-top: 50px; text-align: center; font-size: 12px; color: #7f8c8d;">
+        <p>This is a computer generated document.</p>
     </div>
 </div>
 @endsection

@@ -19,7 +19,7 @@ class PayBillController extends Controller
     public function index(Request $request)
     {
         $type = $request->get("type", "Supplier");
-        $payments = PayBill::with(["vendor", "customer"])
+        $payments = PayBill::with(["vendor", "customer", "items"])
             ->where("type", $type)
             ->latest()
             ->paginate(10);
@@ -116,8 +116,9 @@ class PayBillController extends Controller
             "applied_credits.*.amount_to_use" => "required|numeric|min:0",
         ]);
 
-        $payBill = DB::transaction(function () use ($validated, $request) {
-            $payBill = PayBill::create([
+        try {
+            $payBill = DB::transaction(function () use ($validated, $request) {
+                $payBill = PayBill::create([
                 "type" => $validated["type"],
                 "vendor_id" => $validated["vendor_id"] ?? null,
                 "customer_id" => $validated["customer_id"] ?? null,
@@ -335,6 +336,15 @@ class PayBillController extends Controller
 
             return $payBill;
         });
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            return back()->with('error', 'This record has already been saved. Please avoid double-clicking.')->withInput();
+        } catch (\Illuminate\Database\QueryException $e) {
+            $errorCode = $e->errorInfo[1] ?? null;
+            if ($errorCode == 1062 || $errorCode == 19) {
+                return back()->with('error', 'This record has already been saved. Please avoid double-clicking.')->withInput();
+            }
+            throw $e;
+        }
 
         if ($request->action === "pay_and_new") {
             $routeName =

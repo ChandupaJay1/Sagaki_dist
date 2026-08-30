@@ -172,7 +172,7 @@ class GrnController extends Controller
             }
         }
 
-        \DB::transaction(function () use ($request, $validated) {
+        $grn = \DB::transaction(function () use ($request, $validated) {
             $data = Arr::except($validated, ["items"]);
             foreach (
                 [
@@ -254,7 +254,16 @@ class GrnController extends Controller
                     );
                 }
             }
+            
+            return $grn;
         });
+
+        if ($request->action === "save_and_print") {
+            return response()->json([
+                'success' => true,
+                'print_url' => route('grns.print', $grn->id)
+            ]);
+        }
 
         if ($request->action === "save_and_new") {
             return redirect()
@@ -659,7 +668,7 @@ class GrnController extends Controller
             ->with("success", "GRN deleted successfully.");
     }
 
-    public function print()
+    public function print($id)
     {
         $grn = Grn::with(["vendor", "items.product"])->findOrFail($id);
         return view("grns.print", compact("grn"));
