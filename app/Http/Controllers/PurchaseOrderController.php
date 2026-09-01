@@ -88,7 +88,7 @@ class PurchaseOrderController extends Controller
             'items.*.rate' => ['required', 'numeric'],
         ]);
 
-        \DB::transaction(function () use ($request, $validated) {
+        $purchaseOrder = \DB::transaction(function () use ($request, $validated) {
             $data = Arr::except($validated, ['items']);
             foreach (['subtotal', 'header_discount_percent', 'header_discount_amount', 'tax_amount', 'sscl_percent', 'sscl_amount', 'vat_percent', 'vat_amount', 'total_amount'] as $field) {
                 if (array_key_exists($field, $data)) {
@@ -137,10 +137,18 @@ class PurchaseOrderController extends Controller
                     ]);
                 }
             }
+
+            return $purchaseOrder;
         });
 
-        $po = PurchaseOrder::latest()->first();
-        $message = "Purchase Order " . ($po ? $po->po_no : '') . " created successfully.";
+        if ($request->action === "save_and_print") {
+            return response()->json([
+                'success' => true,
+                'print_url' => route('purchase-orders.print', $purchaseOrder->id)
+            ]);
+        }
+
+        $message = "Purchase Order " . ($purchaseOrder ? $purchaseOrder->po_no : '') . " created successfully.";
 
         if ($request->action === 'save_and_new') {
             return redirect()->route('purchase-orders.create')->with('success', $message);

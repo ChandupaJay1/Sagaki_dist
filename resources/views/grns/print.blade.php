@@ -4,26 +4,50 @@
 
 @section('content')
 <style>
-    @media print {
-        #global-preloader { display: none !important; }
-        body { padding: 0; background: #fff !important; }
-        @page { size: A4; margin: 10mm; }
+        #print-area {
+            margin: 0 auto;
+            width: 100%;
+            max-width: 210mm;
+            padding: 10mm;
+            box-sizing: border-box;
+            background: #fff;
+        }
+        @media print {
+            #global-preloader { display: none !important; }
+            body { padding: 0; margin: 0; background: #fff !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            @page { size: A4; margin: 10mm; }
+            #print-area {
+                padding: 0 !important;
+                margin: 0 auto !important;
+                max-width: 210mm !important;
+            }
         
-        .header { text-align: center; margin-bottom: 30px; }
-        .header h1 { margin: 0; font-size: 24px; color: #2c3e50; text-transform: uppercase; }
-        .info-section { width: 100%; margin-bottom: 30px; display: flex; justify-content: space-between; }
-        .info-box { width: 45%; }
-        .info-box h3 { margin-top: 0; margin-bottom: 10px; font-size: 16px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
-        .info-box p { margin: 5px 0; font-size: 14px; }
-        .table-print { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 14px; }
-        .table-print th, .table-print td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-        .table-print th { background-color: #f8f9fa; font-weight: bold; }
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h1 { margin: 0; font-size: 26px; color: #2c3e50; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
+        .header p { margin: 5px 0 0; color: #555; font-size: 14px; font-weight: bold; }
+        
+        .info-section { width: 100%; margin-bottom: 30px; display: table; }
+        .info-box { display: table-cell; width: 50%; vertical-align: top; }
+        .info-box.right { text-align: right; }
+        
+        .info-box h3 { margin: 0 0 10px; font-size: 14px; text-transform: uppercase; border-bottom: 2px solid #eee; padding-bottom: 5px; display: inline-block; color: #2c3e50; }
+        .info-box p { margin: 4px 0; font-size: 13px; color: #333; }
+        
+        .table-print { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
+        .table-print th, .table-print td { border-bottom: 1px solid #ddd; padding: 8px 10px; }
+        .table-print th { background-color: #f8f9fa !important; font-weight: bold; color: #2c3e50; border-top: 2px solid #2c3e50; border-bottom: 2px solid #2c3e50; }
+        
         .text-right { text-align: right !important; }
         .text-center { text-align: center !important; }
-        .totals-section { width: 100%; display: flex; justify-content: flex-end; }
-        .totals-table { width: 300px; border-collapse: collapse; font-size: 14px; }
-        .totals-table th, .totals-table td { padding: 8px; border: 1px solid #ddd; }
-        .totals-table th { background-color: #f8f9fa; text-align: left; }
+        .text-left { text-align: left !important; }
+        
+        .totals-section { width: 100%; display: flex; justify-content: flex-end; margin-top: 15px; }
+        .totals-table { width: 320px; border-collapse: collapse; font-size: 14px; }
+        .totals-table th, .totals-table td { padding: 8px 10px; text-align: right; }
+        .totals-table th { text-align: left; color: #2c3e50; }
+        
+        .total-row th, .total-row td { border-top: 2px solid #2c3e50; font-weight: bold; font-size: 16px; color: #000; }
+        .footer-note { margin-top: 40px; text-align: center; font-size: 11px; color: #888; border-top: 1px solid #eee; padding-top: 10px; }
     }
 </style>
 
@@ -142,22 +166,22 @@
 
 <div class="d-none d-print-block" id="print-area">
     <div class="header">
-        <h1>Good Receive Note</h1>
-        <p style="margin-top: 5px; color: #7f8c8d;">{{ $grn->grn_no ?? 'No Reference' }}</p>
+        <h1>Goods Receipt Note</h1>
+        <p>GRN NO: {{ $grn->grn_no ?? 'N/A' }}</p>
     </div>
 
     <div class="info-section">
-        <div class="info-box">
+        <div class="info-box text-left">
             <h3>Vendor Details</h3>
-            <p><strong>Name:</strong> {{ $grn->vendor->company_name ?? $grn->vendor->name ?? 'N/A' }}</p>
-            <p><strong>Address:</strong> {{ $grn->address ?? 'N/A' }}</p>
-            <p><strong>Delivery:</strong> {{ $grn->delivery_destination ?? 'N/A' }}</p>
+            <p><strong>{{ $grn->vendor->company_name ?? $grn->vendor->name ?? 'N/A' }}</strong></p>
+            @if($grn->address)<p>{{ $grn->address }}</p>@endif
+            @if($grn->delivery_destination)<p>Delivery: {{ $grn->delivery_destination }}</p>@endif
         </div>
-        <div class="info-box">
-            <h3>GRN Details</h3>
+        <div class="info-box right">
+            <h3>GRN Info</h3>
             <p><strong>Date:</strong> {{ $grn->date }}</p>
-            <p><strong>Reference:</strong> {{ $grn->reference_no ?? 'N/A' }}</p>
-            <p><strong>Load:</strong> {{ $grn->load ?? 'N/A' }}</p>
+            @if($grn->reference_no)<p><strong>Reference:</strong> {{ $grn->reference_no }}</p>@endif
+            @if($grn->load)<p><strong>Load:</strong> {{ $grn->load }}</p>@endif
         </div>
     </div>
 
@@ -165,24 +189,27 @@
         <thead>
             <tr>
                 <th width="5%" class="text-center">#</th>
-                <th width="45%">Item Code & Description</th>
-                <th width="15%" class="text-center">Qty</th>
-                <th width="15%" class="text-right">Rate</th>
-                <th width="20%" class="text-right">Total</th>
+                <th width="15%" class="text-left">Item Code</th>
+                <th width="35%" class="text-left">Description</th>
+                <th width="10%" class="text-right">Qty</th>
+                <th width="12%" class="text-right">Rate</th>
+                @if($grn->items->sum('discount') > 0)
+                <th width="10%" class="text-right">Discount</th>
+                @endif
+                <th width="13%" class="text-right">Total</th>
             </tr>
         </thead>
         <tbody>
             @foreach($grn->items as $index => $item)
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
-                    <td>
-                        {{ $item->description }}
-                        @if($item->product && $item->product->code)
-                            <br><small style="color: #6c757d;">Code: {{ $item->product->code }}</small>
-                        @endif
-                    </td>
-                    <td class="text-center">{{ number_format($item->qty, 2) }}</td>
+                    <td class="text-left">{{ $item->product->code ?? '—' }}</td>
+                    <td class="text-left">{{ $item->description }}</td>
+                    <td class="text-right">{{ number_format($item->qty, 2) }}</td>
                     <td class="text-right">{{ number_format($item->rate, 2) }}</td>
+                    @if($grn->items->sum('discount') > 0)
+                    <td class="text-right">{{ $item->discount > 0 ? number_format($item->discount, 2) : '-' }}</td>
+                    @endif
                     <td class="text-right">{{ number_format($item->total, 2) }}</td>
                 </tr>
             @endforeach
@@ -193,22 +220,22 @@
         <table class="totals-table">
             <tr>
                 <th>Subtotal</th>
-                <td class="text-right">{{ number_format($grn->subtotal ?? $grn->total_amount, 2) }}</td>
+                <td>{{ number_format($grn->subtotal ?? $grn->total_amount, 2) }}</td>
             </tr>
             @if($grn->header_discount_amount > 0)
             <tr>
                 <th>Discount</th>
-                <td class="text-right">-{{ number_format($grn->header_discount_amount, 2) }}</td>
+                <td>-{{ number_format($grn->header_discount_amount, 2) }}</td>
             </tr>
             @endif
-            <tr>
-                <th style="font-size: 16px;">Grand Total</th>
-                <td class="text-right" style="font-size: 16px; font-weight: bold;">{{ number_format($grn->total_amount, 2) }}</td>
+            <tr class="total-row">
+                <th>Grand Total</th>
+                <td>{{ number_format($grn->total_amount, 2) }}</td>
             </tr>
         </table>
     </div>
 
-    <div style="margin-top: 50px; text-align: center; font-size: 12px; color: #7f8c8d;">
+    <div class="footer-note">
         <p>This is a computer generated document.</p>
     </div>
 </div>

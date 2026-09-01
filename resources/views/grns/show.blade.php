@@ -264,6 +264,9 @@
     .print-document {
         padding: 0 !important;
         box-shadow: none !important;
+        margin: 0 auto !important;
+        width: 100% !important;
+        max-width: 210mm !important;
     }
     
     /* Fix table overflow and width */

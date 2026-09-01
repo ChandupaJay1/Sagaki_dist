@@ -77,9 +77,25 @@
             background-color: #f8f9fa;
             text-align: left;
         }
+        .print-container {
+            margin: 0 auto;
+            width: 100%;
+            max-width: 210mm;
+            padding: 10px;
+            box-sizing: border-box;
+            background: #fff;
+        }
         @media print {
+            @page { margin: 10mm; size: A4 portrait; }
             body {
                 padding: 0;
+                margin: 0;
+                background: #fff !important;
+            }
+            .print-container {
+                padding: 0 !important;
+                margin: 0 auto !important;
+                max-width: 210mm !important;
             }
             .no-print {
                 display: none !important;
@@ -88,6 +104,7 @@
     </style>
 </head>
 <body>
+    <div class="print-container">
 
     <div class="header">
         <h1>Purchase Order</h1>
@@ -170,9 +187,12 @@
     <div style="margin-top: 50px; text-align: center; font-size: 12px; color: #7f8c8d;">
         <p>This is a computer generated document.</p>
     </div>
+    
+    <div class="no-print" style="text-align: center; margin-top: 30px;">
+        <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">Print Purchase Order</button>
+        <a href="{{ route('purchase-orders.index') }}" style="padding: 10px 20px; font-size: 16px; background-color: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block;">Go Back</a>
+    </div>
 
-    <div class="no-print" style="margin-top: 30px; text-align: center;">
-        <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; cursor: pointer; background-color: #0d6efd; color: white; border: none; border-radius: 4px;">Print Document</button>
     </div>
 
     <script>

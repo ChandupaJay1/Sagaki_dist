@@ -114,13 +114,17 @@
             font-weight: bold;
         }
         @media print {
+            @page { margin: 10mm; size: A4 portrait; }
             body {
                 padding: 0;
+                margin: 0;
             }
             .container {
                 border: none;
                 width: 100%;
-                max-width: none;
+                max-width: 210mm;
+                margin: 0 auto;
+                box-sizing: border-box;
             }
             .no-print {
                 display: none;
@@ -141,7 +145,7 @@
 <body>
     <div class="no-print" style="text-align: center;">
         <button onclick="window.print()" class="no-print-btn">Print Voucher</button>
-        <button onclick="window.history.back()" class="no-print-btn" style="background-color: #6c757d;">Go Back</button>
+        <a href="{{ url()->previous() }}" class="no-print-btn" style="background-color: #6c757d; text-decoration: none; display: inline-block;">Go Back</a>
     </div>
 
     <div class="container">
