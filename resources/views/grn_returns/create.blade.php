@@ -1008,21 +1008,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     const valueDiffInput = domRow.querySelector('.value-diff-input');
                     const domValueDiff = valueDiffInput ? (parseFloat(valueDiffInput.value) || 0) : 0;
 
-                    // Proxy row object using DOM values
-                    const row = {
-                        qty: domQty,
-                        amount: domAmount,
-                        discount: domDiscount,
-                        total: domTotal,
-                        value_diff: domValueDiff
-                    };
-
-                    if (row.product_id) {
-                        grandQty += parseFloat(row.qty) || 0;
-                        grandGrossAmount += (parseFloat(row.qty) || 0) * (parseFloat(row.rate) || 0);
-                        grandRowDiscount += parseFloat(row.discount) || 0;
-                        grandNetTotal += parseFloat(row.total) || 0;
-                    }
+                    grandQty += domQty;
+                    grandGrossAmount += domAmount;
+                    grandRowDiscount += domDiscount;
+                    grandNetTotal += domTotal;
                 });
 
                 document.querySelector('.footer-qty').value = grandQty.toFixed(2);

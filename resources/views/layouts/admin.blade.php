@@ -1160,12 +1160,12 @@
                         <div class="collapse" id="menuPayment">
                             <ul class="sub-menu">
                                 <li class="menu-item">
-                                    <a class="menu-link" href="{{ route('pay-bills.supplier.create') }}">
+                                    <a class="menu-link" href="{{ route('pay-bills.index', ['type' => 'Supplier']) }}">
                                         <span class="nav-text">Supplier Bills</span>
                                     </a>
                                 </li>
                                 <li class="menu-item">
-                                    <a class="menu-link" href="{{ route('pay-bills.customer.create') }}">
+                                    <a class="menu-link" href="{{ route('pay-bills.index', ['type' => 'Customer']) }}">
                                         <span class="nav-text">Customer Bills</span>
                                     </a>
                                 </li>

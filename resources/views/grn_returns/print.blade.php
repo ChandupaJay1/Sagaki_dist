@@ -3,6 +3,20 @@
 @section('title', 'GRN Return - View Details')
 
 @section('content')
+<style>
+    @media print {
+        #global-preloader, .navbar, .sidebar, footer, .page-title-box { display: none !important; }
+        body, .main-content, .page-content, .container-fluid { padding: 0 !important; margin: 0 !important; background: #fff !important; }
+        @page { size: A4; margin: 10mm; }
+        .card { 
+            border: none !important; 
+            box-shadow: none !important;
+            margin: 0 auto !important;
+            width: 100% !important;
+            max-width: 210mm !important;
+        }
+    }
+</style>
 <div class="row">
     <div class="col-12">
         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
@@ -58,7 +72,10 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @php $totalQty = 0; @endphp
+                            @php 
+                                $totalQty = 0; 
+                                $grandTotal = 0;
+                            @endphp
                             @foreach($return->items as $index => $item)
                                 <tr>
                                     <td class="text-center">{{ $index + 1 }}</td>
@@ -71,7 +88,10 @@
                                     <td class="text-end">{{ number_format($item->discount, 2) }}</td>
                                     <td class="text-end fw-medium">{{ number_format($item->total, 2) }}</td>
                                 </tr>
-                                @php $totalQty += $item->qty; @endphp
+                                @php 
+                                    $totalQty += $item->qty; 
+                                    $grandTotal += $item->total;
+                                @endphp
                             @endforeach
                         </tbody>
                         <tfoot class="bg-light fw-bold">
@@ -79,7 +99,7 @@
                                 <td colspan="3" class="text-end">Total Qty</td>
                                 <td class="text-center">{{ number_format($totalQty, 2) }}</td>
                                 <td colspan="4" class="text-end">Grand Total</td>
-                                <td class="text-end">{{ number_format($return->total_amount, 2) }}</td>
+                                <td class="text-end">{{ number_format($grandTotal, 2) }}</td>
                             </tr>
                         </tfoot>
                     </table>
