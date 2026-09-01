@@ -116,7 +116,7 @@
         @media print {
             @page { margin: 10mm; size: A4 portrait; }
             body { padding: 0; margin: 0; font-size: 11px; }
-            .container { border: none; width: 100%; max-width: 100%; padding: 10px; margin: 0; box-sizing: border-box; }
+            .container { border: none; width: 100%; max-width: 210mm; padding: 10px; margin: 0 auto; box-sizing: border-box; }
             .no-print { display: none !important; }
             table { width: 100%; page-break-inside: auto; }
             tr { page-break-inside: avoid; }
@@ -143,7 +143,7 @@
 <body>
     <div class="no-print" style="text-align: center;">
         <button onclick="window.print()" class="no-print-btn">Print Invoice</button>
-        <button onclick="window.history.back()" class="no-print-btn" style="background-color: #6c757d;">Go Back</button>
+        <a href="{{ route('invoices.index') }}" class="no-print-btn" style="background-color: #6c757d; text-decoration: none; display: inline-block;">Go Back</a>
     </div>
 
     <div class="container">

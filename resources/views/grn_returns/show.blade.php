@@ -66,7 +66,10 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @php $totalQty = 0; @endphp
+                            @php 
+                                $totalQty = 0; 
+                                $grandTotal = 0;
+                            @endphp
                             @foreach($return->items as $index => $item)
                                 <tr>
                                     <td class="text-center">{{ $index + 1 }}</td>
@@ -79,7 +82,10 @@
                                     <td class="text-end">{{ number_format($item->discount, 2) }}</td>
                                     <td class="text-end fw-medium">{{ number_format($item->total, 2) }}</td>
                                 </tr>
-                                @php $totalQty += $item->qty; @endphp
+                                @php 
+                                    $totalQty += $item->qty; 
+                                    $grandTotal += $item->total;
+                                @endphp
                             @endforeach
                         </tbody>
                         <tfoot class="bg-light fw-bold">
@@ -87,7 +93,7 @@
                                 <td colspan="3" class="text-end">Total Qty</td>
                                 <td class="text-center">{{ number_format($totalQty, 2) }}</td>
                                 <td colspan="4" class="text-end">Grand Total</td>
-                                <td class="text-end">{{ number_format($return->total_amount, 2) }}</td>
+                                <td class="text-end">{{ number_format($grandTotal, 2) }}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -170,7 +176,10 @@
                 </tr>
             </thead>
             <tbody>
-                @php $totalQty = 0; @endphp
+                @php 
+                    $totalQtyPrint = 0; 
+                    $grandTotalPrint = 0;
+                @endphp
                 @foreach($return->items as $index => $item)
                     <tr>
                         <td class="text-center">{{ $index + 1 }}</td>
@@ -182,16 +191,19 @@
                         <td class="text-end">{{ $item->disc_percent }}%</td>
                         <td class="text-end fw-bold text-dark">{{ number_format($item->total, 2) }}</td>
                     </tr>
-                    @php $totalQty += $item->qty; @endphp
+                    @php 
+                        $totalQtyPrint += $item->qty; 
+                        $grandTotalPrint += $item->total;
+                    @endphp
                 @endforeach
             </tbody>
             <tfoot style="background-color: #f8f9fa;">
                 <tr>
                     <td colspan="3" class="text-end text-uppercase fw-bold text-muted" style="font-size: 0.85rem;">Total Qty</td>
-                    <td class="text-end fw-bold text-dark fs-6">{{ number_format($totalQty, 2) }}</td>
+                    <td class="text-end fw-bold text-dark fs-6">{{ number_format($totalQtyPrint, 2) }}</td>
                     <td colspan="3" class="text-end text-uppercase fw-bold" style="font-size: 1.1rem; color: #2c3e50;">Grand Total</td>
                     <td class="text-end fw-bold" style="font-size: 1.2rem; color: #2c3e50; border-top: 2px solid #343a40;">
-                        {{ number_format($return->total_amount, 2) }}
+                        {{ number_format($grandTotalPrint, 2) }}
                     </td>
                 </tr>
             </tfoot>
@@ -247,6 +259,9 @@
         padding: 0 !important;
         box-shadow: none !important;
         display: block !important;
+        margin: 0 auto !important;
+        width: 100% !important;
+        max-width: 210mm !important;
     }
     
     /* Fix table overflow and width */

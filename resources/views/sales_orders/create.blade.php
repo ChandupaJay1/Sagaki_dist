@@ -200,7 +200,7 @@
                                     <td><input type="text" name="items[0][unit]" class="form-control form-control-sm unit-input bg-light" readonly></td>
                                     <td class="text-center align-middle">
                                         <button type="button" class="btn btn-sm btn-danger px-2 py-1" onclick="this.closest('tr').remove(); salesOrderController.calculateGrandTotal('none');" title="Remove Row">
-                                            <i class="fas fa-trash"></i>
+                                            <i class="ri-delete-bin-line"></i>
                                         </button>
                                     </td>
                                 </tr>

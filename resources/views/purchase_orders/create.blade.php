@@ -817,12 +817,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         value_diff: domValueDiff
                     };
 
-                    if (row.product_id) {
-                        grandQty += parseFloat(row.qty) || 0;
-                        grandAmount += parseFloat(row.amount) || 0;
-                        grandDiscount += parseFloat(row.discount) || 0;
-                        grandTotal += parseFloat(row.total) || 0;
-                    }
+                    grandQty += parseFloat(row.qty) || 0;
+                    grandAmount += parseFloat(row.amount) || 0;
+                    grandDiscount += parseFloat(row.discount) || 0;
+                    grandTotal += parseFloat(row.total) || 0;
                 });
 
                 document.querySelector('.footer-qty').value = grandQty.toFixed(2);
@@ -1166,10 +1164,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 600);
 
-        // --- Form Submission Fix --- //
+        // --- Form Submission (fetch-based for proper 422 validation feedback) --- //
         const form = document.getElementById('createPurchaseOrderForm');
         if (form) {
             form.addEventListener('submit', function (e) {
+                e.preventDefault();
+
                 const rows = document.querySelectorAll('#itemsTable tbody tr.item-row');
                 let validRowIndex = 0;
                 let hasValidRow = false;
@@ -1213,9 +1213,68 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 if (!hasValidRow) {
-                    e.preventDefault();
                     alert('Please add at least one valid item to the purchase order.');
+                    return;
                 }
+
+                const actionValue = (document.activeElement && document.activeElement.name === 'action')
+                    ? document.activeElement.value
+                    : null;
+
+                const formData = new FormData(form);
+                if (actionValue) formData.set('action', actionValue);
+
+                const submitBtns = form.querySelectorAll('[type="submit"]');
+                submitBtns.forEach(btn => { btn.disabled = true; });
+
+                var storeBase = form.getAttribute('action'); 
+                var createUrl = storeBase + '/create';
+                var indexUrl  = storeBase;   
+
+                fetch(storeBase, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData,
+                    credentials: 'same-origin',
+                    redirect: 'manual',
+                })
+                .then(function (response) {
+                    if (actionValue === 'save_and_print' && response.ok) {
+                        return response.json().then(function (data) {
+                            if (data && data.print_url) {
+                                window.location.href = data.print_url;
+                            } else {
+                                window.location.href = storeBase;
+                            }
+                        });
+                    }
+
+                    if (response.type === 'opaqueredirect' || response.status === 0) {
+                        window.location.href = (actionValue === 'save_and_new') ? createUrl : indexUrl;
+                        return;
+                    }
+
+                    if (response.status === 422) {
+                        return response.json().then(function (data) {
+                            submitBtns.forEach(btn => { btn.disabled = false; });
+                            const errors = data.errors || {};
+                            if (typeof window.showValidationErrors === 'function') {
+                                window.showValidationErrors(errors, '.card-body.p-3');
+                            } else {
+                                const msgs = Object.values(errors).flat().join('\n');
+                                alert('Validation errors:\n' + msgs);
+                            }
+                        });
+                    }
+
+                    submitBtns.forEach(btn => { btn.disabled = false; });
+                    alert('An unexpected server error occurred (HTTP ' + response.status + '). Please try again.');
+                })
+                .catch(function (err) {
+                    submitBtns.forEach(btn => { btn.disabled = false; });
+                    alert('Network error - could not reach the server. Please check your connection.');
+                    console.error('Form submit fetch error:', err);
+                });
             });
         }
 

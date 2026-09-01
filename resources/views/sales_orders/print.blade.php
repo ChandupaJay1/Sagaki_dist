@@ -4,10 +4,23 @@
 
 @section('content')
 <style>
-    @media print {
-        #global-preloader { display: none !important; }
-        body { padding: 0; background: #fff !important; }
-        @page { size: A4; margin: 10mm; }
+        #print-area {
+            margin: 0 auto;
+            width: 100%;
+            max-width: 210mm;
+            padding: 10mm;
+            box-sizing: border-box;
+            background: #fff;
+        }
+        @media print {
+            #global-preloader { display: none !important; }
+            body { padding: 0; margin: 0; background: #fff !important; }
+            @page { size: A4; margin: 10mm; }
+            #print-area {
+                padding: 0 !important;
+                margin: 0 auto !important;
+                max-width: 210mm !important;
+            }
         
         .header { text-align: center; margin-bottom: 30px; }
         .header h1 { margin: 0; font-size: 24px; color: #2c3e50; text-transform: uppercase; }
