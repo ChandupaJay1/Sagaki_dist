@@ -4,9 +4,9 @@
 <head>
     <!-- Title Meta -->
     <meta charset="utf-8" />
-    <title>@yield('title', 'Sagaki Distribution') | Admin Dashboard</title>
+    <title>@yield('title', 'Phoenix Lanka') | Admin Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Sagaki Distribution Management System" />
+    <meta name="description" content="Phoenix Lanka Management System" />
     <meta name="author" content="FoxPixel" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <link rel="shortcut icon" href="{{ asset('assets/images/favicon.ico') }}">
@@ -90,24 +90,61 @@
             box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1) !important;
         }
 
-        .main-nav {
+        [data-bs-theme="dark"] .main-nav, [data-bs-theme="dark"] .main-nav .logo-box {
             background: #0f172a !important;
+        }
+        [data-bs-theme="dark"] .main-nav {
             box-shadow: 12px 0 50px rgba(0,0,0,0.15);
-            z-index: 1050;
+        }
+        [data-bs-theme="dark"] .main-nav .logo-box {
+            border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+        }
+        [data-bs-theme="dark"] .navbar-nav .menu-link {
+            color: rgba(255,255,255,0.5) !important;
+        }
+        [data-bs-theme="dark"] .navbar-nav .menu-link:hover {
+            color: #ffffff !important;
+            background: rgba(255,255,255,0.08);
+        }
+        [data-bs-theme="dark"] .navbar-nav .menu-link:hover .nav-icon,
+        [data-bs-theme="dark"] .navbar-nav .menu-link:hover .nav-icon i {
+            color: #ffffff !important;
         }
 
+        [data-bs-theme="light"] .main-nav, [data-bs-theme="light"] .main-nav .logo-box {
+            background: #ffffff !important;
+        }
+        [data-bs-theme="light"] .main-nav {
+            box-shadow: 12px 0 50px rgba(0,0,0,0.05);
+            border-right: 1px solid #e2e8f0 !important;
+        }
+        [data-bs-theme="light"] .main-nav .logo-box {
+            border-bottom: 1px solid #e2e8f0 !important;
+        }
+        [data-bs-theme="light"] .navbar-nav .menu-link {
+            color: #64748b !important;
+        }
+        [data-bs-theme="light"] .navbar-nav .menu-link:hover {
+            color: #4f46e5 !important;
+            background: rgba(79, 70, 229, 0.08);
+        }
+        [data-bs-theme="light"] .navbar-nav .menu-link:hover .nav-icon,
+        [data-bs-theme="light"] .navbar-nav .menu-link:hover .nav-icon i {
+            color: #4f46e5 !important;
+        }
+
+        .main-nav {
+            z-index: 1050;
+        }
         .main-nav .logo-box {
-            background: #0f172a !important;
             height: var(--sg-topbar-height);
             display: flex;
             align-items: center;
             justify-content: center;
-            border-bottom: 1px solid rgba(255,255,255,0.05) !important;
         }
 
         /* Sidebar Menu Items */
         .navbar-nav .menu-link {
-            color: rgba(255,255,255,0.5) !important;
             font-weight: 500;
             padding: 13px 20px !important;
             border-radius: 12px;
@@ -116,8 +153,6 @@
         }
 
         .navbar-nav .menu-link:hover {
-            color: #ffffff !important;
-            background: rgba(255,255,255,0.08);
             transform: translateX(5px);
         }
 
@@ -138,11 +173,11 @@
         .navbar-nav .menu-item.active .menu-link .nav-icon,
         .navbar-nav .menu-link.active .nav-icon {
             background: transparent !important;
-            color: #ffffff !important;
         }
 
-        .navbar-nav .menu-link:hover .nav-icon i,
+        .navbar-nav .menu-item.active .menu-link .nav-icon,
         .navbar-nav .menu-item.active .menu-link .nav-icon i,
+        .navbar-nav .menu-link.active .nav-icon,
         .navbar-nav .menu-link.active .nav-icon i {
             color: #ffffff !important;
         }
@@ -220,7 +255,7 @@
             display: none !important;
         }
 
-        /* Sidebar: hide template logo images (Metor); show only our icon + "Sagaki Distribution" */
+        /* Sidebar: hide template logo images (Metor); show only our icon + "Phoenix Lanka" */
         .main-nav .logo-box .logo-sm {
             display: none !important;
         }
@@ -238,7 +273,7 @@
             width: auto;
         }
 
-        /* Brand name "Sagaki Distribution" - always visible & beautiful */
+        /* Brand name "Phoenix Lanka" - always visible & beautiful */
         .brand-name {
             font-size: 1rem;
             font-weight: 700;
@@ -266,7 +301,7 @@
             }
         }
 
-        /* Short brand name - hidden on desktop, shown on mobile to avoid "Sagaki Distributi" truncation */
+        /* Short brand name - hidden on desktop, shown on mobile to avoid "Phoenix Lanka" truncation */
         .brand-name-short { display: none !important; }
 
         /* Mobile: show short name, hide long; compact topbar logo; search visible */
@@ -289,9 +324,13 @@
             align-items: center;
         }
 
-        .main-nav .logo-box .brand-name {
+        [data-bs-theme="dark"] .main-nav .logo-box .brand-name {
             color: #ffffff !important;
             text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        [data-bs-theme="light"] .main-nav .logo-box .brand-name {
+            color: #0f172a !important;
+            text-shadow: none;
         }
 
         /* Search: icon by default, click to expand bar */
@@ -595,8 +634,13 @@
         }
 
         /* Sidebar Category Headers */
-        .menu-title {
+        [data-bs-theme="dark"] .menu-title {
             color: rgba(255, 255, 255, 0.3) !important;
+        }
+        [data-bs-theme="light"] .menu-title {
+            color: #94a3b8 !important;
+        }
+        .menu-title {
             font-size: 11px;
             font-weight: 700;
             text-transform: uppercase;
@@ -978,22 +1022,22 @@
     <div class="wrapper">
 
         <div class="main-nav">
-            <!-- Sidebar Logo - no Metor; icon + Sagaki Distribution only -->
+            <!-- Sidebar Logo - no Metor; icon + Phoenix Lanka only -->
             <div class="logo-box">
                 <a href="{{ route('dashboard') }}" class="logo-dark">
                     <i class="ri-fire-line sidebar-brand-icon"></i>
                     <img src="{{ asset('assets/images/logo-sm.png') }}" class="logo-sm" alt="">
                     <img src="{{ asset('assets/images/logo-dark.png') }}" class="logo-lg" alt="">
-                    <span class="brand-name brand-name-full" title="Sagaki Distribution">Sagaki Distribution</span>
-                    <span class="brand-name brand-name-short" title="Sagaki Distribution">Sagaki</span>
+                    <span class="brand-name brand-name-full" title="Phoenix Lanka">Phoenix Lanka</span>
+                    <span class="brand-name brand-name-short" title="Phoenix Lanka">Phoenix</span>
                 </a>
 
                 <a href="{{ route('dashboard') }}" class="logo-light">
                     <i class="ri-fire-line sidebar-brand-icon"></i>
                     <img src="{{ asset('assets/images/logo-sm.png') }}" class="logo-sm" alt="">
                     <img src="{{ asset('assets/images/logo-white.png') }}" class="logo-lg" alt="">
-                    <span class="brand-name brand-name-full" title="Sagaki Distribution">Sagaki Distribution</span>
-                    <span class="brand-name brand-name-short" title="Sagaki Distribution">Sagaki</span>
+                    <span class="brand-name brand-name-full" title="Phoenix Lanka">Phoenix Lanka</span>
+                    <span class="brand-name brand-name-short" title="Phoenix Lanka">Phoenix</span>
                 </a>
             </div>
 
@@ -1251,10 +1295,10 @@
             <div class="logo-box">
                 <div class="d-flex align-items-center">
                     <a href="{{ route('dashboard') }}" class="d-flex align-items-center">
-                        <img src="{{ asset('assets/images/logo-sm.png') }}" class="logo-sm" alt="Sagaki">
-                        <img src="{{ asset('assets/images/logo-dark.png') }}" class="logo-lg" alt="Sagaki Distribution">
-                        <span class="brand-name brand-name-full ms-1" title="Sagaki Distribution">Sagaki Distribution</span>
-                        <span class="brand-name brand-name-short ms-1" title="Sagaki Distribution">Sagaki</span>
+                        <img src="{{ asset('assets/images/logo-sm.png') }}" class="logo-sm" alt="Phoenix">
+                        <img src="{{ asset('assets/images/logo-dark.png') }}" class="logo-lg" alt="Phoenix Lanka">
+                        <span class="brand-name brand-name-full ms-1" title="Phoenix Lanka">Phoenix Lanka</span>
+                        <span class="brand-name brand-name-short ms-1" title="Phoenix Lanka">Phoenix</span>
                     </a>
                     <!-- (Reverted) No menu icon inside logo area -->
 
@@ -1279,7 +1323,7 @@
                         <div class="d-lg-none me-2">
                             <a href="{{ route('dashboard') }}" class="brand-chip">
                                 <i class="ri-fire-line"></i>
-                                <span>Sagaki</span>
+                                <span>Phoenix Lanka</span>
                             </a>
                         </div>
                         <!-- Search: icon toggles search bar -->

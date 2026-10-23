@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>Sign In | Sagaki Distribution</title>
+    <title>Sign In | Phoenix Lanka</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Sign in to Sagaki Distribution Management System" />
+    <meta name="description" content="Sign in to Phoenix Lanka Management System" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <link rel="shortcut icon" href="{{ asset('assets/images/favicon.ico') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -633,7 +633,7 @@
                 <div class="brand-icon">
                     <i class='bx bx-package'></i>
                 </div>
-                <div class="brand-name">Sagaki <span>Dist.</span></div>
+                <div class="brand-name">Phoenix <span>Lanka</span></div>
             </div>
 
             <!-- Floating Stats Illustration -->
@@ -685,7 +685,7 @@
             <div class="brand-inline">
                 <a href="{{ route('dashboard') }}" class="brand-chip">
                     <i class='bx bx-package'></i>
-                    <span>Sagaki Distribution</span>
+                    <span>Phoenix Lanka</span>
                 </a>
             </div>
 
@@ -695,7 +695,7 @@
                     Welcome back!
                 </div>
                 <h1>Sign in to your account</h1>
-                <p>Enter your credentials below to access the Sagaki Distribution dashboard.</p>
+                <p>Enter your credentials below to access the Phoenix Lanka dashboard.</p>
             </div>
 
             {{-- Success Message --}}

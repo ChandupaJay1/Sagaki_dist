@@ -25,9 +25,9 @@
                 <div class="row mb-4">
                     <div class="col-sm-3">
                         <h6 class="text-muted text-uppercase fw-semibold mb-2">Customer Details</h6>
-                        <p class="fw-bold mb-1">{{ $invoice->customer->company_name ?? $invoice->customer->name }}</p>
-                        <p class="text-muted mb-1">{{ $invoice->address }}</p>
-                        <p class="text-muted mb-0">Delivery: {{ $invoice->delivery_destination }}</p>
+                        <p class="fw-bold mb-1">{{ $invoice->customer?->company_name ?? $invoice->customer?->name ?? '—' }}</p>
+                        <p class="text-muted mb-1">{{ $invoice->address ?? ($invoice->customer?->address ?? '—') }}</p>
+                        <p class="text-muted mb-0">Delivery: {{ $invoice->delivery_destination ?? '—' }}</p>
                     </div>
                     <div class="col-sm-3">
                         <h6 class="text-muted text-uppercase fw-semibold mb-2">Invoice Info</h6>
@@ -37,7 +37,11 @@
                         </div>
                         <div class="d-flex justify-content-between mb-1">
                             <span class="text-muted">Load:</span>
-                            <span class="fw-medium">{{ $invoice->load }}</span>
+                            <span class="fw-medium">{{ $invoice->load ?? '—' }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted">Rep Agent:</span>
+                            <span class="fw-medium">{{ $invoice->rep?->name ?? 'System Admin' }}</span>
                         </div>
                     </div>
                     <div class="col-sm-3">
@@ -141,7 +145,7 @@
                             @foreach($invoice->items as $index => $item)
                                 <tr>
                                     <td class="text-center">{{ $index + 1 }}</td>
-                                    <td>{{ $item->product->code ?? '—' }}</td>
+                                    <td>{{ $item->product?->code ?? '—' }}</td>
                                     <td>{{ $item->description }}</td>
                                     <td class="text-center">{{ number_format($item->qty, 2) }}</td>
                                     <td class="text-end">{{ number_format($item->rate, 2) }}</td>
@@ -160,10 +164,15 @@
                                 <td colspan="4" class="text-end">Grand Total</td>
                                 <td class="text-end">{{ number_format($invoice->total_amount, 2) }}</td>
                             </tr>
-                            @if(isset($outstanding))
+                            @if($invoice->customer || (isset($outstanding) && $outstanding !== null))
+                            @php
+                                $customerBalance = (isset($outstanding) && $outstanding !== null)
+                                    ? $outstanding
+                                    : (float) ($invoice->customer->balance ?? 0);
+                            @endphp
                             <tr class="table-danger">
-                                <td colspan="8" class="text-end">Customer Remaining Outstanding</td>
-                                <td class="text-end text-danger">LKR {{ number_format($outstanding, 2) }}</td>
+                                <td colspan="8" class="text-end fw-bold">Customer Remaining Outstanding</td>
+                                <td class="text-end text-danger fw-bold">LKR {{ number_format($customerBalance, 2) }}</td>
                             </tr>
                             @endif
                         </tfoot>

@@ -24,6 +24,7 @@ class MasterDataSeeder extends Seeder
             ['email' => 'mgpdesaman@gmail.com'],
             [
                 'name' => 'Admin',
+                'role' => 'admin',
                 'password' => Hash::make('12345678'),
             ]
         );

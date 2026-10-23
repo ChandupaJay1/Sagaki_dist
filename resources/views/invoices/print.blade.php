@@ -149,9 +149,9 @@
     <div class="container">
         <div class="header">
             <div class="company-info">
-                <h1>Sagaki Distribution</h1>
+                <h1>Phoenix Lanka</h1>
                 <p>High-Quality Products Distribution</p>
-                <p>Phone: +94 11 234 5678 | Email: info@sagaki.lk</p>
+                <p>Phone: +94 11 234 5678 | Email: info@phoenixlanka.lk</p>
             </div>
             <div class="invoice-title">
                 <h2>INVOICE</h2>
@@ -260,10 +260,15 @@
                 <span>TOTAL</span>
                 <span>{{ number_format($invoice->total_amount, 2) }}</span>
             </div>
-            @if(isset($outstanding))
+            @if($invoice->customer || (isset($outstanding) && $outstanding !== null))
+            @php
+                $customerBalance = (isset($outstanding) && $outstanding !== null)
+                    ? $outstanding
+                    : (float) ($invoice->customer->balance ?? 0);
+            @endphp
             <div class="total-row" style="border-bottom: none; color: #dc3545; font-weight: bold; margin-top: 5px;">
                 <span>REMAINING OUTSTANDING</span>
-                <span>LKR {{ number_format($outstanding, 2) }}</span>
+                <span>LKR {{ number_format($customerBalance, 2) }}</span>
             </div>
             @endif
         </div>
