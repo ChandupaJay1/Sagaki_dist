@@ -86,8 +86,9 @@
                                     <th class="fw-bold py-2 text-uppercase">Item Code</th>
                                     <th class="fw-bold py-2 text-uppercase">Description</th>
                                     <th class="fw-bold py-2 text-uppercase">Current Qty (System)</th>
-                                    <th class="fw-bold py-2 text-uppercase">New Qty (Physical)</th>
-                                    <th class="fw-bold py-2 text-uppercase">Adjustment Qty</th>
+                                    <th class="fw-bold py-2 text-uppercase">Added Qty</th>
+                                    <th class="fw-bold py-2 text-uppercase">Taken Out Qty</th>
+                                    <th class="fw-bold py-2 text-uppercase">New Qty (Balance)</th>
                                     <th class="fw-bold py-2 text-uppercase" style="width: 40px"></th>
                                 </tr>
                             </thead>
@@ -113,8 +114,10 @@ document.addEventListener('DOMContentLoaded', function() {
         let initialRows = document.querySelectorAll('#itemsTable tbody tr.item-row');
         initialRows.forEach((row, index) => {
             if(index > 0) {
-                let qtyInput = row.querySelector('.qty-input');
-                if(qtyInput) qtyInput.value = '0';
+                let addedInput = row.querySelector('.added-qty-input');
+                if(addedInput) addedInput.value = '0';
+                let takenOutInput = row.querySelector('.taken-out-qty-input');
+                if(takenOutInput) takenOutInput.value = '0';
             }
         });
     }, 200);
@@ -153,8 +156,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         this.appendRow();
                         let rows = document.querySelectorAll('#itemsTable tbody tr');
                         if (rows.length > 0) {
-                            let lastRowQty = rows[rows.length - 1].querySelector('.qty-input');
-                            if (lastRowQty) { lastRowQty.value = '0'; }
+                            let lastRowAdded = rows[rows.length - 1].querySelector('.added-qty-input');
+                            if (lastRowAdded) { lastRowAdded.value = '0'; }
+                            let lastRowTaken = rows[rows.length - 1].querySelector('.taken-out-qty-input');
+                            if (lastRowTaken) { lastRowTaken.value = '0'; }
                         }
                     }
                 }
@@ -167,6 +172,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     product_id: '',
                     description: '',
                     current_qty: 0,
+                    added_qty: 0,
+                    taken_out_qty: 0,
                     new_qty: 0,
                     adjustment_qty: 0
                 });
@@ -189,8 +196,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     </td>
                     <td><input type="text" class="form-control form-control-sm description-input bg-light" name="items[${index}][description]" readonly></td>
                     <td><input type="text" class="form-control form-control-sm onhand-input text-center bg-light" name="items[${index}][current_qty]" readonly></td>
-                    <td><input type="number" class="form-control form-control-sm text-center new-qty-input" name="items[${index}][new_qty]" step="any"></td>
-                    <td><input type="text" class="form-control form-control-sm adj-qty-input text-center bg-light fw-bold" name="items[${index}][adjustment_qty]" readonly></td>
+                    <td><input type="number" class="form-control form-control-sm text-center added-qty-input" step="any" placeholder="e.g. 2"></td>
+                    <td><input type="number" class="form-control form-control-sm text-center taken-out-qty-input" step="any" placeholder="e.g. 5"></td>
+                    <td><input type="text" class="form-control form-control-sm new-qty-input text-center bg-light fw-bold" name="items[${index}][new_qty]" readonly></td>
+                    <input type="hidden" class="adj-qty-hidden" name="items[${index}][adjustment_qty]">
                     <td>
                         <button type="button" class="btn btn-link text-danger p-0 remove-row-btn"><i class="ri-delete-bin-line"></i></button>
                     </td>
@@ -212,35 +221,36 @@ document.addEventListener('DOMContentLoaded', function() {
             calculateRow(rowIndex, rowElement) {
                 if (!this.data[rowIndex]) return;
                 const dataRow = this.data[rowIndex];
+                const addedInput = rowElement.querySelector('.added-qty-input');
+                const takenOutInput = rowElement.querySelector('.taken-out-qty-input');
                 const newQtyInput = rowElement.querySelector('.new-qty-input');
-                const adjInput = rowElement.querySelector('.adj-qty-input');
+                const hiddenAdjInput = rowElement.querySelector('.adj-qty-hidden');
                 
                 const current = parseFloat(dataRow.current_qty) || 0;
                 
-                if (newQtyInput.value === '') {
+                if (addedInput.value === '' && takenOutInput.value === '') {
+                    dataRow.added_qty = 0;
+                    dataRow.taken_out_qty = 0;
                     dataRow.new_qty = 0;
                     dataRow.adjustment_qty = 0;
-                    adjInput.value = '0.00';
-                    adjInput.classList.remove('text-success', 'text-danger');
+                    newQtyInput.value = '';
+                    hiddenAdjInput.value = '0';
                     return;
                 }
 
-                const physical = parseFloat(newQtyInput.value) || 0;
-                const diff = physical - current;
+                const added = parseFloat(addedInput.value) || 0;
+                const takenOut = parseFloat(takenOutInput.value) || 0;
+                
+                const diff = added - takenOut;
+                const physical = current + diff;
 
+                dataRow.added_qty = added;
+                dataRow.taken_out_qty = takenOut;
                 dataRow.new_qty = physical;
                 dataRow.adjustment_qty = diff;
-                adjInput.value = diff.toFixed(2);
                 
-                if (diff > 0) {
-                    adjInput.classList.remove('text-danger');
-                    adjInput.classList.add('text-success');
-                } else if (diff < 0) {
-                    adjInput.classList.remove('text-success');
-                    adjInput.classList.add('text-danger');
-                } else {
-                    adjInput.classList.remove('text-success', 'text-danger');
-                }
+                newQtyInput.value = physical.toFixed(2);
+                hiddenAdjInput.value = diff;
             },
 
             removeRow(rowIndex, rowElement) {
@@ -264,6 +274,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     this.updateRowData(rowIndex, 'product_id', '');
                     this.updateRowData(rowIndex, 'description', '');
                     this.updateRowData(rowIndex, 'current_qty', 0);
+                    this.updateRowData(rowIndex, 'added_qty', 0);
+                    this.updateRowData(rowIndex, 'taken_out_qty', 0);
                     this.updateRowData(rowIndex, 'new_qty', 0);
                     this.updateRowData(rowIndex, 'adjustment_qty', 0);
                     this.calculateRow(rowIndex, rowElement);
@@ -336,13 +348,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     adjController.updateRowData(rowIndex, 'description', '');
                     adjController.updateRowData(rowIndex, 'current_qty', 0);
+                    adjController.updateRowData(rowIndex, 'added_qty', 0);
+                    adjController.updateRowData(rowIndex, 'taken_out_qty', 0);
                     adjController.updateRowData(rowIndex, 'new_qty', 0);
                     adjController.updateRowData(rowIndex, 'adjustment_qty', 0);
 
                     row.querySelector('.description-input').value = '';
                     row.querySelector('.onhand-input').value = '';
+                    row.querySelector('.added-qty-input').value = '';
+                    row.querySelector('.taken-out-qty-input').value = '';
                     row.querySelector('.new-qty-input').value = '';
-                    row.querySelector('.adj-qty-input').value = '';
                     adjController.calculateRow(rowIndex, row);
                 }
             }
@@ -389,10 +404,21 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             // --- STANDARD SYSTEM PATTERN END ---
 
-            newQtyInput.addEventListener('input', function() {
-                adjController.updateRowData(rowIndex, 'new_qty', parseFloat(this.value) || 0);
-                adjController.calculateRow(rowIndex, row);
-            });
+            const addedInput = row.querySelector('.added-qty-input');
+            if (addedInput) {
+                addedInput.addEventListener('input', function() {
+                    adjController.updateRowData(rowIndex, 'added_qty', parseFloat(this.value) || 0);
+                    adjController.calculateRow(rowIndex, row);
+                });
+            }
+
+            const takenOutInput = row.querySelector('.taken-out-qty-input');
+            if (takenOutInput) {
+                takenOutInput.addEventListener('input', function() {
+                    adjController.updateRowData(rowIndex, 'taken_out_qty', parseFloat(this.value) || 0);
+                    adjController.calculateRow(rowIndex, row);
+                });
+            }
 
             if (removeBtn) {
                 removeBtn.addEventListener('click', function() {
@@ -436,12 +462,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (productId) {
                         hasValidRow = true;
                         
-                        const newQtyInput = row.querySelector('.new-qty-input');
-                        if (newQtyInput && newQtyInput.value.trim() === '') {
+                        const addedInput = row.querySelector('.added-qty-input');
+                        const takenOutInput = row.querySelector('.taken-out-qty-input');
+                        const hasNoInput = (!addedInput || addedInput.value.trim() === '') && (!takenOutInput || takenOutInput.value.trim() === '');
+                        
+                        if (hasNoInput) {
                             hasValidationError = true;
-                            newQtyInput.classList.add('is-invalid', 'border-danger');
-                        } else if (newQtyInput) {
-                            newQtyInput.classList.remove('is-invalid', 'border-danger');
+                            if (addedInput) addedInput.classList.add('is-invalid', 'border-danger');
+                            if (takenOutInput) takenOutInput.classList.add('is-invalid', 'border-danger');
+                        } else {
+                            if (addedInput) addedInput.classList.remove('is-invalid', 'border-danger');
+                            if (takenOutInput) takenOutInput.classList.remove('is-invalid', 'border-danger');
                         }
 
                         row.querySelectorAll('input, select').forEach(el => {

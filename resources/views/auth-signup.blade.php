@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>Sign Up | Sagaki Distribution</title>
+    <title>Sign Up | Phoenix Lanka</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Create a new account on Sagaki Distribution Management System" />
+    <meta name="description" content="Create a new account on Phoenix Lanka Management System" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <link rel="shortcut icon" href="{{ asset('assets/images/favicon.ico') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -489,7 +489,7 @@
                 <div class="brand-icon">
                     <i class='bx bx-package'></i>
                 </div>
-                <div class="brand-name">Sagaki <span>Dist.</span></div>
+                <div class="brand-name">Phoenix <span>Lanka</span></div>
             </div>
 
             <!-- Onboarding Steps -->
@@ -522,7 +522,7 @@
             </div>
 
             <div class="hero-text">
-                <h2>Join the <span>Sagaki</span> Network Today</h2>
+                <h2>Join the <span>Phoenix Lanka</span> Network Today</h2>
                 <p>Streamline your sales operations, track performance, and scale your business with ease.</p>
             </div>
 
@@ -536,7 +536,7 @@
             <div class="brand-inline">
                 <a href="{{ route('dashboard') }}" class="brand-chip">
                     <i class='bx bx-package'></i>
-                    <span>Sagaki Distribution</span>
+                    <span>Phoenix Lanka</span>
                 </a>
             </div>
 
@@ -546,7 +546,7 @@
                     New Account
                 </div>
                 <h1>Create your account</h1>
-                <p>Join the Sagaki distribution platform and start managing your sales operations.</p>
+                <p>Join the Phoenix Lanka platform and start managing your sales operations.</p>
             </div>
 
             {{-- Error Messages --}}
@@ -664,7 +664,7 @@
                     <input type="checkbox" id="terms" required>
                     <label for="terms">
                         I agree to the <a href="#">Terms of Service</a> and
-                        <a href="#">Privacy Policy</a> of Sagaki Distribution
+                        <a href="#">Privacy Policy</a> of Phoenix Lanka
                     </label>
                 </div>
 
