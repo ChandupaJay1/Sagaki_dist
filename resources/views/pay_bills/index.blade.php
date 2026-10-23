@@ -6,7 +6,7 @@
 <div class="row">
     <div class="col-12">
         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-            <h4 class="mb-sm-0 text-white">{{ $type }} Bills History</h4>
+            <h4 class="mb-sm-0">{{ $type }} Bills History</h4>
             <div class="page-title-right">
                 <a href="{{ $type === 'Supplier' ? route('pay-bills.supplier.create') : route('pay-bills.customer.create') }}" class="btn btn-primary btn-sm">
                     <i class="ri-add-line me-1"></i>New {{ $type === 'Supplier' ? 'Payment' : 'Collection' }}
@@ -18,9 +18,9 @@
 
 <div class="row">
     <div class="col-lg-12">
-        <div class="card shadow-lg" style="background-color: #1a1d21; border: 1px solid #2d3238;">
-            <div class="card-header d-flex justify-content-between align-items-center py-3" style="background-color: #212529 !important; border-bottom: 1px solid #2d3238;">
-                <h5 class="card-title mb-0 text-white" style="letter-spacing: 0.5px;"><i class="ri-history-line me-2 text-info"></i>{{ strtoupper($type) }} BILL TRANSACTIONS</h5>
+        <div class="card shadow-lg">
+            <div class="card-header d-flex justify-content-between align-items-center py-3">
+                <h5 class="card-title mb-0" style="letter-spacing: 0.5px;"><i class="ri-history-line me-2 text-info"></i>{{ strtoupper($type) }} BILL TRANSACTIONS</h5>
                 <div class="btn-group">
                     <a href="{{ route('pay-bills.index', ['type' => 'Supplier']) }}" class="btn btn-sm {{ $type === 'Supplier' ? 'btn-info' : 'btn-outline-info' }}" style="font-size: 0.75rem; font-weight: 600;">Supplier Mode</a>
                     <a href="{{ route('pay-bills.index', ['type' => 'Customer']) }}" class="btn btn-sm {{ $type === 'Customer' ? 'btn-info' : 'btn-outline-info' }}" style="font-size: 0.75rem; font-weight: 600;">Customer Mode</a>
@@ -34,9 +34,9 @@
                     </div>
                 @endif
                 <div class="table-responsive">
-                    <table class="table table-dark table-hover align-middle mb-0" id="historyTable">
-                        <thead>
-                            <tr class="text-uppercase small fw-bold" style="background-color: #4b38b3;">
+                    <table class="table table-hover align-middle mb-0" id="historyTable">
+                        <thead class="table-light">
+                            <tr class="text-uppercase small fw-bold">
                                 <th class="py-3 ps-4">Voucher No</th>
                                 <th class="py-3">Date</th>
                                 <th class="py-3">{{ $type === 'Supplier' ? 'Vendor' : 'Customer' }}</th>
@@ -56,10 +56,10 @@
                                 <td>{{ \Carbon\Carbon::parse($p->date)->format('Y-m-d') }}</td>
                                 <td>
                                     @if($type === 'Supplier')
-                                        <div class="fw-bold text-white">{{ $p->vendor->company_name ?? $p->vendor->name }}</div>
+                                        <div class="fw-bold">{{ $p->vendor->company_name ?? $p->vendor->name }}</div>
                                         <small class="text-muted extra-small text-uppercase">{{ $p->vendor->code ?? 'V-00' }}</small>
                                     @else
-                                        <div class="fw-bold text-white">{{ $p->customer->company_name ?? $p->customer->name }}</div>
+                                        <div class="fw-bold">{{ $p->customer->company_name ?? $p->customer->name }}</div>
                                         <small class="text-muted extra-small text-uppercase">{{ $p->customer->code ?? 'C-00' }}</small>
                                     @endif
                                 </td>
@@ -128,16 +128,11 @@
 </div>
 
 <style>
-    .card-title { color: #fff !important; }
     #historyTable thead th { 
-        background-color: #2d3238 !important; 
-        color: #adb5bd !important; 
-        border-bottom: 1px solid #3e444a;
         font-size: 0.7rem;
         letter-spacing: 0.5px;
     }
-    #historyTable tbody td { border-color: #2d3238; color: #ced4da; font-size: 0.85rem; }
-    #historyTable tr:hover td { background-color: #212529; }
+    #historyTable tbody td { font-size: 0.85rem; }
     .bg-soft-info { background-color: rgba(13, 202, 240, 0.1); }
     .icon-btn {
         width: 30px;
@@ -147,11 +142,8 @@
         align-items: center;
         justify-content: center;
         border-radius: 6px;
-        background-color: #2d3238;
-        border: 1px solid #3e444a;
-        color: #adb5bd;
     }
-    .icon-btn:hover { background-color: #3e444a; color: #fff; }
+    .icon-btn:hover { background-color: rgba(13, 202, 240, 0.1); color: #0dcaf0; border-color: #0dcaf0; }
     .extra-small { font-size: 10px; }
     .btn-outline-info { color: #0dcaf0; border-color: #0dcaf0; }
     .btn-outline-info:hover { background-color: #0dcaf0; color: #fff; }

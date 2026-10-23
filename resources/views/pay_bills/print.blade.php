@@ -151,9 +151,9 @@
     <div class="container">
         <div class="header">
             <div class="company-info">
-                <h1>Sagaki Distribution</h1>
+                <h1>Phoenix Lanka</h1>
                 <p>High-Quality Products Distribution</p>
-                <p>Phone: +94 11 234 5678 | Email: info@sagaki.lk</p>
+                <p>Phone: +94 11 234 5678 | Email: info@phoenixlanka.lk</p>
             </div>
             <div class="voucher-title">
                 <h2>{{ strtoupper($payment->type) }} PAYMENT VOUCHER</h2>

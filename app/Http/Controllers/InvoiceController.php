@@ -25,7 +25,7 @@ class InvoiceController extends Controller
 {
     public function index()
     {
-        $invoices = Invoice::with('customer')->latest()->paginate(10);
+        $invoices = Invoice::with('customer')->orderBy('id', 'desc')->paginate(10);
         return view('invoices.index', compact('invoices'));
     }
 
@@ -123,6 +123,36 @@ class InvoiceController extends Controller
             }
             $invoice = Invoice::create($data);
 
+            // Bug 1 fix: Automatically create a Customer Bill (PayBill) entry for the new invoice.
+            $payBill = \App\Models\PayBill::create([
+                'type' => 'Customer',
+                'customer_id' => $invoice->customer_id,
+                'voucher_no' => 'CRV/WEB/' . strtoupper(uniqid()),
+                'date' => $invoice->date,
+                'total_amount' => $invoice->total_amount,
+                'payment_method' => $request->payment_method ?? 'Cash',
+                'memo' => "Auto-generated Customer Bill for Invoice #{$invoice->invoice_no}",
+                'status' => 'Pending', // Pending until actual payment is processed
+                'location_id' => $invoice->location_id,
+            ]);
+
+            // Link the bill to the invoice
+            \App\Models\PayBillItem::create([
+                'pay_bill_id' => $payBill->id,
+                'invoice_id' => $invoice->id,
+                'bill_no' => $invoice->invoice_no,
+                'bill_date' => $invoice->date,
+                'bill_amount' => $invoice->total_amount,
+                'amount_to_pay' => 0, // Pending bill, so payment amount is 0 initially
+            ]);
+
+            // Update customer balance to reflect the new invoice debt
+            $customer = \App\Models\Customer::find($invoice->customer_id);
+            if ($customer) {
+                $customer->balance += (float)$invoice->total_amount;
+                $customer->save();
+            }
+
             // NOTE: Customer outstanding is calculated dynamically from invoice/payment
             // totals (see InvoiceController::show and PayBillController::print).
             // The customer->balance column is ONLY updated by PayBillController when a
@@ -175,16 +205,11 @@ class InvoiceController extends Controller
 
     public function show($id)
     {
-        $invoice = Invoice::with(['customer', 'items.product', 'payments.cheques', 'payBillItems.payBill'])->findOrFail($id);
+        $invoice = Invoice::with(['customer', 'rep', 'items.product', 'payments.cheques', 'payBillItems.payBill'])->findOrFail($id);
 
-        // Calculate Customer Outstanding
-        $totalInvoices = Invoice::where('customer_id', $invoice->customer_id)->sum('total_amount');
-        $totalPaid = \App\Models\PayBillItem::whereHas('payBill', function($q) use ($invoice) {
-            $q->where('customer_id', $invoice->customer_id);
-        })->sum('amount_to_pay');
-        $totalReturns = \App\Models\SalesReturn::where('customer_id', $invoice->customer_id)->sum('total_amount');
-
-        $outstanding = ($totalInvoices - $totalPaid) - $totalReturns;
+        // Fetch the actual current outstanding balance for the specific customer associated with this invoice
+        $customer = $invoice->customer;
+        $outstanding = $customer ? (float) ($customer->balance ?? 0) : null;
 
         return view('invoices.show', compact('invoice', 'outstanding'));
     }
@@ -193,13 +218,9 @@ class InvoiceController extends Controller
     {
         $invoice = Invoice::with(['customer', 'items.product', 'rep', 'paymentTerm'])->findOrFail($id);
 
-        $totalInvoices = Invoice::where('customer_id', $invoice->customer_id)->sum('total_amount');
-        $totalPaid = \App\Models\PayBillItem::whereHas('payBill', function($q) use ($invoice) {
-            $q->where('customer_id', $invoice->customer_id);
-        })->sum('amount_to_pay');
-        $totalReturns = \App\Models\SalesReturn::where('customer_id', $invoice->customer_id)->sum('total_amount');
-
-        $outstanding = ($totalInvoices - $totalPaid) - $totalReturns;
+        // Fetch the actual current outstanding balance for the specific customer associated with this invoice
+        $customer = $invoice->customer;
+        $outstanding = $customer ? (float) ($customer->balance ?? 0) : null;
 
         return view('invoices.print', compact('invoice', 'outstanding'));
     }
@@ -257,7 +278,10 @@ class InvoiceController extends Controller
             'items.*.rate' => ['required', 'numeric'],
         ]);
 
-        \DB::transaction(function () use ($request, $validated, $invoice) {
+        $oldCustomerId = $invoice->customer_id;
+        $oldTotalAmount = (float)($invoice->total_amount ?? 0);
+
+        \DB::transaction(function () use ($request, $validated, $invoice, $oldCustomerId, $oldTotalAmount) {
             $data = Arr::except($validated, ['items']);
             foreach (['subtotal', 'header_discount_percent', 'header_discount_amount', 'tax_amount', 'sscl_percent', 'sscl_amount', 'vat_percent', 'vat_amount', 'total_amount'] as $field) {
                 if (array_key_exists($field, $data)) {
@@ -265,11 +289,28 @@ class InvoiceController extends Controller
                 }
             }
             $invoice->update($data);
+            $newCustomerId = $invoice->customer_id;
+            $newTotalAmount = (float)($invoice->total_amount ?? 0);
 
-            // NOTE: Customer outstanding is calculated dynamically from invoice/payment
-            // totals (see InvoiceController::show and PayBillController::print).
-            // The customer->balance column is ONLY updated by PayBillController when a
-            // real payment is committed or reversed — NOT here — to prevent double-deduction.
+            // Update Customer Balance
+            if ($oldCustomerId == $newCustomerId) {
+                $customer = Customer::find($newCustomerId);
+                if ($customer) {
+                    $customer->balance += ($newTotalAmount - $oldTotalAmount);
+                    $customer->save();
+                }
+            } else {
+                $oldCustomer = Customer::find($oldCustomerId);
+                if ($oldCustomer) {
+                    $oldCustomer->balance -= $oldTotalAmount;
+                    $oldCustomer->save();
+                }
+                $newCustomer = Customer::find($newCustomerId);
+                if ($newCustomer) {
+                    $newCustomer->balance += $newTotalAmount;
+                    $newCustomer->save();
+                }
+            }
 
             // Reverse old stock
             foreach ($invoice->items as $oldItem) {
@@ -327,9 +368,12 @@ class InvoiceController extends Controller
         $invoice = Invoice::findOrFail($id);
 
         \DB::transaction(function () use ($invoice) {
-            // NOTE: Customer outstanding is calculated dynamically from invoice/payment
-            // totals. The customer->balance column is ONLY updated by PayBillController.
-            // No balance adjustment on invoice delete — prevents double-deduction.
+            // Update Customer Balance
+            $customer = Customer::find($invoice->customer_id);
+            if ($customer) {
+                $customer->balance -= (float)($invoice->total_amount ?? 0);
+                $customer->save();
+            }
 
             $invoice->items()->delete();
             $invoice->delete();

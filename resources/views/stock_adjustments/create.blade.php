@@ -98,8 +98,8 @@
                                     <th>Onhand</th>
                                     <th>Rate(LKR)</th>
                                     <th>Value</th>
+                                    <th>Taken Out Qty</th>
                                     <th>New Qty</th>
-                                    <th>Qty Diff</th>
                                     <th>New Value</th>
                                     <th>Value Diff</th>
                                 </tr>
@@ -113,10 +113,11 @@
                                     <td><input type="number" class="form-control form-control-sm onhand-input text-center bg-light" readonly></td>
                                     <td><input type="number" class="form-control form-control-sm text-end rate-input bg-light" readonly></td>
                                     <td><input type="number" class="form-control form-control-sm text-end current-value-input bg-light" readonly></td>
-                                    <td><input type="number" class="form-control form-control-sm text-center new-qty-input" step="any"></td>
-                                    <td><input type="number" class="form-control form-control-sm text-center qty-diff-input bg-light fw-bold" readonly></td>
+                                    <td><input type="number" class="form-control form-control-sm text-center taken-out-qty-input" step="any" placeholder="e.g. 5"></td>
+                                    <td><input type="number" class="form-control form-control-sm text-center new-qty-input bg-light fw-bold" readonly></td>
                                     <td><input type="number" class="form-control form-control-sm text-end new-value-input bg-light" readonly></td>
                                     <td><input type="number" class="form-control form-control-sm text-end value-diff-input bg-light fw-bold" readonly></td>
+                                    <input type="hidden" class="adjustment-qty-hidden">
                                 </tr>
                             </tbody>
                             <tfoot class="bg-light">
@@ -144,7 +145,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let initialRows = document.querySelectorAll('#itemsTable tbody tr.item-row');
         initialRows.forEach((row, index) => {
             if(index > 0) {
-                let qtyInput = row.querySelector('.qty-input');
+                let qtyInput = row.querySelector('.taken-out-qty-input');
                 if(qtyInput) qtyInput.value = '0';
             }
         });
@@ -184,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         this.appendRow();
                         let rows = document.querySelectorAll('#itemsTable tbody tr');
                         if (rows.length > 0) {
-                            let lastRowQty = rows[rows.length - 1].querySelector('.qty-input');
+                            let lastRowQty = rows[rows.length - 1].querySelector('.taken-out-qty-input');
                             if (lastRowQty) { lastRowQty.value = '0'; }
                         }
                     }
@@ -199,8 +200,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     onhand: 0,
                     rate: 0,
                     current_value: 0,
+                    taken_out_qty: 0,
+                    adjustment_qty: 0,
                     new_qty: 0,
-                    qty_diff: 0,
                     new_value: 0,
                     value_diff: 0
                 });
@@ -231,11 +233,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 newRow.querySelectorAll('input, select').forEach(el => {
                     if (el.classList.contains('product-select')) el.name = `items[${newIndex}][product_id]`;
                     if (el.classList.contains('description-input')) el.name = `items[${newIndex}][description]`;
-                    if (el.classList.contains('onhand-input')) el.name = `items[${newIndex}][onhand]`;
+                    if (el.classList.contains('onhand-input')) el.name = `items[${newIndex}][current_qty]`; // matches backend validation
                     if (el.classList.contains('rate-input')) el.name = `items[${newIndex}][rate]`;
                     if (el.classList.contains('current-value-input')) el.name = `items[${newIndex}][current_value]`;
+                    if (el.classList.contains('taken-out-qty-input')) el.name = ``; // user input, doesn't go to backend directly
+                    if (el.classList.contains('adjustment-qty-hidden')) el.name = `items[${newIndex}][adjustment_qty]`; // calculated diff
                     if (el.classList.contains('new-qty-input')) el.name = `items[${newIndex}][new_qty]`;
-                    if (el.classList.contains('qty-diff-input')) el.name = `items[${newIndex}][qty_diff]`;
                     if (el.classList.contains('new-value-input')) el.name = `items[${newIndex}][new_value]`;
                     if (el.classList.contains('value-diff-input')) el.name = `items[${newIndex}][value_diff]`;
                 });
@@ -260,12 +263,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const dataRow = this.data[rowIndex];
                 dataRow.current_value = dataRow.onhand * dataRow.rate;
-                dataRow.qty_diff = dataRow.new_qty - dataRow.onhand;
+                
+                // Adjustment Qty is negative of Taken Out Qty
+                dataRow.new_qty = dataRow.onhand + dataRow.adjustment_qty;
+                
                 dataRow.new_value = dataRow.new_qty * dataRow.rate;
-                dataRow.value_diff = dataRow.new_value - dataRow.current_value;
+                dataRow.value_diff = dataRow.adjustment_qty * dataRow.rate;
 
                 rowElement.querySelector('.current-value-input').value = dataRow.current_value.toFixed(2);
-                rowElement.querySelector('.qty-diff-input').value = dataRow.qty_diff.toFixed(2);
+                rowElement.querySelector('.new-qty-input').value = dataRow.new_qty.toFixed(2);
+                
+                const hiddenAdjInput = rowElement.querySelector('.adjustment-qty-hidden');
+                if (hiddenAdjInput) hiddenAdjInput.value = dataRow.adjustment_qty;
+
                 rowElement.querySelector('.new-value-input').value = dataRow.new_value.toFixed(2);
                 
                 const valDiffInput = rowElement.querySelector('.value-diff-input');
@@ -292,9 +302,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     const productSelect = domRow.querySelector('.product-select');
                     if (!productSelect || !productSelect.value || productSelect.value.trim() === '') return;
                     
-                    const qtyInput = domRow.querySelector('.qty-input');
+                    const qtyInput = domRow.querySelector('.taken-out-qty-input');
                     const domQty = qtyInput ? (parseFloat(qtyInput.value) || 0) : 0;
-                    if (domQty <= 0) return; // Completely ignore rows where visible DOM qty is 0 or empty
+                    if (domQty === 0) return; // Completely ignore rows where visible DOM qty is 0 or empty
 
                     const amountInput = domRow.querySelector('.amount-input');
                     const domAmount = amountInput ? (parseFloat(amountInput.value) || 0) : 0;
@@ -350,11 +360,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     onhandInput.value = balance;
                     adjustmentController.updateRowData(rowIndex, 'onhand', balance);
                     
-                    const newQtyInput = row.querySelector('.new-qty-input');
-                    if (!newQtyInput.value) {
-                         newQtyInput.value = balance;
-                         adjustmentController.updateRowData(rowIndex, 'new_qty', balance);
-                    }
                     adjustmentController.calculateRow(rowIndex, row);
                 })
                 .catch(error => {
@@ -435,9 +440,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
 
-            [newQtyInput].forEach(input => {
+            const takenOutQtyInput = row.querySelector('.taken-out-qty-input');
+
+            [takenOutQtyInput].forEach(input => {
                 input.addEventListener('input', function() {
-                    adjustmentController.updateRowData(rowIndex, 'new_qty', parseFloat(this.value) || 0);
+                    let takenOut = parseFloat(this.value) || 0;
+                    adjustmentController.updateRowData(rowIndex, 'taken_out_qty', takenOut);
+                    adjustmentController.updateRowData(rowIndex, 'adjustment_qty', -takenOut); // Negative because taking out deducts stock
                     adjustmentController.calculateRow(rowIndex, row);
                 });
             });
